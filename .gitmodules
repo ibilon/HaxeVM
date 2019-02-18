@@ -1,0 +1,6 @@
+[submodule "libs/haxeparser"]
+	path = libs/haxeparser
+	url = https://github.com/Simn/haxeparser.git
+[submodule "libs/hxparse"]
+	path = libs/hxparse
+	url = https://github.com/Simn/hxparse.git
