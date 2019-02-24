@@ -9,7 +9,7 @@ enum EVal
 	EString(s:String);
 	ERegexp(r:EReg);
 	EArray(of:TType, a:Array<EVal>);
-	EObject; //TODO
+	EObject(fields:Array<{ name:String, val:EVal }>);
 	EVoid;
 	EFn(fn:Array<EVal>->EVal);
 	EIdent(id:Int);
@@ -97,19 +97,63 @@ class VM
 								throw 'TBinop $op unimplemented';
 						}
 
+					case OpSub:
+						switch (texpr.type)
+						{
+							case TInt:
+								switch ([v1, v2])
+								{
+									case [EInt(i1), EInt(i2)]: EInt(i1 - i2);
+
+									default:
+										throw 'TBinop $op unimplemented';
+								}
+
+							case TFloat:
+								EFloat(getFloatOrPromote(v1) - getFloatOrPromote(v2));
+
+							default:
+								throw 'TBinop $op unimplemented';
+						}
+
+					case OpAssign:
+						//TODO check var can hold value?
+						switch (e1.expr)
+						{
+							//TODO make it work on field access
+							case TConst(TCIdent(id)): context[id] = v2;
+							default: throw "can only assign to var " + e1.expr;
+						}
+
 					default:
 						throw 'TBinop $op unimplemented';
 				}
 				return eval(e1, context);
 
 			case TField(e, field):
-				throw "TField unimplemented";
+				//TODO class
+				switch (e.type)
+				{
+					case TObject(fields):
+						for (f in fields)
+						{
+							if (f.name == field)
+							{
+								return eval(f.expr, context);
+							}
+						}
+
+						throw 'Field "${field}" not found';
+
+					default:
+						throw 'Field access on non object "${e.type}"';
+				}
 
 			case TParenthesis(e):
 				throw "TParenthesis unimplemented";
 
 			case TObjectDecl(fields):
-				throw "TObjectDecl unimplemented";
+				return EObject(fields.map(f -> { name: f.name, val: eval(f.expr, context)}));
 
 			case TArrayDecl(values):
 				var value : Array<EVal> = [];
@@ -235,7 +279,17 @@ class VM
 			case EFloat(f): '$f';
 			case EFn(_): 'function';
 			case EInt(i): '$i';
-			case EObject: throw "todo print object";
+			case EObject(fields):
+				var buf = new StringBuf();
+				buf.add("{");
+				var fs = [];
+				for (f in fields)
+				{
+					fs.push('${f.name}: ${EVal2str(f.val, context)}');
+				}
+				buf.add(fs.join(", "));
+				buf.add("}");
+				buf.toString();
 			case ERegexp(r): throw "todo print ereg";
 			case EString(s): s;
 			case EVoid: "Void";

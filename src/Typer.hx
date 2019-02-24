@@ -1,5 +1,4 @@
 import haxe.macro.Expr;
-import typer.TConstant;
 import typer.TExpr;
 import typer.TType;
 import typer.TTypedExprDef;
@@ -62,7 +61,7 @@ class Typer
 				{
 					case [TInt, TInt]: TInt;
 					case [TInt, TFloat], [TFloat, TInt], [TFloat, TFloat]: TFloat;
-					default: throw "TODO binop return type"; //TODO
+					default: throw "TODO binop return type " + t1.type + " " + t2.type; //TODO
 				}
 
 				return makeTyped(expr, TBinop(op, t1, t2), t);
@@ -70,7 +69,30 @@ class Typer
 			case EField(e, field):
 				var t = typeExpr(e);
 
-				return makeTyped(expr, TField(t, field), TUnknown); //TODO class/object support
+				//TODO class
+				var sub = null;
+
+				switch (t.type)
+				{
+					case TObject(fields):
+						for (f in fields)
+						{
+							if (f.name == field)
+							{
+								sub = f;
+								break;
+							}
+						}
+
+					default: throw "field access on non object " + t.type;
+				}
+
+				if (sub == null)
+				{
+					throw "object has no field " + field;
+				}
+
+				return makeTyped(expr, TField(t, field), sub.expr.type);
 
 			case EParenthesis(e):
 				enter();
@@ -87,7 +109,7 @@ class Typer
 					tfields.push({ name: f.field, expr: typeExpr(f.expr) });
 				}
 
-				return makeTyped(expr, TObjectDecl(tfields), TObject);
+				return makeTyped(expr, TObjectDecl(tfields), TObject(tfields));
 
 			case EArrayDecl(values):
 				var t = null;

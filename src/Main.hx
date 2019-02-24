@@ -15,8 +15,15 @@ class Main
 			t(0);
 			var b = a[1] + 8.0;
 			trace(b);
+			b = -2;
+			trace(b);
 			var b = "hi";
 			trace(b);
+			var obj = { sub: { hello: "well hello" }, a: 12, b: -7.2 };
+			trace(obj.sub.hello);
+			trace(obj.a + obj.b);
+			trace(obj.a - obj.b);
+			trace(obj);
 		}';
 
 		var parser = new HaxeParser(ByteData.ofString(f), "test.hxs");

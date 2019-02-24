@@ -10,7 +10,7 @@ enum TType
 	TArray(of:TType);
 	TMonomorph;
 	TUnknown;
-	TObject; //TODO
+	TObject(fields:Array<{ name:String, expr:TExpr }>);
 	TVoid;
 	TFn(args:Array<TType>, ret:TType);
 }
