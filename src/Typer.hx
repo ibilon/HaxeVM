@@ -1,7 +1,7 @@
 import haxe.macro.Expr;
-import typer.TExpr;
-import typer.TType;
-import typer.TTypedExprDef;
+import haxe.macro.Type;
+import typer.BaseType;
+import typer.RefImpl;
 
 class Typer
 {
@@ -10,7 +10,7 @@ class Typer
 		insertTrace();
 	}
 
-	public function typeExpr(expr:Expr) : TExpr
+	public function typeExpr(expr:Expr) : TypedExpr
 	{
 		switch (expr.expr)
 		{
@@ -18,36 +18,41 @@ class Typer
 				switch (c)
 				{
 					case CInt(v):
-						return makeTyped(expr, TConst(TCInt(v)), TInt);
+						return makeTyped(expr, TConst(TInt(Std.parseInt(v))), BaseType.Int);
 
 					case CFloat(f):
-						return makeTyped(expr, TConst(TCFloat(f)), TFloat);
+						return makeTyped(expr, TConst(TFloat(f)), BaseType.Float);
+
+					//TODO boolean
+					//case CIdent("true"):
+					//case CIdent("false"):
 
 					case CIdent(s):
 						var sid = getSymbol(s);
-						return makeTyped(expr, TConst(TCIdent(sid)), typeTable[sid]);
-						//TODO use TLocal
+						var type = typeTable[sid];
+						return makeTyped(expr, makeTypedVar(s, sid, type), type);
 
 					case CRegexp(r, opt):
-						return makeTyped(expr, TConst(TCRegexp(r, opt)), TRegexp);
+						//return makeTyped(expr, TConst(TCRegexp(r, opt)), TRegexp);
+						throw "no regex support";
 
 					case CString(s):
-						return makeTyped(expr, TConst(TCString(s)), TString);
+						return makeTyped(expr, TConst(TString(s)), BaseType.String);
 				}
 
 			case EArray(e1, e2):
 				var t1 = typeExpr(e1);
 				var t2 = typeExpr(e2);
 
-				var of = switch (t1.type)
+				var of = switch (t1.t)
 				{
-					case TArray(of): of;
+					case TInst(_.get() => t, params) if (t.name == "Array"): params[0];
 					default: throw "Array access only allowed on arrays";
 				}
 
-				switch (t2.type)
+				switch (t2.t)
 				{
-					case TInt:
+					case TAbstract(_.get() => t, _) if (t.name == "Int"):
 					default: throw "Array index must be int";
 				}
 
@@ -57,11 +62,12 @@ class Typer
 				var t1 = typeExpr(e1);
 				var t2 = typeExpr(e2);
 
-				var t = switch([t1.type, t2.type])
+				//TODO that's not true of all binops, eg +=
+				var t = switch([t1.t, t2.t])
 				{
-					case [TInt, TInt]: TInt;
-					case [TInt, TFloat], [TFloat, TInt], [TFloat, TFloat]: TFloat;
-					default: throw "TODO binop return type " + t1.type + " " + t2.type; //TODO
+					case [TAbstract(_.get() => t1, _), TAbstract(_.get() => t2, _)] if (t1.name == "Int" && t2.name == "Int"): BaseType.Int;
+					case [TAbstract(_.get() => t1, _), TAbstract(_.get() => t2, _)] if ((t1.name == "Int" || t1.name == "Float") && (t2.name == "Int" || t2.name == "Float")): BaseType.Float;
+					default: throw "TODO binop return type " + t1.t + " " + t2.t; //TODO
 				}
 
 				return makeTyped(expr, TBinop(op, t1, t2), t);
@@ -72,10 +78,10 @@ class Typer
 				//TODO class
 				var sub = null;
 
-				switch (t.type)
+				switch (t.t)
 				{
-					case TObject(fields):
-						for (f in fields)
+					case TAnonymous(_.get() => a):
+						for (f in a.fields)
 						{
 							if (f.name == field)
 							{
@@ -84,7 +90,7 @@ class Typer
 							}
 						}
 
-					default: throw "field access on non object " + t.type;
+					default: throw "field access on non object " + t.t;
 				}
 
 				if (sub == null)
@@ -92,24 +98,52 @@ class Typer
 					throw "object has no field " + field;
 				}
 
-				return makeTyped(expr, TField(t, field), sub.expr.type);
+				return makeTyped(expr, TField(t, FAnon(new RefImpl(sub))), sub.type);
 
 			case EParenthesis(e):
 				enter();
 					var t = typeExpr(e);
 				leave();
 
-				return makeTyped(expr, TParenthesis(t), t.type);
+				return makeTyped(expr, TParenthesis(t), t.t);
 
 			case EObjectDecl(fields):
+				var ofields = [];
 				var tfields = [];
 
 				for (f in fields)
 				{
-					tfields.push({ name: f.field, expr: typeExpr(f.expr) });
+					var texpr = typeExpr(f.expr);
+
+					ofields.push({
+						name: f.field,
+						expr: texpr
+					});
+
+					tfields.push({
+						doc: null,
+						isExtern: false,
+						isFinal: false,
+						isPublic: true,
+						kind: FVar(AccNormal, AccNormal),
+						meta: null,
+						name: f.field,
+						overloads: cast new RefImpl([]),
+						params: [],
+						pos: cast {
+							file: "",
+							max: 0,
+							min: 0
+						},
+						type: texpr.t,
+						expr: () -> texpr
+					});
 				}
 
-				return makeTyped(expr, TObjectDecl(tfields), TObject(tfields));
+				return makeTyped(expr, TObjectDecl(ofields), TAnonymous(new RefImpl({
+					fields: tfields,
+					status: AConst
+				})));
 
 			case EArrayDecl(values):
 				var t = null;
@@ -122,26 +156,26 @@ class Typer
 
 					if (t == null)
 					{
-						t = st.type;
+						t = st.t;
 					}
 					else
 					{
-						if (t != st.type) //TODO monomorph/unify
+						if (t != st.t) //TODO monomorph/unify
 						{
 							throw "array must be of single type";
 						}
 					}
 				}
 
-				return makeTyped(expr, TArrayDecl(elems), TArray(t));
+				return makeTyped(expr, TArrayDecl(elems), BaseType.Array(t));
 
 			case ECall(e, params):
 				var t = typeExpr(e);
 				var elems = [];
 
-				var r = switch (t.type)
+				var r = switch (t.t)
 				{
-					case TFn(args, ret): ret;
+					case TFun(_, ret): ret;
 					default: throw "Can only call functions";
 				}
 
@@ -153,6 +187,7 @@ class Typer
 				return makeTyped(expr, TCall(t, elems), r); //TODO check function sign and param
 
 			case ENew(t, params):
+				/*
 				var elems = [];
 
 				for (e in params)
@@ -160,12 +195,14 @@ class Typer
 					elems.push(typeExpr(e));
 				}
 
-				return makeTyped(expr, TNew(t, elems), TUnknown); //TODO type of the TypePath
+				return makeTyped(expr, TNew(t, elems), makeMonomorph()); //TODO type of the TypePath
+				*/
+				throw "no class support";
 
 			case EUnop(op, postFix, e):
 				var t = typeExpr(e);
 
-				return makeTyped(expr, TUnop(op, postFix, t), t.type); //TODO
+				return makeTyped(expr, TUnop(op, postFix, t), t.t); //TODO
 
 			case EFunction(name, f):
 				var at = [];
@@ -183,34 +220,34 @@ class Typer
 								switch (p.name)
 								{
 									case "Int":
-										TInt;
+										BaseType.Int;
 
-									default: TUnknown; //TODO
+									default: makeMonomorph(); //TODO
 								}
 
-							default: TUnknown; //TODO
+							default: makeMonomorph(); //TODO
 						}
-						at.push(typeTable[sid]);
-						args.push({ capture: false, extra: null, id: sid, meta: null, name: a.name, t: null });
+						at.push({ name: a.name, opt: a.opt, t: typeTable[sid] });
+						args.push({ value: null, v: { capture: false, extra: null, id: sid, meta: null, name: a.name, t: null } });
 					}
 
 					var t = typeExpr(f.expr);
 				leave();
 
-				var ft = TFn(at, t.type);
+				var ft = TFun(at, t.t);
 				var sid = getSymbol(name);
 				typeTable[sid] = ft;
 
-				var te = makeTyped(expr, TFunction(args, t, t.type), ft);
+				var te = makeTyped(expr, TFunction({ args: args, expr: t, t: t.t }), ft);
 				return makeTyped(expr, TVar({ t: null, name: name, meta: null, id: sid, extra: null, capture: false }, te), ft);
 
 			case EVars(vars):
 				var v = vars[0]; //TODO how to make multiple nodes from this?
 				var sid = addSymbol(v.name);
 				var t = typeExpr(v.expr);
-				typeTable[sid] = t.type;
+				typeTable[sid] = t.t;
 
-				return makeTyped(expr, TVar({ capture: false, extra: null, id: sid, meta: null, name: v.name, t: null }, t), t.type);
+				return makeTyped(expr, TVar({ capture: false, extra: null, id: sid, meta: null, name: v.name, t: null }, t), t.t);
 
 			case EBlock(exprs):
 				var elems = [];
@@ -222,7 +259,7 @@ class Typer
 					}
 				leave();
 
-				var t = elems.length > 0 ? elems[elems.length - 1].type : TVoid;
+				var t = elems.length > 0 ? elems[elems.length - 1].t : typer.BaseType.Void;
 
 				return makeTyped(expr, TBlock(elems), t);
 
@@ -234,12 +271,12 @@ class Typer
 					leave();
 				leave();
 
-				return makeTyped(expr, TFor(null, null, t), TVoid); //TODO check
+				return makeTyped(expr, TFor(null, null, t), typer.BaseType.Void); //TODO check
 
 			case EIf(econd, eif, eelse):
 				enter();
 					var c = typeExpr(econd);
-					switch (c.type)
+					switch (c.t)
 					{
 						default: //TODO needs to be bool
 					}
@@ -252,7 +289,7 @@ class Typer
 					leave();
 				leave();
 
-				return makeTyped(expr, TIf(c, i, e), TVoid); //TODO check
+				return makeTyped(expr, TIf(c, i, e), typer.BaseType.Void); //TODO check
 
 			case EWhile(econd, e, normalWhile):
 				enter();
@@ -262,7 +299,7 @@ class Typer
 					leave();
 				leave();
 
-				return makeTyped(expr, TWhile(c, t, normalWhile), TVoid); //TODO check
+				return makeTyped(expr, TWhile(c, t, normalWhile), typer.BaseType.Void); //TODO check
 
 			case ESwitch(e, cases, edef):
 				//TODO cases exprs must be from the switch expr
@@ -294,7 +331,7 @@ class Typer
 					leave();
 				leave();
 
-				return makeTyped(expr, TSwitch(t, elems, d), TVoid); //TODO check
+				return makeTyped(expr, TSwitch(t, elems, d), typer.BaseType.Void); //TODO check
 
 			case ETry(e, catches):
 				enter();
@@ -310,38 +347,38 @@ class Typer
 					}
 				leave();
 
-				return makeTyped(expr, TTry(t, elems), TVoid); //TODO check
+				return makeTyped(expr, TTry(t, elems), typer.BaseType.Void); //TODO check
 
 			case EReturn(e):
 				var t = typeExpr(e);
 
-				return makeTyped(expr, TReturn(t), t.type);
+				return makeTyped(expr, TReturn(t), t.t);
 
 			case EBreak:
-				return makeTyped(expr, TBreak, TVoid);
+				return makeTyped(expr, TBreak, typer.BaseType.Void);
 
 			case EContinue:
-				return makeTyped(expr, TContinue, TVoid);
+				return makeTyped(expr, TContinue, typer.BaseType.Void);
 
 			case EThrow(e):
 				var t = typeExpr(e);
 
-				return makeTyped(expr, TThrow(t), TVoid);
+				return makeTyped(expr, TThrow(t), typer.BaseType.Void);
 
 			case ECast(e, t):
 				var t = typeExpr(e);
 
-				return makeTyped(expr, TCast(t, null), TUnknown); //TODO type of the TypePath
+				return makeTyped(expr, TCast(t, null), makeMonomorph()); //TODO type of the TypePath
 
 			case EMeta(s, e):
 				var t = typeExpr(e);
 
-				return makeTyped(expr, TMeta(s, t), t.type);
+				return makeTyped(expr, TMeta(s, t), t.t);
 
 			case ECheckType(e, t):
 				var t = typeExpr(e);
 
-				return makeTyped(expr, TParenthesis(t), TUnknown); //TODO
+				return makeTyped(expr, TParenthesis(t), makeMonomorph()); //TODO
 
 			case ETernary(econd, eif, eelse):
 				enter();
@@ -354,7 +391,7 @@ class Typer
 					leave();
 				leave();
 
-				return makeTyped(expr, TIf(c, i, e), i.type); //TODO type
+				return makeTyped(expr, TIf(c, i, e), i.t); //TODO type
 
 			case EUntyped(e):
 				throw "Untyped is not supported";
@@ -367,17 +404,28 @@ class Typer
 	var symbolTable = new Map<String, Array<Int>>();
 	var currentScope : Array<Array<String>> = [[]];
 	var id = 0;
-	var typeTable = new Map<Int, TType>();
+	var typeTable = new Map<Int, Type>();
 
 	function insertTrace()
 	{
 		var sid = addSymbol("trace");
-		typeTable[sid] = TFn([TUnknown], TVoid);
+		typeTable[sid] = TFun([{ t: makeMonomorph(), opt:false, name: "value" }], typer.BaseType.Void);
 	}
 
-	function makeTyped(expr:Expr, texpr:TTypedExprDef, type:TType) : TExpr
+	function makeTyped(expr:Expr, texpr:TypedExprDef, type:Type) : TypedExpr
 	{
-		return { expr: texpr, pos: expr.pos, type: type };
+		return { expr: texpr, pos: expr.pos, t: type };
+	}
+
+	function makeTypedVar(name:String, sid:Int, type:Type) : TypedExprDef
+	{
+		return TLocal({ capture: false, extra: null, id: sid, meta: null, name: name, t: type });
+	}
+
+	function makeMonomorph() : Type
+	{
+		//TODO allow this to be changed after unification
+		return TMono(new RefImpl(null));
 	}
 
 	function enter()
@@ -409,7 +457,7 @@ class Typer
 			symbolTable[name].push(sid);
 		}
 
-		typeTable[sid] = TMonomorph;
+		typeTable[sid] = makeMonomorph();
 
 		return sid;
 	}

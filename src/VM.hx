@@ -1,5 +1,4 @@
-import typer.TExpr;
-import typer.TType;
+import haxe.macro.Type;
 
 enum EVal
 {
@@ -8,16 +7,17 @@ enum EVal
 	EFloat(f:Float);
 	EString(s:String);
 	ERegexp(r:EReg);
-	EArray(of:TType, a:Array<EVal>);
+	EArray(of:Type, a:Array<EVal>);
 	EObject(fields:Array<{ name:String, val:EVal }>);
 	EVoid;
 	EFn(fn:Array<EVal>->EVal);
 	EIdent(id:Int);
+	ENull;
 }
 
 class VM
 {
-	public static function evalExpr(texpr:TExpr) : EVal
+	public static function evalExpr(texpr:TypedExpr) : EVal
 	{
 		var context = new Map<Int, EVal>();
 
@@ -37,18 +37,20 @@ class VM
 		return eval(texpr, context);
 	}
 
-	static function eval(texpr:TExpr, context:Map<Int, EVal>) : EVal
+	static function eval(texpr:TypedExpr, context:Map<Int, EVal>) : EVal
 	{
 		switch (texpr.expr)
 		{
 			case TConst(c):
 				return switch (c)
 				{
-					case TCInt(v): EInt(Std.parseInt(v));
-					case TCFloat(f): EFloat(Std.parseFloat(f));
-					case TCIdent(sid): context.exists(sid) ? context[sid] : {trace(context); throw "using unbound variable " + sid;};
-					case TCRegexp(r, opt): ERegexp(new EReg(r, opt));
-					case TCString(s): EString(s);
+					case TInt(v): EInt(v);
+					case TFloat(f): EFloat(Std.parseFloat(f));
+					case TString(s): EString(s);
+					case TBool(b): EBool(b);
+					case TNull: ENull;
+					case TSuper: throw "no super";
+					case TThis: throw "no this";
 				}
 
 			case TArray(e1, e2):
@@ -79,9 +81,10 @@ class VM
 				return switch (op)
 				{
 					case OpAdd:
-						switch (texpr.type)
+						switch (texpr.t)
 						{
-							case TInt:
+							//TODO properly check for StdTypes.Int
+							case TAbstract(_.get() => t, _) if (t.name == "Int"):
 								switch ([v1, v2])
 								{
 									case [EInt(i1), EInt(i2)]: EInt(i1 + i2);
@@ -90,7 +93,7 @@ class VM
 										throw 'TBinop $op unimplemented';
 								}
 
-							case TFloat:
+							case TAbstract(_.get() => t, _) if (t.name == "Float"):
 								EFloat(getFloatOrPromote(v1) + getFloatOrPromote(v2));
 
 							default:
@@ -98,9 +101,9 @@ class VM
 						}
 
 					case OpSub:
-						switch (texpr.type)
+						switch (texpr.t)
 						{
-							case TInt:
+							case TAbstract(_.get() => t, _) if (t.name == "Int"):
 								switch ([v1, v2])
 								{
 									case [EInt(i1), EInt(i2)]: EInt(i1 - i2);
@@ -109,7 +112,7 @@ class VM
 										throw 'TBinop $op unimplemented';
 								}
 
-							case TFloat:
+							case TAbstract(_.get() => t, _) if (t.name == "Float"):
 								EFloat(getFloatOrPromote(v1) - getFloatOrPromote(v2));
 
 							default:
@@ -121,7 +124,7 @@ class VM
 						switch (e1.expr)
 						{
 							//TODO make it work on field access
-							case TConst(TCIdent(id)): context[id] = v2;
+							case TLocal(v): context[v.id] = v2;
 							default: throw "can only assign to var " + e1.expr;
 						}
 
@@ -132,21 +135,27 @@ class VM
 
 			case TField(e, field):
 				//TODO class
-				switch (e.type)
+				var field = switch (field)
 				{
-					case TObject(fields):
-						for (f in fields)
+					case FAnon(_.get() => cf): cf.name;
+					default: "field access type not supported";
+				}
+
+				switch (e.t)
+				{
+					case TAnonymous(_.get() => a):
+						for (f in a.fields)
 						{
 							if (f.name == field)
 							{
-								return eval(f.expr, context);
+								return eval(f.expr(), context);
 							}
 						}
 
 						throw 'Field "${field}" not found';
 
 					default:
-						throw 'Field access on non object "${e.type}"';
+						throw 'Field access on non object "${e.t}"';
 				}
 
 			case TParenthesis(e):
@@ -163,7 +172,7 @@ class VM
 					value.push(eval(v, context));
 				}
 
-				return EArray(texpr.type, value);
+				return EArray(texpr.t, value);
 
 			case TCall(e, el):
 				var v = eval(e, context);
@@ -186,24 +195,24 @@ class VM
 					default: throw "unexpected value, expected EFunction, got " + v;
 				}
 
-			case TNew(t, el):
+			case TNew(c, params, el):
 				throw "TNew unimplemented";
 
 			case TUnop(op, postFix, e):
 				throw "TUnop unimplemented";
 
-			case TFunction(args, expr, _):
+			case TFunction(tfunc):
 				return EFn(function (a:Array<EVal>) {
-					for (i in 0...args.length)
+					for (i in 0...tfunc.args.length)
 					{
-						context[args[i].id] = a[i];
+						context[tfunc.args[i].v.id] = a[i];
 					}
 
-					var ret = eval(expr, context);
+					var ret = eval(tfunc.expr, context);
 
-					for (i in 0...args.length)
+					for (i in 0...tfunc.args.length)
 					{
-						context.remove(args[i].id);
+						context.remove(tfunc.args[i].v.id);
 					}
 
 					return ret;
@@ -257,6 +266,27 @@ class VM
 			case TMeta(s, e):
 				//TODO is there actually something to do at runtime?
 				return eval(e, context);
+
+			case TEnumIndex(e1):
+				throw "TEnumIndex unimplemented";
+
+			case TEnumParameter(e1, ef, index):
+				throw "TEnumParameter unimplemented";
+
+			case TTypeExpr(m):
+				throw "TTypeExpr unimplemented";
+
+			case TIdent(s):
+				throw "TIdent unimplemented";
+
+			case TLocal(v):
+				if (!context.exists(v.id))
+				{
+					trace(context);
+					throw "using unbound variable " + v.id;
+				}
+
+				return context[v.id];
 		}
 	}
 
@@ -275,6 +305,7 @@ class VM
 		return switch (e)
 		{
 			case EBool(b): b ? "true" : "false";
+			case ENull: "null";
 			case EArray(_, a): "[" + a.join(", ") + "]";
 			case EFloat(f): '$f';
 			case EFn(_): 'function';

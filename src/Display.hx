@@ -1,10 +1,10 @@
-import typer.TExpr;
+import haxe.macro.Type;
 
 class Display
 {
-	public static function displayTExpr(expr:TExpr)
+	public static function displayTExpr(expr:TypedExpr)
 	{
-		print(expr.type);
+		//print(expr.t); //TODO proper/less verbose print of type
 
 		switch (expr.expr)
 		{
@@ -26,7 +26,7 @@ class Display
 				indent--;
 
 			case TField(e, field):
-				print("TField", field);
+				print("TField"); //, field); //TODO displayFieldAccess(field)
 				indent++;
 				displayTExpr(e);
 				indent--;
@@ -68,8 +68,8 @@ class Display
 				indent--;
 				indent--;
 
-			case TNew(t, el):
-				print("TNew", t);
+			case TNew(_.get() => c, params, el):
+				print("TNew", c.name);
 				indent++;
 				for (e in el)
 				{
@@ -83,15 +83,15 @@ class Display
 				displayTExpr(e);
 				indent--;
 
-			case TFunction(args, expr, ret):
+			case TFunction(tfunc):
 				print("TFunction");
 				indent++;
-				for (a in args)
+				for (a in tfunc.args)
 				{
-					print(a.name, a.t);
+					print(a.v.name, a.v.t);
 				}
 				indent++;
-				displayTExpr(expr);
+				displayTExpr(tfunc.expr);
 				indent--;
 				indent--;
 
@@ -192,6 +192,27 @@ class Display
 				indent++;
 				displayTExpr(e);
 				indent--;
+
+			case TEnumIndex(e1):
+				print("TEnumIndex");
+				indent++;
+				displayTExpr(e1);
+				indent--;
+
+			case TEnumParameter(e1, ef, index):
+				print("TEnumParameter " + ef.name + "@" + index, ef.type);
+				indent++;
+				displayTExpr(e1);
+				indent--;
+
+			case TIdent(s):
+				print("TIdent", s);
+
+			case TLocal(v):
+				print("TLocal " + v.name + "@" + v.id);
+
+			case TTypeExpr(m):
+				print("TTypeExpr", m);
 		}
 	}
 
