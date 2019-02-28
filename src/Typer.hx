@@ -30,6 +30,15 @@ class Typer
 					case CIdent("false"):
 						return makeTyped(expr, TConst(TBool(false)), BaseType.Bool);
 
+					case CIdent("null"):
+						return makeTyped(expr, TConst(TNull), makeMonomorph());
+
+					case CIdent("this"):
+						return makeTyped(expr, TConst(TThis), makeMonomorph());
+
+					case CIdent("super"):
+						return makeTyped(expr, TConst(TSuper), makeMonomorph());
+
 					case CIdent(s):
 						var sid = getSymbol(s);
 						var type = typeTable[sid];
@@ -49,7 +58,7 @@ class Typer
 
 				var of = switch (t1.t)
 				{
-					case TInst(_.get() => t, params) if (t.name == "Array"): params[0];
+					case TInst(_.get() => t, params) if (BaseType.isArray(t1.t)): params[0];
 					default: throw "Array access only allowed on arrays";
 				}
 
@@ -219,10 +228,16 @@ class Typer
 									case "Bool":
 										BaseType.Bool;
 
-									default: makeMonomorph(); //TODO
+									case "Float":
+										BaseType.Float;
+
+									case "String":
+										BaseType.String;
+
+									default: throw "unknown type";
 								}
 
-							default: makeMonomorph(); //TODO
+							default: makeMonomorph(); //TODO TAnonymous | TExtend | TFunction | TIntersection | TNamed | TOptional | TParent
 						}
 						at.push({ name: a.name, opt: a.opt, t: typeTable[sid] });
 						args.push({ value: null, v: { capture: false, extra: null, id: sid, meta: null, name: a.name, t: null } });
@@ -261,8 +276,47 @@ class Typer
 				return makeTyped(expr, TBlock(elems), t);
 
 			case EFor(it, expr):
+				//var v;
+				//var range;
+
 				enter();
-					typeExpr(it); //TODO get var and e1
+					/*
+					switch (it.expr)
+					{
+						case EBinop(OpIn, e1, e2):
+							var s = switch (e1.expr)
+							{
+								case EConst(CIdent(s)): s;
+								default: throw "unsuported for syntax";
+							}
+
+							switch (e2.expr)
+							{
+								case EBinop(OpInterval, e1, e2):
+									switch (e1.expr)
+									{
+										case EConst(CInt(_)):
+										default: throw "unsuported for syntax";
+									}
+
+									switch (e2.expr)
+									{
+										case EConst(CInt(_)):
+										default: throw "unsuported for syntax";
+									}
+
+								default:
+									throw "unsuported for syntax";
+							}
+							var sid = addSymbol(s);
+							v = { capture: false, extra: null, id: sid, meta: null, name: s, t: null };
+							range = typeExpr(e2);
+
+						default:
+							throw "unsuported for syntax";
+					}
+					*/
+
 					enter();
 						var t = typeExpr(expr);
 					leave();
@@ -283,7 +337,7 @@ class Typer
 						var i = typeExpr(eif);
 					leave();
 					enter();
-						var e = typeExpr(eelse);
+						var e = eelse != null ? typeExpr(eelse) : null;
 					leave();
 				leave();
 

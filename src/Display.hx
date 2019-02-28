@@ -122,7 +122,10 @@ class Display
 				displayTExpr(econd);
 				indent++;
 				displayTExpr(eif);
-				displayTExpr(eelse);
+				if (eelse != null)
+				{
+					displayTExpr(eelse);
+				}
 				indent--;
 				indent--;
 

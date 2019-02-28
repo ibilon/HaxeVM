@@ -29,14 +29,17 @@ class Main
 			function boolTest(b:Bool) {
 				if (b) {
 					trace("is true");
+					return 0;
 				} else {
 					trace("is false");
 				}
+
+				return -1;
 			}
 			trace(a);
-			boolTest(a);
+			trace(boolTest(a));
 			trace(b);
-			boolTest(b);
+			trace(boolTest(b));
 			var i = 10;
 			trace(i--);
 			trace(i);
@@ -44,7 +47,17 @@ class Main
 			trace(i);
 			trace(i < 0);
 			while (--i >= 0) {
+				if (i == 5)
+				{
+					continue;
+				}
+
 				trace(i);
+
+				if (i < 2)
+				{
+					break;
+				}
 			}
 		}';
 
