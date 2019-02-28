@@ -1,19 +1,6 @@
 import haxe.macro.Type;
-
-enum EVal
-{
-	EBool(b:Bool);
-	EInt(i:Int);
-	EFloat(f:Float);
-	EString(s:String);
-	ERegexp(r:EReg);
-	EArray(of:Type, a:Array<EVal>);
-	EObject(fields:Array<{ name:String, val:EVal }>);
-	EVoid;
-	EFn(fn:Array<EVal>->EVal);
-	EIdent(id:Int);
-	ENull;
-}
+import vm.EVal;
+import vm.Operator;
 
 class VM
 {
@@ -75,63 +62,7 @@ class VM
 				}
 
 			case TBinop(op, e1, e2):
-				var v1 = eval(e1, context);
-				var v2 = eval(e2, context);
-
-				return switch (op)
-				{
-					case OpAdd:
-						switch (texpr.t)
-						{
-							//TODO properly check for StdTypes.Int
-							case TAbstract(_.get() => t, _) if (t.name == "Int"):
-								switch ([v1, v2])
-								{
-									case [EInt(i1), EInt(i2)]: EInt(i1 + i2);
-
-									default:
-										throw 'TBinop $op unimplemented';
-								}
-
-							case TAbstract(_.get() => t, _) if (t.name == "Float"):
-								EFloat(getFloatOrPromote(v1) + getFloatOrPromote(v2));
-
-							default:
-								throw 'TBinop $op unimplemented';
-						}
-
-					case OpSub:
-						switch (texpr.t)
-						{
-							case TAbstract(_.get() => t, _) if (t.name == "Int"):
-								switch ([v1, v2])
-								{
-									case [EInt(i1), EInt(i2)]: EInt(i1 - i2);
-
-									default:
-										throw 'TBinop $op unimplemented';
-								}
-
-							case TAbstract(_.get() => t, _) if (t.name == "Float"):
-								EFloat(getFloatOrPromote(v1) - getFloatOrPromote(v2));
-
-							default:
-								throw 'TBinop $op unimplemented';
-						}
-
-					case OpAssign:
-						//TODO check var can hold value?
-						switch (e1.expr)
-						{
-							//TODO make it work on field access
-							case TLocal(v): context[v.id] = v2;
-							default: throw "can only assign to var " + e1.expr;
-						}
-
-					default:
-						throw 'TBinop $op unimplemented';
-				}
-				return eval(e1, context);
+				return Operator.binop(op, e1, e2, context, eval);
 
 			case TField(e, field):
 				//TODO class
@@ -199,7 +130,7 @@ class VM
 				throw "TNew unimplemented";
 
 			case TUnop(op, postFix, e):
-				throw "TUnop unimplemented";
+				return Operator.unop(op, postFix, e, context);
 
 			case TFunction(tfunc):
 				return EFn(function (a:Array<EVal>) {
@@ -254,7 +185,12 @@ class VM
 				}
 
 			case TWhile(econd, e, normalWhile):
-				throw "TWhile unimplemented";
+				while (eval(econd, context).match(EBool(true)))
+				{
+					eval(e, context);
+				}
+
+				return EVoid;
 
 			case TSwitch(e, cases, edef):
 				throw "TSwitch unimplemented";
@@ -301,16 +237,6 @@ class VM
 				}
 
 				return context[v.id];
-		}
-	}
-
-	static function getFloatOrPromote(value:EVal) : Float
-	{
-		return switch (value)
-		{
-			case EInt(i): i;
-			case EFloat(f): f;
-			default: throw "unexpected value, expected number, got " + value;
 		}
 	}
 

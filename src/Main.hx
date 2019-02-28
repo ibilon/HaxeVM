@@ -37,6 +37,15 @@ class Main
 			boolTest(a);
 			trace(b);
 			boolTest(b);
+			var i = 10;
+			trace(i--);
+			trace(i);
+			trace(--i);
+			trace(i);
+			trace(i < 0);
+			while (--i >= 0) {
+				trace(i);
+			}
 		}';
 
 		var parser = new HaxeParser(ByteData.ofString(f), "test.hxs");

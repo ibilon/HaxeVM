@@ -16,6 +16,21 @@
 				"kind": "build",
 				"isDefault": true
 			}
+		},
+		{
+			"label": "todos",
+			"type": "shell",
+			"command": "grep",
+			"args": [
+				"--color",
+				"--include=\\*.hx",
+				"--exclude-dir=libs",
+				"-rnw",
+				"'src'",
+				"-e",
+				"'//TODO'"
+			],
+			"problemMatcher": []
 		}
 	]
 }

@@ -1,6 +1,7 @@
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import typer.BaseType;
+import typer.Operator;
 import typer.RefImpl;
 
 class Typer
@@ -52,10 +53,9 @@ class Typer
 					default: throw "Array access only allowed on arrays";
 				}
 
-				switch (t2.t)
+				if (!BaseType.isInt(t2.t))
 				{
-					case TAbstract(_.get() => t, _) if (t.name == "Int"):
-					default: throw "Array index must be int";
+					throw "Array index must be int " + t2.t;
 				}
 
 				return makeTyped(expr, TArray(t1, t2), of);
@@ -64,15 +64,7 @@ class Typer
 				var t1 = typeExpr(e1);
 				var t2 = typeExpr(e2);
 
-				//TODO that's not true of all binops, eg +=
-				var t = switch([t1.t, t2.t])
-				{
-					case [TAbstract(_.get() => t1, _), TAbstract(_.get() => t2, _)] if (t1.name == "Int" && t2.name == "Int"): BaseType.Int;
-					case [TAbstract(_.get() => t1, _), TAbstract(_.get() => t2, _)] if ((t1.name == "Int" || t1.name == "Float") && (t2.name == "Int" || t2.name == "Float")): BaseType.Float;
-					default: throw "TODO binop return type " + t1.t + " " + t2.t; //TODO
-				}
-
-				return makeTyped(expr, TBinop(op, t1, t2), t);
+				return makeTyped(expr, TBinop(op, t1, t2), Operator.binop(op, t1.t, t2.t));
 
 			case EField(e, field):
 				var t = typeExpr(e);
@@ -204,7 +196,7 @@ class Typer
 			case EUnop(op, postFix, e):
 				var t = typeExpr(e);
 
-				return makeTyped(expr, TUnop(op, postFix, t), t.t); //TODO
+				return makeTyped(expr, TUnop(op, postFix, t), Operator.unop(op, t.t));
 
 			case EFunction(name, f):
 				var at = [];
@@ -218,7 +210,7 @@ class Typer
 						var sid = addSymbol(a.name);
 						typeTable[sid] = switch (a.type)
 						{
-							case TPath(p):
+							case TPath(p): //TODO convert TPath to Type
 								switch (p.name)
 								{
 									case "Int":
@@ -281,10 +273,10 @@ class Typer
 			case EIf(econd, eif, eelse):
 				enter();
 					var c = typeExpr(econd);
-					switch (c.t)
+
+					if (!BaseType.isBool(c.t))
 					{
-						case TAbstract(_.get() => t, _) if (t.name == "Bool"):
-						default: throw "if condition must be bool is " + c.t;
+						throw "if condition must be bool is " + c.t;
 					}
 
 					enter();
@@ -299,7 +291,13 @@ class Typer
 
 			case EWhile(econd, e, normalWhile):
 				enter();
-					var c = typeExpr(econd); //TODO needs to be bool
+					var c = typeExpr(econd);
+
+					if (!BaseType.isBool(c.t))
+					{
+						throw "while condition must be bool is " + c.t;
+					}
+
 					enter();
 						var t = typeExpr(e);
 					leave();
@@ -388,7 +386,13 @@ class Typer
 
 			case ETernary(econd, eif, eelse):
 				enter();
-					var c = typeExpr(econd); //TODO needs to be bool
+					var c = typeExpr(econd);
+
+					if (!BaseType.isBool(c.t))
+					{
+						throw "ternary condition must be bool is " + c.t;
+					}
+
 					enter();
 						var i = typeExpr(eif);
 					leave();

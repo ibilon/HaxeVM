@@ -30,6 +30,15 @@ class BaseType
 		exclude: () -> {}
 	}), []);
 
+	public static function isInt(t:Type) : Bool
+	{
+		return switch (t)
+		{
+			case TAbstract(_.get() => t, _): t.pack.length == 0 && t.module == "StdTypes" && t.name == "Int";
+			default: false;
+		}
+	}
+
 	public static final Float : Type = TAbstract(new RefImpl({
 		array: [],
 		binops: [],
@@ -55,6 +64,15 @@ class BaseType
 		unops: [],
 		exclude: () -> {}
 	}), []);
+
+	public static function isFloat(t:Type) : Bool
+	{
+		return switch (t)
+		{
+			case TAbstract(_.get() => t, _): t.pack.length == 0 && t.module == "StdTypes" && t.name == "Float";
+			default: false;
+		}
+	}
 
 	public static final String : Type = TInst(new RefImpl({
 		constructor: null,
@@ -83,6 +101,15 @@ class BaseType
 		exclude: () -> {}
 	}), []);
 
+	public static function isString(t:Type) : Bool
+	{
+		return switch (t)
+		{
+			case TInst(_.get() => t, _): t.pack.length == 0 && t.module == "String" && t.name == "String";
+			default: false;
+		}
+	}
+
 	public static final Void : Type = TAbstract(new RefImpl({
 		array: [],
 		binops: [],
@@ -108,6 +135,15 @@ class BaseType
 		unops: [],
 		exclude: () -> {}
 	}), []);
+
+	public static function isVoid(t:Type) : Bool
+	{
+		return switch (t)
+		{
+			case TAbstract(_.get() => t, _): t.pack.length == 0 && t.module == "StdTypes" && t.name == "Void";
+			default: false;
+		}
+	}
 
 	public static function Array(t:Type) : Type
 	{
@@ -167,6 +203,15 @@ class BaseType
 		}), [t]);
 	}
 
+	public static function isArray(t:Type) : Bool
+	{
+		return switch (t)
+		{
+			case TInst(_.get() => t, _): t.pack.length == 0 && t.module == "Array" && t.name == "Array";
+			default: false;
+		}
+	}
+
 	public static final Bool : Type = TAbstract(new RefImpl({
 		array: [],
 		binops: [],
@@ -192,4 +237,18 @@ class BaseType
 		unops: [],
 		exclude: () -> {}
 	}), []);
+
+	public static function isBool(t:Type) : Bool
+	{
+		return switch (t)
+		{
+			case TAbstract(_.get() => t, _): t.pack.length == 0 && t.module == "StdTypes" && t.name == "Bool";
+			default: false;
+		}
+	}
+
+	public static function isNumeric(t:Type) : Bool
+	{
+		return isInt(t) || isFloat(t);
+	}
 }
