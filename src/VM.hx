@@ -237,7 +237,21 @@ class VM
 				throw "TFor unimplemented";
 
 			case TIf(econd, eif, eelse):
-				throw "TIf unimplemented";
+				return switch (eval(econd, context))
+				{
+					case EBool(b):
+						if (b)
+						{
+							eval(eif, context);
+						}
+						else
+						{
+							eval(eelse, context);
+						}
+
+					default:
+						throw "if condition is not bool";
+				}
 
 			case TWhile(econd, e, normalWhile):
 				throw "TWhile unimplemented";

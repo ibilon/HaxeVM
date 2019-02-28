@@ -166,4 +166,30 @@ class BaseType
 			exclude: () -> {}
 		}), [t]);
 	}
+
+	public static final Bool : Type = TAbstract(new RefImpl({
+		array: [],
+		binops: [],
+		doc: "",
+		from: [],
+		impl: null,
+		isExtern: false,
+		isPrivate: false,
+		meta: null,
+		module: "StdTypes",
+		name: "Bool",
+		pack: [],
+		params: [],
+		pos: cast {
+			file: "",
+			max: 0,
+			min: 0
+		},
+		resolve: null,
+		resolveWrite: null,
+		to: [],
+		type: null, // The TAbstract(this, []);
+		unops: [],
+		exclude: () -> {}
+	}), []);
 }

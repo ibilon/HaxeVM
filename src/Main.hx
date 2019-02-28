@@ -24,6 +24,19 @@ class Main
 			trace(obj.a + obj.b);
 			trace(obj.a - obj.b);
 			trace(obj);
+			var a = true;
+			var b = false;
+			function boolTest(b:Bool) {
+				if (b) {
+					trace("is true");
+				} else {
+					trace("is false");
+				}
+			}
+			trace(a);
+			boolTest(a);
+			trace(b);
+			boolTest(b);
 		}';
 
 		var parser = new HaxeParser(ByteData.ofString(f), "test.hxs");

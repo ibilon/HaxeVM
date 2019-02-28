@@ -23,9 +23,11 @@ class Typer
 					case CFloat(f):
 						return makeTyped(expr, TConst(TFloat(f)), BaseType.Float);
 
-					//TODO boolean
-					//case CIdent("true"):
-					//case CIdent("false"):
+					case CIdent("true"):
+						return makeTyped(expr, TConst(TBool(true)), BaseType.Bool);
+
+					case CIdent("false"):
+						return makeTyped(expr, TConst(TBool(false)), BaseType.Bool);
 
 					case CIdent(s):
 						var sid = getSymbol(s);
@@ -222,6 +224,9 @@ class Typer
 									case "Int":
 										BaseType.Int;
 
+									case "Bool":
+										BaseType.Bool;
+
 									default: makeMonomorph(); //TODO
 								}
 
@@ -278,7 +283,8 @@ class Typer
 					var c = typeExpr(econd);
 					switch (c.t)
 					{
-						default: //TODO needs to be bool
+						case TAbstract(_.get() => t, _) if (t.name == "Bool"):
+						default: throw "if condition must be bool is " + c.t;
 					}
 
 					enter();
