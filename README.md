@@ -24,6 +24,41 @@ Currently support a very small subset of the language, can run the following exa
 	trace(obj.a + obj.b);
 	trace(obj.a - obj.b);
 	trace(obj);
+	var a = true;
+	var b = false;
+	function boolTest(b:Bool) {
+		if (b) {
+			trace("is true");
+			return 0;
+		} else {
+			trace("is false");
+		}
+
+		return -1;
+	}
+	trace(a);
+	trace(boolTest(a));
+	trace(b);
+	trace(boolTest(b));
+	var i = 10;
+	trace(i--);
+	trace(i);
+	trace(--i);
+	trace(i);
+	trace(i < 0);
+	while (--i >= 0) {
+		if (i == 5)
+		{
+			continue;
+		}
+
+		trace(i);
+
+		if (i < 2)
+		{
+			break;
+		}
+	}
 }
 ```
 
@@ -40,4 +75,21 @@ well hello
 4.8
 19.2
 {sub: {hello: well hello}, a: 12, b: -7.2}
+true
+is true
+0
+false
+is false
+-1
+10
+9
+8
+8
+false
+7
+6
+4
+3
+2
+1
 ```
