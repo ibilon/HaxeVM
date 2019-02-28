@@ -217,28 +217,7 @@ class Typer
 					for (a in f.args)
 					{
 						var sid = addSymbol(a.name);
-						typeTable[sid] = switch (a.type)
-						{
-							case TPath(p): //TODO convert TPath to Type
-								switch (p.name)
-								{
-									case "Int":
-										BaseType.Int;
-
-									case "Bool":
-										BaseType.Bool;
-
-									case "Float":
-										BaseType.Float;
-
-									case "String":
-										BaseType.String;
-
-									default: throw "unknown type";
-								}
-
-							default: makeMonomorph(); //TODO TAnonymous | TExtend | TFunction | TIntersection | TNamed | TOptional | TParent
-						}
+						typeTable[sid] = convertComplexType(a.type);
 						at.push({ name: a.name, opt: a.opt, t: typeTable[sid] });
 						args.push({ value: null, v: { capture: false, extra: null, id: sid, meta: null, name: a.name, t: null } });
 					}
@@ -374,18 +353,23 @@ class Typer
 							{
 								vals.push(typeExpr(v));
 							}
+
 							enter();
-								typeExpr(c.guard);
-							leave();
-							enter();
-								var et = typeExpr(c.expr);
+								var et = if (c.guard != null)
+								{
+									typeExpr({ expr: EIf(c.guard, c.expr, edef), pos: null });
+								}
+								else
+								{
+									typeExpr(c.expr);
+								}
 							leave();
 						leave();
 
 						elems.push({ values: vals, expr: et });
 					}
 					enter();
-						var d = typeExpr(edef);
+						var d = edef != null ? typeExpr(edef) : null;
 					leave();
 				leave();
 
@@ -399,8 +383,10 @@ class Typer
 					for (c in catches)
 					{
 						enter();
+							var sid = addSymbol(c.name);
+							typeTable[sid] = convertComplexType(c.type);
 							var t = typeExpr(c.expr);
-							elems.push({ v: { capture: false, extra: null, id: -1, meta: null, name: c.name, t: null }, expr: t });
+							elems.push({ v: { capture: false, extra: null, id: sid, meta: null, name: c.name, t: typeTable[sid] }, expr: t });
 						leave();
 					}
 				leave();
@@ -530,10 +516,36 @@ class Typer
 	{
 		if (!symbolTable.exists(name) || symbolTable[name].length == 0)
 		{
-			return -1;
+			throw "unknown symbol " + name;
 		}
 
 		var sids = symbolTable[name];
 		return sids[sids.length - 1];
+	}
+
+	function convertComplexType(t:ComplexType) : Type
+	{
+		return switch (t)
+		{
+			case TPath(p): //TODO convert TPath to Type
+				switch (p.name)
+				{
+					case "Int":
+						BaseType.Int;
+
+					case "Bool":
+						BaseType.Bool;
+
+					case "Float":
+						BaseType.Float;
+
+					case "String":
+						BaseType.String;
+
+					default: throw "unknown type";
+				}
+
+			default: makeMonomorph(); //TODO TAnonymous | TExtend | TFunction | TIntersection | TNamed | TOptional | TParent
+		}
 	}
 }

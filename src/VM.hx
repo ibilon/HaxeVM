@@ -1,5 +1,6 @@
 import haxe.macro.Type;
 import vm.EVal;
+import vm.EValTools;
 import vm.FlowControl;
 import vm.Operator;
 
@@ -223,10 +224,62 @@ class VM
 				return EVoid;
 
 			case TSwitch(e, cases, edef):
-				throw "TSwitch unimplemented";
+				var val = eval(e, context);
+
+				for (c in cases)
+				{
+					var match = false;
+
+					for (v in c.values)
+					{
+						if (val.equals(eval(v, context)))
+						{
+							match = true;
+							break;
+						}
+					}
+
+					if (match)
+					{
+						return eval(c.expr, context);
+					}
+				}
+
+				if (edef != null)
+				{
+					return eval(edef, context);
+				}
+
+				return EVoid;
 
 			case TTry(e, catches):
-				throw "TTry unimplemented";
+				try
+				{
+					eval(e, context);
+				}
+				catch (fc:FlowControl)
+				{
+					switch (fc)
+					{
+						case FCThrow(v):
+							for (c in catches)
+							{
+								if (EValTools.isSameType(v, EValTools.extractType(c.v.t)))
+								{
+									context[c.v.id] = v;
+									eval(c.expr, context);
+									return EVoid;
+								}
+							}
+
+							throw fc;
+
+						default:
+							throw fc;
+					}
+				}
+
+				return EVoid;
 
 			case TReturn(e):
 				throw FCReturn(eval(e, context));
@@ -238,7 +291,7 @@ class VM
 				throw FCContinue;
 
 			case TThrow(e):
-				throw "TThrow unimplemented";
+				throw FCThrow(eval(e, context));
 
 			case TCast(e, m):
 				throw "TCast unimplemented";
