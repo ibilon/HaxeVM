@@ -189,6 +189,11 @@ class Typer
 					elems.push(typeExpr(e));
 				}
 
+				if (isTrace(e))
+				{
+					elems.unshift(tracePosition(e));
+				}
+
 				return makeTyped(expr, TCall(t, elems), r); //TODO check function sign and param
 
 			case ENew(t, params):
@@ -358,7 +363,7 @@ class Typer
 							enter();
 								var et = if (c.guard != null)
 								{
-									typeExpr({ expr: EIf(c.guard, c.expr, edef), pos: null });
+									typeExpr({ expr: EIf(c.guard, c.expr, null), pos: null });
 								}
 								else
 								{
@@ -463,6 +468,11 @@ class Typer
 		typeTable[sid] = TFun([{ t: makeMonomorph(), opt:false, name: "value" }], BaseType.Void);
 	}
 
+	inline function isTrace(e:Expr) : Bool
+	{
+		return e.expr.match(EConst(CIdent("trace")));
+	}
+
 	function makeTyped(expr:Expr, texpr:TypedExprDef, type:Type) : TypedExpr
 	{
 		return { expr: texpr, pos: expr.pos, t: type };
@@ -548,5 +558,28 @@ class Typer
 
 			default: makeMonomorph(); //TODO TAnonymous | TExtend | TFunction | TIntersection | TNamed | TOptional | TParent
 		}
+	}
+
+	function tracePosition(expr:Expr) : TypedExpr
+	{
+		var content = sys.io.File.getContent(expr.pos.file);
+		var i = 0;
+		var line = 1;
+		while (i < expr.pos.min)
+		{
+			switch (content.charAt(i++))
+			{
+				case "\r":
+					if (content.charAt(i+1) == "\n")
+					{
+						i++;
+					}
+					line++;
+				case "\n":
+					line++;
+				default:
+			}
+		}
+		return makeTyped(expr, TConst(TString(expr.pos.file + ":" + line + ":")), BaseType.String);
 	}
 }
