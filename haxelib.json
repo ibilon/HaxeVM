@@ -1,0 +1,11 @@
+{
+	"name": "haxevm",
+	"url" : "https://github.com/ibilon/HaxeVM",
+	"license": "MIT",
+	"tags": ["haxe", "compiler", "vm", "interpreter"],
+	"description": "Compiler/virtual machine in Haxe for Haxe",
+	"version": "0.1.0",
+	"releasenote": "Prototype",
+	"contributors": ["_ibilon"],
+	"main": "haxevm.Main"
+}

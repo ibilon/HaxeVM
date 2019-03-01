@@ -8,7 +8,26 @@ class Main
 {
 	static function main()
 	{
-		var fname = "test/samples/Main.hx";
+		if (Sys.environment().exists("HAXELIB_RUN"))
+		{
+			var args = Sys.args();
+			Sys.setCwd(args.pop());
+
+			switch (args.length)
+			{
+				case 0: Sys.println("haxelib run haxevm filename.hx");
+				case 1: runFile(args[0]);
+				default: Sys.println("too much args");
+			}
+		}
+		else
+		{
+			runFile("test/samples/Main.hx");
+		}
+	}
+
+	static function runFile(fname:String)
+	{
 		var parser = new HaxeParser(ByteData.ofString(File.getContent(fname)), fname);
 		var file = parser.parse();
 
@@ -17,11 +36,6 @@ class Main
 			switch (d.decl)
 			{
 				case EClass(d):
-					if (d.name != "Main")
-					{
-						throw "not supported";
-					}
-
 					for (d in d.data)
 					{
 						switch (d.kind)
@@ -30,7 +44,7 @@ class Main
 								if (d.name == "main" && f.args.length == 0)
 								{
 									var typed = new Typer().typeExpr(f.expr);
-									Display.displayTExpr(typed);
+									//Display.displayTExpr(typed);
 									VM.evalExpr(typed);
 								}
 
