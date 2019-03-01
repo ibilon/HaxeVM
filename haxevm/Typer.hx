@@ -1,8 +1,10 @@
+package haxevm;
+
 import haxe.macro.Expr;
 import haxe.macro.Type;
-import typer.BaseType;
-import typer.Operator;
-import typer.RefImpl;
+import haxevm.typer.BaseType;
+import haxevm.typer.Operator;
+import haxevm.typer.RefImpl;
 
 class Typer
 {
@@ -249,7 +251,7 @@ class Typer
 					}
 				leave();
 
-				var t = elems.length > 0 ? elems[elems.length - 1].t : typer.BaseType.Void;
+				var t = elems.length > 0 ? elems[elems.length - 1].t : BaseType.Void;
 
 				return makeTyped(expr, TBlock(elems), t);
 
@@ -300,7 +302,7 @@ class Typer
 				var cond = { expr: EBinop(OpLte, it, { expr: EConst(CInt(max)), pos: null }), pos: null };
 				var w = typeExpr({ expr: EWhile(cond, expr, true), pos: null });
 
-				return makeTyped(expr, TBlock([v, w]), typer.BaseType.Void); //TODO check
+				return makeTyped(expr, TBlock([v, w]), BaseType.Void); //TODO check
 
 			case EIf(econd, eif, eelse):
 				enter();
@@ -319,7 +321,7 @@ class Typer
 					leave();
 				leave();
 
-				return makeTyped(expr, TIf(c, i, e), typer.BaseType.Void); //TODO check
+				return makeTyped(expr, TIf(c, i, e), BaseType.Void); //TODO check
 
 			case EWhile(econd, e, normalWhile):
 				enter();
@@ -335,7 +337,7 @@ class Typer
 					leave();
 				leave();
 
-				return makeTyped(expr, TWhile(c, t, normalWhile), typer.BaseType.Void); //TODO check
+				return makeTyped(expr, TWhile(c, t, normalWhile), BaseType.Void); //TODO check
 
 			case ESwitch(e, cases, edef):
 				//TODO cases exprs must be from the switch expr
@@ -372,7 +374,7 @@ class Typer
 					leave();
 				leave();
 
-				return makeTyped(expr, TSwitch(t, elems, d), typer.BaseType.Void); //TODO check
+				return makeTyped(expr, TSwitch(t, elems, d), BaseType.Void); //TODO check
 
 			case ETry(e, catches):
 				enter();
@@ -390,7 +392,7 @@ class Typer
 					}
 				leave();
 
-				return makeTyped(expr, TTry(t, elems), typer.BaseType.Void); //TODO check
+				return makeTyped(expr, TTry(t, elems), BaseType.Void); //TODO check
 
 			case EReturn(e):
 				var t = typeExpr(e);
@@ -398,15 +400,15 @@ class Typer
 				return makeTyped(expr, TReturn(t), t.t);
 
 			case EBreak:
-				return makeTyped(expr, TBreak, typer.BaseType.Void);
+				return makeTyped(expr, TBreak, BaseType.Void);
 
 			case EContinue:
-				return makeTyped(expr, TContinue, typer.BaseType.Void);
+				return makeTyped(expr, TContinue, BaseType.Void);
 
 			case EThrow(e):
 				var t = typeExpr(e);
 
-				return makeTyped(expr, TThrow(t), typer.BaseType.Void);
+				return makeTyped(expr, TThrow(t), BaseType.Void);
 
 			case ECast(e, t):
 				var t = typeExpr(e);
@@ -458,7 +460,7 @@ class Typer
 	function insertTrace()
 	{
 		var sid = addSymbol("trace");
-		typeTable[sid] = TFun([{ t: makeMonomorph(), opt:false, name: "value" }], typer.BaseType.Void);
+		typeTable[sid] = TFun([{ t: makeMonomorph(), opt:false, name: "value" }], BaseType.Void);
 	}
 
 	function makeTyped(expr:Expr, texpr:TypedExprDef, type:Type) : TypedExpr

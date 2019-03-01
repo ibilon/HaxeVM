@@ -1,3 +1,5 @@
+package haxevm;
+
 import haxe.macro.Type;
 
 class Display

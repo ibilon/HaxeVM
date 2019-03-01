@@ -1,3 +1,5 @@
+package haxevm;
+
 import byte.ByteData;
 import haxeparser.HaxeParser;
 import sys.io.File;
@@ -28,7 +30,7 @@ class Main
 								if (d.name == "main" && f.args.length == 0)
 								{
 									var typed = new Typer().typeExpr(f.expr);
-									//Display.displayTExpr(typed);
+									Display.displayTExpr(typed);
 									VM.evalExpr(typed);
 								}
 

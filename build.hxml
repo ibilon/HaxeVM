@@ -1,5 +1,4 @@
 -cp libs/hxparse/src
 -cp libs/haxeparser/src
--cp src
--main Main
+-main haxevm.Main
 --interp

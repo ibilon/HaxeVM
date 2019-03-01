@@ -1,4 +1,4 @@
-package typer;
+package haxevm.typer;
 
 import haxe.macro.Expr;
 import haxe.macro.Type;
@@ -20,7 +20,7 @@ class Operator
 
 	public static function binopArithmetic(op:Binop, a:Type, b:Type) : Type
 	{
-		if (!typer.BaseType.isNumeric(a) || !typer.BaseType.isNumeric(b))
+		if (!haxevm.typer.BaseType.isNumeric(a) || !haxevm.typer.BaseType.isNumeric(b))
 		{
 			throw 'cannot apply operator $op to type $a and $b';
 		}
@@ -28,16 +28,16 @@ class Operator
 		return switch (op)
 		{
 			case OpMod, OpMult, OpAdd, OpSub:
-				if (typer.BaseType.isFloat(a) || typer.BaseType.isFloat(b))
+				if (haxevm.typer.BaseType.isFloat(a) || haxevm.typer.BaseType.isFloat(b))
 				{
-					typer.BaseType.Float;
+					haxevm.typer.BaseType.Float;
 				}
 				else
 				{
-					typer.BaseType.Int;
+					haxevm.typer.BaseType.Int;
 				}
 
-			case OpDiv: typer.BaseType.Float;
+			case OpDiv: haxevm.typer.BaseType.Float;
 
 			default: throw "not arithmetic";
 		}
@@ -48,17 +48,17 @@ class Operator
 		return switch (op)
 		{
 			case OpShl, OpShr, OpUShr, OpAnd, OpOr, OpXor:
-				if (!typer.BaseType.isInt(a))
+				if (!haxevm.typer.BaseType.isInt(a))
 				{
 					throw '$a should be Int';
 				}
 
-				if (!typer.BaseType.isInt(b))
+				if (!haxevm.typer.BaseType.isInt(b))
 				{
 					throw '$b should be Int';
 				}
 
-				typer.BaseType.Int;
+				haxevm.typer.BaseType.Int;
 
 			default: throw "not bitwise";
 		}
@@ -71,7 +71,7 @@ class Operator
 			case OpEq, OpNotEq:
 				if (a == b)
 				{
-					typer.BaseType.Bool;
+					haxevm.typer.BaseType.Bool;
 				}
 				else
 				{
@@ -79,9 +79,9 @@ class Operator
 				}
 
 			case OpLt, OpLte, OpGt, OpGte:
-				if (typer.BaseType.isNumeric(a) && typer.BaseType.isNumeric(b))
+				if (haxevm.typer.BaseType.isNumeric(a) && haxevm.typer.BaseType.isNumeric(b))
 				{
-					typer.BaseType.Bool;
+					haxevm.typer.BaseType.Bool;
 				}
 				else
 				{
@@ -89,17 +89,17 @@ class Operator
 				}
 
 			case OpBoolAnd, OpBoolOr:
-				if (!typer.BaseType.isBool(a))
+				if (!haxevm.typer.BaseType.isBool(a))
 				{
 					throw '$a should be Bool';
 				}
 
-				if (!typer.BaseType.isBool(b))
+				if (!haxevm.typer.BaseType.isBool(b))
 				{
 					throw '$b should be Bool';
 				}
 
-				typer.BaseType.Bool;
+				haxevm.typer.BaseType.Bool;
 
 			default: throw "not boolean";
 		}
@@ -110,19 +110,19 @@ class Operator
 		switch (op)
 		{
 			case OpDecrement, OpIncrement, OpNeg:
-				if (!typer.BaseType.isNumeric(a))
+				if (!haxevm.typer.BaseType.isNumeric(a))
 				{
 					throw 'type $a doesn\'t have operator $op';
 				}
 
 			case OpNegBits:
-				if (!typer.BaseType.isInt(a))
+				if (!haxevm.typer.BaseType.isInt(a))
 				{
 					throw '$a should be Int';
 				}
 
 			case OpNot:
-				if (!typer.BaseType.isBool(a))
+				if (!haxevm.typer.BaseType.isBool(a))
 				{
 					throw '$a should be Bool';
 				}

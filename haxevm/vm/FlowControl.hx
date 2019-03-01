@@ -1,4 +1,4 @@
-package vm;
+package haxevm.vm;
 
 enum FlowControl
 {

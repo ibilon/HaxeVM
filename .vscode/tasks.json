@@ -4,6 +4,7 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
+			"label": "run main test",
 			"type": "hxml",
 			"file": "build.hxml",
 			"problemMatcher": [
@@ -26,7 +27,7 @@
 				"--include=\\*.hx",
 				"--exclude-dir=libs",
 				"-rnw",
-				"'src'",
+				"'haxevm'",
 				"-e",
 				"'//TODO'"
 			],

@@ -1,4 +1,4 @@
-package typer;
+package haxevm.typer;
 
 class RefImpl<T>
 {

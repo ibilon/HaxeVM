@@ -1,8 +1,10 @@
+package haxevm;
+
 import haxe.macro.Type;
-import vm.EVal;
-import vm.EValTools;
-import vm.FlowControl;
-import vm.Operator;
+import haxevm.vm.EVal;
+import haxevm.vm.EValTools;
+import haxevm.vm.FlowControl;
+import haxevm.vm.Operator;
 
 class VM
 {
