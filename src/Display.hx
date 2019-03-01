@@ -96,7 +96,7 @@ class Display
 				indent--;
 
 			case TVar(v, expr):
-				print("TVar", v.name);
+				print("TVar " + v.name + "@" + v.id);
 				indent++;
 				displayTExpr(expr);
 				indent--;

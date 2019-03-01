@@ -226,11 +226,10 @@ class Typer
 				leave();
 
 				var ft = TFun(at, t.t);
-				var sid = getSymbol(name);
-				typeTable[sid] = ft;
+				typeTable[fid] = ft;
 
 				var te = makeTyped(expr, TFunction({ args: args, expr: t, t: t.t }), ft);
-				return makeTyped(expr, TVar({ t: null, name: name, meta: null, id: sid, extra: null, capture: false }, te), ft);
+				return makeTyped(expr, TVar({ t: null, name: name, meta: null, id: fid, extra: null, capture: false }, te), ft);
 
 			case EVars(vars):
 				var v = vars[0]; //TODO how to make multiple nodes from this?
@@ -255,15 +254,15 @@ class Typer
 				return makeTyped(expr, TBlock(elems), t);
 
 			case EFor(it, expr):
-				//var v;
-				//var range;
+				var s = null;
+				var min = "";
+				var max = "";
 
 				enter();
-					/*
 					switch (it.expr)
 					{
 						case EBinop(OpIn, e1, e2):
-							var s = switch (e1.expr)
+							s = switch (e1.expr)
 							{
 								case EConst(CIdent(s)): s;
 								default: throw "unsuported for syntax";
@@ -274,34 +273,34 @@ class Typer
 								case EBinop(OpInterval, e1, e2):
 									switch (e1.expr)
 									{
-										case EConst(CInt(_)):
+										case EConst(CInt(i)): min = i;
 										default: throw "unsuported for syntax";
 									}
 
 									switch (e2.expr)
 									{
-										case EConst(CInt(_)):
+										case EConst(CInt(i)): max = i;
 										default: throw "unsuported for syntax";
 									}
 
 								default:
 									throw "unsuported for syntax";
 							}
-							var sid = addSymbol(s);
-							v = { capture: false, extra: null, id: sid, meta: null, name: s, t: null };
-							range = typeExpr(e2);
 
 						default:
 							throw "unsuported for syntax";
 					}
-					*/
-
-					enter();
-						var t = typeExpr(expr);
-					leave();
 				leave();
 
-				return makeTyped(expr, TFor(null, null, t), typer.BaseType.Void); //TODO check
+				var min = { expr: EConst(CInt('${Std.parseInt(min) - 1}')), pos: null };
+				var v = typeExpr({ expr: EVars([{ name: s, expr: min, type: null }]), pos: null });
+
+				var id = { expr: EConst(CIdent(s)), pos: null };
+				var it = { expr: EUnop(OpIncrement, false, id), pos: null };
+				var cond = { expr: EBinop(OpLte, it, { expr: EConst(CInt(max)), pos: null }), pos: null };
+				var w = typeExpr({ expr: EWhile(cond, expr, true), pos: null });
+
+				return makeTyped(expr, TBlock([v, w]), typer.BaseType.Void); //TODO check
 
 			case EIf(econd, eif, eelse):
 				enter();

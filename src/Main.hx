@@ -104,6 +104,17 @@ class Main
 			test(1, true);
 			test(2, true);
 			test(3, true);
+			for (i in 0...5) {
+				if (i == 2) {
+					continue;
+				}
+
+				trace(i * 2);
+
+				if (i == 4) {
+					break;
+				}
+			}
 		}';
 
 		var parser = new HaxeParser(ByteData.ofString(f), "test.hxs");
