@@ -218,7 +218,7 @@ class Typer
 				var at = [];
 				var args = [];
 
-				var fid = addSymbol(name);
+				var fid = name != null ? addSymbol(name) : -1;
 
 				enter();
 					for (a in f.args)
@@ -233,10 +233,17 @@ class Typer
 				leave();
 
 				var ft = TFun(at, t.t);
-				typeTable[fid] = ft;
-
 				var te = makeTyped(expr, TFunction({ args: args, expr: t, t: t.t }), ft);
-				return makeTyped(expr, TVar({ t: null, name: name, meta: null, id: fid, extra: null, capture: false }, te), ft);
+
+				if (fid != -1)
+				{
+					typeTable[fid] = ft;
+					return makeTyped(expr, TVar({ t: null, name: name, meta: null, id: fid, extra: null, capture: false }, te), ft);
+				}
+				else
+				{
+					return te;
+				}
 
 			case EVars(vars):
 				var v = vars[0]; //TODO how to make multiple nodes from this?
@@ -262,52 +269,64 @@ class Typer
 
 			case EFor(it, expr):
 				var s = null;
-				var min = "";
-				var max = "";
+				var min = 0;
+				var max = 0;
 
-				enter();
-					switch (it.expr)
-					{
-						case EBinop(OpIn, e1, e2):
-							s = switch (e1.expr)
-							{
-								case EConst(CIdent(s)): s;
-								default: throw "unsuported for syntax";
-							}
+				switch (it.expr)
+				{
+					case EBinop(OpIn, e1, e2):
+						s = switch (e1.expr)
+						{
+							case EConst(CIdent(s)): s;
+							default: throw "unsuported for syntax";
+						}
 
-							switch (e2.expr)
-							{
-								case EBinop(OpInterval, e1, e2):
-									switch (e1.expr)
-									{
-										case EConst(CInt(i)): min = i;
-										default: throw "unsuported for syntax";
-									}
+						switch (e2.expr)
+						{
+							case EBinop(OpInterval, e1, e2):
+								switch (e1.expr)
+								{
+									case EConst(CInt(i)): min = Std.parseInt(i);
+									default: throw "unsuported for syntax";
+								}
 
-									switch (e2.expr)
-									{
-										case EConst(CInt(i)): max = i;
-										default: throw "unsuported for syntax";
-									}
+								switch (e2.expr)
+								{
+									case EConst(CInt(i)): max = Std.parseInt(i);
+									default: throw "unsuported for syntax";
+								}
 
-								default:
-									throw "unsuported for syntax";
-							}
+							default:
+								throw "unsuported for syntax";
+						}
 
-						default:
-							throw "unsuported for syntax";
-					}
-				leave();
+					default:
+						throw "unsuported for syntax";
+				}
 
-				var min = { expr: EConst(CInt('${Std.parseInt(min) - 1}')), pos: null };
-				var v = typeExpr({ expr: EVars([{ name: s, expr: min, type: null }]), pos: null });
+				if (min > max)
+				{
+					throw "can't iterate backwards";
+				}
 
-				var id = { expr: EConst(CIdent(s)), pos: null };
-				var it = { expr: EUnop(OpIncrement, false, id), pos: null };
-				var cond = { expr: EBinop(OpLte, it, { expr: EConst(CInt(max)), pos: null }), pos: null };
-				var w = typeExpr({ expr: EWhile(cond, expr, true), pos: null });
+				var block = [];
 
-				return makeTyped(expr, TBlock([v, w]), BaseType.Void); //TODO check
+				if (min < max)
+				{
+					enter();
+						var min = { expr: EConst(CInt('${min - 1}')), pos: null };
+						var v = typeExpr({ expr: EVars([{ name: s, expr: min, type: null }]), pos: null });
+
+						var id = { expr: EConst(CIdent(s)), pos: null };
+						var it = { expr: EUnop(OpIncrement, false, id), pos: null };
+						var cond = { expr: EBinop(OpLte, it, { expr: EConst(CInt('$max')), pos: null }), pos: null };
+						var w = typeExpr({ expr: EWhile(cond, expr, true), pos: null });
+
+						block = [v, w];
+					leave();
+				}
+
+				return makeTyped(expr, TBlock(block), BaseType.Void); //TODO check
 
 			case EIf(econd, eif, eelse):
 				enter();
