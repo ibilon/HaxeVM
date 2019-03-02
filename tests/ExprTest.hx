@@ -35,7 +35,6 @@ class ExprTest extends Test
 		compareFile("tests/samples/Operators.hx");
 	}
 
-	@Ignored //TODO rework switch
 	public function testSwitchSample()
 	{
 		compareFile("tests/samples/Switch.hx");
