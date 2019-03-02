@@ -1,5 +1,7 @@
 # HaxeVM
 
+[![Build Status](https://travis-ci.org/ibilon/HaxeVM.svg?branch=master)](https://travis-ci.org/ibilon/HaxeVM)
+
 Prototype compiler/virtual machine in Haxe for Haxe.
 
 Currently support a very small subset of the language.
