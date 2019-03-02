@@ -35,7 +35,7 @@ class Test extends utest.Test
 
 		if (error != "")
 		{
-			throw error;
+			Assert.fail(error);
 		}
 
 		process.close();
