@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/ibilon/HaxeVM.svg?branch=master)](https://travis-ci.org/ibilon/HaxeVM)
 
-Prototype compiler/virtual machine in Haxe for Haxe.
+Prototype compiler/virtual machine in Haxe for Haxe. Requires Haxe 4.
 
 Currently support a very small subset of the language.
 Can run files containing a single class with a single static function called main.
