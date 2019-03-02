@@ -115,7 +115,6 @@ class Main
 			}
 		}
 
-		/* //TODO haxe doesn't give the same results
 		test(0, false);
 		test(1, false);
 		test(2, false);
@@ -124,7 +123,6 @@ class Main
 		test(1, true);
 		test(2, true);
 		test(3, true);
-		*/
 
 		for (i in 0...5)
 		{

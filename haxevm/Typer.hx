@@ -365,45 +365,33 @@ class Typer
 
 			case ESwitch(e, cases, edef):
 				//TODO cases exprs must be from the switch expr
-
-				// Group all case with the same pattern together
-				var groupedCases = new Map<Expr, Array<{expr:Null<Expr>, guard:Null<Expr>}>>();
-				for (c in cases) {
-					for (v in c.values) {
-						if (!groupedCases.exists(v)) {
-							groupedCases.set(v, []);
-						}
-						groupedCases.get(v).push({expr:c.expr, guard:c.guard});
+				var eif = edef;
+				var i = cases.length - 1;
+				while (i >= 0)
+				{
+					var c = cases[i--];
+					var cond = { expr: EBinop(OpEq, e, c.values[0]), pos: null }; // TODO OpEq wont work on anon type
+					for (j in 1...c.values.length)
+					{
+						cond = {
+							expr: EBinop(OpBoolOr, cond, { expr: EBinop(OpEq, e, c.values[j]), pos: null}),
+							pos: null
+						};
 					}
+
+					if (c.guard != null)
+					{
+						cond = {
+							expr: EBinop(OpBoolAnd,
+								{ expr: EParenthesis(cond), pos:null },
+								c.guard),
+							pos: null
+						};
+					}
+
+					eif = { expr: EIf(cond, c.expr, eif), pos: null };
 				}
-
-				var t = typeExpr(e);
-				var elems = [];
-				var d = edef != null ? typeExpr(edef) : null;
-				for (pattern in groupedCases.keys()) {
-					var possibilities = groupedCases.get(pattern);
-					var firstWithoutGuardIndex = -1;
-					for (i in 0...possibilities.length) {
-						if (possibilities[i].guard == null) {
-							firstWithoutGuardIndex = i;
-							break;
-						}
-					}
-
-					// Ignore cases after an unguarded case for the same pattern
-					// If no unguarded case exists for this pattern use default
-					var te = (firstWithoutGuardIndex != -1) ? typeExpr(possibilities[firstWithoutGuardIndex].expr) : d;
-					var i = (firstWithoutGuardIndex != -1) ? firstWithoutGuardIndex - 1 : possibilities.length - 1;
-
-					while (i >= 0) {
-						var p = possibilities[i--];
-						te = makeTyped(p.guard, TIf(typeExpr(p.guard), typeExpr(p.expr), te), BaseType.Void); // TODO check
-					}
-					elems.push({ values: [typeExpr(pattern)], expr: te});
-				}
-
-				return makeTyped(expr, TSwitch(t, elems, d), BaseType.Void); //TODO check
-
+				return typeExpr(eif);
 			case ETry(e, catches):
 				enter();
 					var t = typeExpr(e);
