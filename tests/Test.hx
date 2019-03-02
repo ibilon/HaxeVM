@@ -29,7 +29,15 @@ class Test extends utest.Test
 		}
 
 		var process = new Process("haxe", args);
+
 		var output = process.stdout.readAll().toString();
+		var error = process.stderr.readAll().toString();
+
+		if (error != "")
+		{
+			throw error;
+		}
+
 		process.close();
 
 		return output;
