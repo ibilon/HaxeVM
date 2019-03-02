@@ -1,0 +1,15 @@
+language: haxe
+
+os:
+  - linux
+  - osx
+
+haxe:
+  - 3.4.7
+  - 4.0.0-rc.1
+  - development
+
+sudo: false
+
+script:
+  - haxe test.hxml

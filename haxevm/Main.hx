@@ -8,21 +8,18 @@ class Main
 {
 	static function main()
 	{
+		var args = Sys.args();
+
 		if (Sys.environment().exists("HAXELIB_RUN"))
 		{
-			var args = Sys.args();
 			Sys.setCwd(args.pop());
-
-			switch (args.length)
-			{
-				case 0: Sys.println("haxelib run haxevm filename.hx");
-				case 1: runFile(args[0]);
-				default: Sys.println("too much args");
-			}
 		}
-		else
+
+		switch (args.length)
 		{
-			runFile("test/samples/Main.hx");
+			case 0: Sys.println("haxelib run haxevm filename.hx");
+			case 1: runFile(args[0]);
+			default: Sys.println("too much args");
 		}
 	}
 

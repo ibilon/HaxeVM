@@ -4,14 +4,19 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "run main test",
-			"type": "hxml",
-			"file": "build.hxml",
+			"label": "run",
+			"type": "shell",
+			"command": "haxe",
+			"args": [
+				"extraParams.hxml",
+				"--run",
+				"haxevm.Main",
+				"tests/samples/Main.hx"
+			],
 			"problemMatcher": [
 				"$haxe-absolute",
 				"$haxe",
-				"$haxe-error",
-				"$haxe-trace"
+				"$haxe-error"
 			],
 			"group": {
 				"kind": "build",

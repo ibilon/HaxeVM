@@ -1,0 +1,7 @@
+-cp tests
+-cp libs/hxparse/src
+-cp libs/haxeparser/src
+-cp libs/utest/src
+libs/utest/extraParams.hxml
+-main Test
+--interp

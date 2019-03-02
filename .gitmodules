@@ -4,3 +4,6 @@
 [submodule "libs/hxparse"]
 	path = libs/hxparse
 	url = https://github.com/Simn/hxparse.git
+[submodule "libs/utest"]
+	path = libs/utest
+	url = https://github.com/haxe-utest/utest.git
