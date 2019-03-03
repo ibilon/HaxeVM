@@ -65,17 +65,25 @@ class Operator
 					case TArray(data, key):
 						var dataEVal = eval(data, context);
 						var keyEVal = eval(key, context);
+
 						switch ([dataEVal, keyEVal])
 						{
 							case [EArray(_, values), EInt(i)]:
-								if (i >= 0 && i < values.length)
+								if (i < 0)
 								{
-									values[i] = v2;
+									throw 'Negative array index: $i';
 								}
-								else
+
+								if (i >= values.length)
 								{
-									throw 'Index out of bound for array ${data}';
+									for (j in values.length...i)
+									{
+										values[j] = ENull;
+									}
 								}
+
+								values[i] = v2;
+
 							default:
 								throw 'Unexpected array access on ${data.t} with type ${key.t}';
 						}
@@ -97,17 +105,22 @@ class Operator
 					case TArray(data, key):
 						var dataEVal = eval(data, context);
 						var keyEVal = eval(key, context);
+
 						switch ([dataEVal, keyEVal])
 						{
 							case [EArray(_, values), EInt(i)]:
-								if (i >= 0 && i < values.length)
+								if (i < 0)
 								{
-									values[i] = doBinop(values[i], subOp, v2);
+									throw 'Negative array index: $i';
 								}
-								else
+
+								if (i >= values.length)
 								{
-									throw 'Index out of bound for array ${data}';
+									doBinop(ENull, subOp, v2);
 								}
+
+								values[i] = doBinop(values[i], subOp, v2);
+
 							default:
 								throw 'Unexpected array access on ${data.t} with type ${key.t}';
 						}
@@ -520,16 +533,5 @@ class Operator
 		}
 
 		throw 'Field access on non object "${parent.t}"';
-	}
-
-	static function extractArrayValues(array:TypedExpr, eval:EvalFn, context:Context):{ of:Type, values:Array<EVal> }
-	{
-		return switch (eval(array, context))
-		{
-			case EArray(of, values):
-				return {of:of, values:values};
-			default:
-				throw 'Expected an array got ${array.t}';
-		}
 	}
 }

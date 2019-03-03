@@ -60,7 +60,7 @@ class VM
 			case TArray(e1, e2):
 				var val = eval(e1, context);
 
-				switch (val)
+				return switch (val)
 				{
 					case EArray(of, a):
 						var idx = eval(e2, context);
@@ -68,7 +68,19 @@ class VM
 						switch (idx)
 						{
 							case EInt(i):
-								return a[i];
+								if (i < 0)
+								{
+									throw 'Negative array index: $i';
+								}
+
+								if (i < a.length)
+								{
+									a[i];
+								}
+								else
+								{
+									ENull;
+								}
 
 							default:
 								throw "unexpected value, expected EInt, got " + idx;
@@ -359,7 +371,7 @@ class VM
 				"null";
 
 			case EArray(_, a):
-				"[" + a.join(", ") + "]";
+				"[" + a.map(f -> EVal2str(f, context)).join(",") + "]";
 
 			case EFloat(f):
 				'$f';
@@ -403,7 +415,7 @@ class VM
 		}
 	}
 
-	public static function nameOf (fa:FieldAccess) : String
+	public static function nameOf(fa:FieldAccess):String
 	{
 		return switch (fa)
 		{
