@@ -253,6 +253,10 @@ class ExprTyper
 					});
 				}
 
+				if (fid != -1 && f.ret != null) {
+					typeTable[fid] = TFun(at, convertComplexType(f.ret));
+				}
+
 				var t = typeExpr(f.expr);
 				leave();
 

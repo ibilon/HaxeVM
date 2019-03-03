@@ -1,6 +1,7 @@
 package haxevm;
 
 import haxe.macro.Type;
+import haxevm.vm.Context;
 import haxevm.vm.EVal;
 import haxevm.vm.EValTools;
 import haxevm.vm.FlowControl;
@@ -10,7 +11,7 @@ class VM
 {
 	public static function evalExpr(texpr:TypedExpr):EVal
 	{
-		var context = new Map<Int, EVal>();
+		var context = new Context();
 
 		// insert builtin trace
 		context[0] = EFn(function(a) {
@@ -28,7 +29,7 @@ class VM
 		return eval(texpr, context);
 	}
 
-	static function eval(texpr:TypedExpr, context:Map<Int, EVal>):EVal
+	static function eval(texpr:TypedExpr, context:Context):EVal
 	{
 		switch (texpr.expr)
 		{
@@ -188,7 +189,7 @@ class VM
 
 					for (i in 0...tfunc.args.length)
 					{
-						context.remove(tfunc.args[i].v.id);
+						context.undefine(tfunc.args[i].v.id);
 					}
 
 					return ret;
@@ -350,7 +351,7 @@ class VM
 				throw "TIdent unimplemented";
 
 			case TLocal(v):
-				if (!context.exists(v.id))
+				if (!context.define(v.id))
 				{
 					trace(context);
 					throw "using unbound variable " + v.id;
@@ -360,7 +361,7 @@ class VM
 		}
 	}
 
-	static function EVal2str(e:EVal, context:Map<Int, EVal>):String
+	static function EVal2str(e:EVal, context:Context):String
 	{
 		return switch (e)
 		{
@@ -406,7 +407,7 @@ class VM
 				"Void";
 
 			case EIdent(id):
-				if (!context.exists(id))
+				if (!context.define(id))
 				{
 					throw "using unbound variable";
 				}

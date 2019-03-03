@@ -3,9 +3,7 @@ package haxevm.vm;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 
-typedef Context = Map<Int, EVal>;
-
-typedef EvalFn = TypedExpr->Map<Int, EVal>->EVal;
+typedef EvalFn = TypedExpr->Context->EVal;
 
 typedef ValRet =
 {
