@@ -63,10 +63,10 @@ class Test extends utest.Test
 				Assert.equals(oreal, ovm);
 
 			case [Success(oreal), Error(ovm)]:
-				Assert.fail('Should have compiled with "$oreal" but failed with "$ovm"');
+				Assert.fail('Should have compiled but failed with "$ovm"');
 
 			case [Error(oreal), Success(ovm)]:
-				Assert.fail('Should have errored with "$oreal" but compiled with "$ovm"');
+				Assert.fail('Should have errored with "$oreal" but compiled');
 		}
 	}
 }

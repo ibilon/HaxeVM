@@ -6,7 +6,6 @@ class Anon
 		trace(obj.sub.hello);
 		trace(obj.a + obj.b);
 		trace(obj.a - obj.b);
-		trace(obj);
 
 		trace(obj.a);
 		trace(-obj.a);
