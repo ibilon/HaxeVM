@@ -1,9 +1,5 @@
 package haxevm;
 
-import byte.ByteData;
-import haxeparser.HaxeParser;
-import sys.io.File;
-
 class Main
 {
 	static function main()
@@ -23,36 +19,26 @@ class Main
 		}
 	}
 
-	static function runFile(fname:String)
+	static function runFile(filename:String)
 	{
-		var parser = new HaxeParser(ByteData.ofString(File.getContent(fname)), fname);
-		var file = parser.parse();
+		var module = Compiler.compileFile(filename);
 
-		for (d in file.decls)
+		if (module.mainType == null)
 		{
-			switch (d.decl)
+			throw "no main class";
+		}
+
+		for (s in module.mainType.statics.get())
+		{
+			if (s.name == "main")
 			{
-				case EClass(d):
-					for (d in d.data)
-					{
-						switch (d.kind)
-						{
-							case FFun(f):
-								if (d.name == "main" && f.args.length == 0)
-								{
-									var typed = new Typer().typeExpr(f.expr);
-									//Display.displayTExpr(typed);
-									VM.evalExpr(typed);
-								}
-
-							default:
-								throw "not supported";
-						}
-					}
-
-				default:
-					throw "not supported";
+				var typed = s.expr();
+				//Display.displayTExpr(typed);
+				VM.evalExpr(typed);
+				return;
 			}
 		}
+
+		throw "no main function";
 	}
 }

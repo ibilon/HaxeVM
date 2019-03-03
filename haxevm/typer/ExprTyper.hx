@@ -1,4 +1,4 @@
-package haxevm;
+package haxevm.typer;
 
 import haxe.macro.Expr;
 import haxe.macro.Type;
@@ -6,7 +6,7 @@ import haxevm.typer.BaseType;
 import haxevm.typer.Operator;
 import haxevm.typer.RefImpl;
 
-class Typer
+class ExprTyper
 {
 	public function new()
 	{
