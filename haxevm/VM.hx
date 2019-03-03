@@ -6,8 +6,6 @@ import haxevm.vm.EValTools;
 import haxevm.vm.FlowControl;
 import haxevm.vm.Operator;
 
-using haxevm.vm.ContextUtils;
-
 class VM
 {
 	public static function evalExpr(texpr:TypedExpr):EVal
@@ -84,7 +82,26 @@ class VM
 				return Operator.binop(op, e1, e2, context, eval);
 
 			case TField(e, fa):
-				return context.findFieldEVal(e, fa).val;
+				var parent = eval(e, context);
+
+				switch (parent)
+				{
+					case EObject(fields):
+						var name = nameOf(fa);
+
+						for (f in fields)
+						{
+							if (f.name == name)
+							{
+								return f.val;
+							}
+						}
+
+						throw 'Field ${name} not found';
+
+					default:
+						throw 'Field access on non object "${e.t}"';
+				}
 
 			case TParenthesis(e):
 				return eval(e, context);
@@ -131,7 +148,7 @@ class VM
 				throw "TNew unimplemented";
 
 			case TUnop(op, postFix, e):
-				return Operator.unop(op, postFix, e, context);
+				return Operator.unop(op, postFix, e, context, eval);
 
 			case TFunction(tfunc):
 				return EFn(function(a:Array<EVal>)
@@ -383,6 +400,21 @@ class VM
 				}
 
 				EVal2str(context[id], context);
+		}
+	}
+
+	public static function nameOf (fa:FieldAccess) : String
+	{
+		return switch (fa)
+		{
+			case FInstance(_, _, _.get() => cf), FStatic(_, _.get() => cf), FAnon(_.get() => cf), FClosure(_, _.get() => cf):
+				cf.name;
+
+			case FDynamic(s):
+				s;
+
+			case FEnum(_, ef):
+				ef.name;
 		}
 	}
 }

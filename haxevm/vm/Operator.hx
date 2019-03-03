@@ -3,7 +3,7 @@ package haxevm.vm;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 
-using haxevm.vm.ContextUtils;
+typedef Context = Map<Int, EVal>;
 
 typedef EvalFn = TypedExpr->Map<Int, EVal>->EVal;
 
@@ -27,7 +27,7 @@ enum OperatorType
 
 class Operator
 {
-	public static function binop(op:Binop, a:TypedExpr, b:TypedExpr, context:Map<Int, EVal>, eval:EvalFn):EVal
+	public static function binop(op:Binop, a:TypedExpr, b:TypedExpr, context:Context, eval:EvalFn):EVal
 	{
 		return switch (typeOf(op))
 		{
@@ -45,7 +45,7 @@ class Operator
 		}
 	}
 
-	public static function binopAssign(op:Binop, a:TypedExpr, b:TypedExpr, context:Map<Int, EVal>, eval:EvalFn):EVal
+	public static function binopAssign(op:Binop, a:TypedExpr, b:TypedExpr, context:Context, eval:EvalFn):EVal
 	{
 		var v2 = eval(b, context);
 
@@ -59,8 +59,26 @@ class Operator
 						context[v.id] = v2;
 
 					case TField(e, fa):
-						var fieldEVal = context.findFieldEVal(e, fa);
+						var fieldEVal = findField(e, fa, eval, context);
 						fieldEVal.val = v2;
+
+					case TArray(data, key):
+						var dataEVal = eval(data, context);
+						var keyEVal = eval(key, context);
+						switch ([dataEVal, keyEVal])
+						{
+							case [EArray(_, values), EInt(i)]:
+								if (i >= 0 && i < values.length)
+								{
+									values[i] = v2;
+								}
+								else
+								{
+									throw 'Index out of bound for array ${data}';
+								}
+							default:
+								throw 'Unexpected array access on ${data.t} with type ${key.t}';
+						}
 
 					default:
 						throw "can only assign to var " + a.expr;
@@ -73,8 +91,26 @@ class Operator
 						context[v.id] = doBinop(context[v.id], subOp, v2);
 
 					case TField(e, fa):
-						var fieldEVal = context.findFieldEVal(e, fa);
+						var fieldEVal = findField(e, fa, eval, context);
 						fieldEVal.val = doBinop(fieldEVal.val, subOp, v2);
+
+					case TArray(data, key):
+						var dataEVal = eval(data, context);
+						var keyEVal = eval(key, context);
+						switch ([dataEVal, keyEVal])
+						{
+							case [EArray(_, values), EInt(i)]:
+								if (i >= 0 && i < values.length)
+								{
+									values[i] = doBinop(values[i], subOp, v2);
+								}
+								else
+								{
+									throw 'Index out of bound for array ${data}';
+								}
+							default:
+								throw 'Unexpected array access on ${data.t} with type ${key.t}';
+						}
 
 					default:
 						throw "can only assign to var " + a.expr;
@@ -85,7 +121,7 @@ class Operator
 		}
 	}
 
-	public static function binopBoolean(op:Binop, a:TypedExpr, b:TypedExpr, context:Map<Int, EVal>, eval:EvalFn):EVal
+	public static function binopBoolean(op:Binop, a:TypedExpr, b:TypedExpr, context:Context, eval:EvalFn):EVal
 	{
 		var a = eval(a, context);
 		var a = switch (a)
@@ -154,7 +190,7 @@ class Operator
 		}
 	}
 
-	public static function unop(op:Unop, postFix:Bool, e:TypedExpr, context:Map<Int, EVal>):EVal
+	public static function unop(op:Unop, postFix:Bool, e:TypedExpr, context:Context, eval:EvalFn):EVal
 	{
 		return switch (op)
 		{
@@ -189,7 +225,7 @@ class Operator
 						result.ret;
 
 					case TField(e, fa):
-						var fieldEVal = context.findFieldEVal(e, fa);
+						var fieldEVal = findField(e, fa, eval, context);
 						var result = update(fieldEVal.val);
 						fieldEVal.val = result.val;
 						result.ret;
@@ -224,7 +260,7 @@ class Operator
 						update(val);
 
 					case TField(e, fa):
-						var fieldEVal = context.findFieldEVal(e, fa);
+						var fieldEVal = findField(e, fa, eval, context);
 						update(fieldEVal.val);
 
 					default:
@@ -254,7 +290,7 @@ class Operator
 						update(val);
 
 					case TField(e, fa):
-						var fieldEVal = context.findFieldEVal(e, fa);
+						var fieldEVal = findField(e, fa, eval, context);
 						update(fieldEVal.val);
 
 					default:
@@ -284,7 +320,7 @@ class Operator
 						update(val);
 
 					case TField(e, fa):
-						var fieldEVal = context.findFieldEVal(e, fa);
+						var fieldEVal = findField(e, fa, eval, context);
 						update(fieldEVal.val);
 
 					default:
@@ -462,6 +498,38 @@ class Operator
 
 			default:
 				throw 'Operator ${op} expect EInt or EFloat, got ${val}';
+		}
+	}
+
+	static function findField(parent:TypedExpr, fa:FieldAccess, eval:EvalFn, context:Context):{ name:String, val:EVal }
+	{
+		switch (eval(parent, context))
+		{
+			case EObject(fields):
+				var name = VM.nameOf(fa);
+
+				for (f in fields)
+				{
+					if (f.name == name)
+					{
+						return f;
+					}
+				}
+
+			default:
+		}
+
+		throw 'Field access on non object "${parent.t}"';
+	}
+
+	static function extractArrayValues(array:TypedExpr, eval:EvalFn, context:Context):{ of:Type, values:Array<EVal> }
+	{
+		return switch (eval(array, context))
+		{
+			case EArray(of, values):
+				return {of:of, values:values};
+			default:
+				throw 'Expected an array got ${array.t}';
 		}
 	}
 }
