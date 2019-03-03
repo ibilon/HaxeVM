@@ -1,0 +1,12 @@
+{
+	"haxe.displayConfigurations": [
+		{
+			"label": "completion",
+			"args": [
+				"test.hxml",
+				"-D",
+				"doc_gen"
+			]
+		}
+	]
+}
