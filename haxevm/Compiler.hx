@@ -46,7 +46,19 @@ class Compiler
 						}
 					}
 
-				default:
+				case EEnum(d):
+					throw "not supported";
+
+				case EAbstract(a):
+					throw "not supported";
+
+				case EImport(sl, mode):
+					throw "not supported";
+
+				case ETypedef(d):
+					throw "not supported";
+
+				case EUsing(path):
 					throw "not supported";
 			}
 		}
