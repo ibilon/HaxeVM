@@ -1,6 +1,7 @@
 # HaxeVM
 
 [![Build Status](https://travis-ci.org/ibilon/HaxeVM.svg?branch=master)](https://travis-ci.org/ibilon/HaxeVM)
+[![Issue Count](https://codeclimate.com/github/ibilon/HaxeVM/badges/issue_count.svg)](https://codeclimate.com/github/ibilon/HaxeVM)
 
 Prototype compiler/virtual machine in Haxe for Haxe. Requires Haxe 4.
 
