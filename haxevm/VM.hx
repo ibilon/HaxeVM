@@ -6,6 +6,8 @@ import haxevm.vm.EValTools;
 import haxevm.vm.FlowControl;
 import haxevm.vm.Operator;
 
+using haxevm.vm.ContextUtils;
+
 class VM
 {
 	public static function evalExpr(texpr:TypedExpr) : EVal
@@ -68,30 +70,8 @@ class VM
 			case TBinop(op, e1, e2):
 				return Operator.binop(op, e1, e2, context, eval);
 
-			case TField(e, field):
-				//TODO class
-				var field = switch (field)
-				{
-					case FAnon(_.get() => cf): cf.name;
-					default: "field access type not supported";
-				}
-
-				switch (e.t)
-				{
-					case TAnonymous(_.get() => a):
-						for (f in a.fields)
-						{
-							if (f.name == field)
-							{
-								return eval(f.expr(), context);
-							}
-						}
-
-						throw 'Field "${field}" not found';
-
-					default:
-						throw 'Field access on non object "${e.t}"';
-				}
+			case TField(e, fa):
+				return context.findFieldEVal(e, fa).val;
 
 			case TParenthesis(e):
 				return eval(e, context);

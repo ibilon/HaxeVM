@@ -69,7 +69,7 @@ class Operator
 		return switch (op)
 		{
 			case OpEq, OpNotEq:
-				if (a == b)
+				if (a == b || (haxevm.typer.BaseType.isNumeric(a) && haxevm.typer.BaseType.isNumeric(b)))
 				{
 					haxevm.typer.BaseType.Bool;
 				}

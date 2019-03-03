@@ -3,196 +3,30 @@ package haxevm.vm;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 
+using haxevm.vm.ContextUtils;
+
 typedef EvalFn = TypedExpr->Map<Int, EVal>->EVal;
+
+enum OperatorType {
+	Arithmetic;
+	Bitwise;
+	Comparison;
+	Boolean;
+	Assignation;
+	Arrow;
+	In;
+	Interval;
+}
 
 class Operator
 {
 	public static function binop(op:Binop, a:TypedExpr, b:TypedExpr, context:Map<Int, EVal>, eval:EvalFn) : EVal
 	{
-		return switch (op)
+		return switch (typeOf(op))
 		{
-			case OpMod, OpMult, OpDiv, OpAdd, OpSub: binopArithmetic(op, a, b, context, eval);
-			case OpShl, OpShr, OpUShr, OpAnd, OpOr, OpXor: binopBitwise(op, a, b, context, eval);
-			case OpEq, OpNotEq, OpLt, OpLte, OpGt, OpGte: binopCompare(op, a, b, context, eval);
-			case OpBoolAnd, OpBoolOr: binopBoolean(op, a, b, context, eval);
-			case OpAssign, OpAssignOp(_): binopAssign(op, a, b, context, eval);
-			case OpArrow, OpIn, OpInterval: throw "not supported";
-		}
-	}
-
-	static function loadNumeric(v:EVal)
-	{
-		var out = { f: null, i: null, isInt: false };
-
-		switch (v)
-		{
-			case EFloat(f):
-				out.f = f;
-
-			case EInt(i):
-				out.f = out.i = i;
-				out.isInt = true;
-
-			default:
-		}
-
-		return out;
-	}
-
-	public static function binopArithmetic(op:Binop, a:TypedExpr, b:TypedExpr, context:Map<Int, EVal>, eval:EvalFn) : EVal
-	{
-		var v1 = loadNumeric(eval(a, context));
-		var v2 = loadNumeric(eval(b, context));
-
-		return switch (op)
-		{
-			case OpMod:
-				if (!v1.isInt || !v2.isInt)
-				{
-					EFloat(v1.f % v2.f);
-				}
-				else
-				{
-					EInt(v1.i % v2.i);
-				}
-
-			case OpMult:
-				if (!v1.isInt || !v2.isInt)
-				{
-					EFloat(v1.f * v2.f);
-				}
-				else
-				{
-					EInt(v1.i * v2.i);
-				}
-
-			case OpDiv:
-				return EFloat(v1.f / v2.f);
-
-			case OpAdd:
-				if (!v1.isInt || !v2.isInt)
-				{
-					EFloat(v1.f + v2.f);
-				}
-				else
-				{
-					EInt(v1.i + v2.i);
-				}
-
-			case OpSub:
-				if (!v1.isInt || !v2.isInt)
-				{
-					EFloat(v1.f - v2.f);
-				}
-				else
-				{
-					EInt(v1.i - v2.i);
-				}
-
-			default:
-				throw "not arithmetic";
-		}
-	}
-
-	public static function binopBitwise(op:Binop, a:TypedExpr, b:TypedExpr, context:Map<Int, EVal>, eval:EvalFn) : EVal
-	{
-		var v1 = switch (eval(a, context))
-		{
-			case EInt(i): i;
-			default: throw "unexpected type";
-		}
-
-		var v2 = switch (eval(b, context))
-		{
-			case EInt(i): i;
-			default: throw "unexpected type";
-		}
-
-		return switch (op)
-		{
-			case OpShl:
-				EInt(v1 << v2);
-
-			case OpShr:
-				EInt(v1 >> v2);
-
-			case OpUShr:
-				EInt(v1 >>> v2);
-
-			case OpAnd:
-				EInt(v1 & v2);
-
-			case OpOr:
-				EInt(v1 | v2);
-
-			case OpXor:
-				EInt(v1 ^ v2);
-
-			default:
-				throw "not bitwise";
-		}
-	}
-
-	public static function binopCompare(op:Binop, a:TypedExpr, b:TypedExpr, context:Map<Int, EVal>, eval:EvalFn) : EVal
-	{
-		var e1 = eval(a, context);
-		var e2 = eval(b, context);
-
-		var v1 = loadNumeric(e1);
-		var v2 = loadNumeric(e2);
-
-		return switch (op)
-		{
-			case OpEq:
-				EBool(e1.equals(e2));
-
-			case OpNotEq:
-				EBool(!e1.equals(e2));
-
-			case OpLt:
-				EBool((v1.isInt ? v1.i : v1.f) < (v2.isInt ? v2.i : v2.f));
-
-			case OpLte:
-				EBool((v1.isInt ? v1.i : v1.f) <= (v2.isInt ? v2.i : v2.f));
-
-			case OpGt:
-				EBool((v1.isInt ? v1.i : v1.f) > (v2.isInt ? v2.i : v2.f));
-
-			case OpGte:
-				EBool((v1.isInt ? v1.i : v1.f) >= (v2.isInt ? v2.i : v2.f));
-
-			default:
-				throw "not compare";
-		}
-	}
-
-	public static function binopBoolean(op:Binop, a:TypedExpr, b:TypedExpr, context:Map<Int, EVal>, eval:EvalFn) : EVal
-	{
-		var v1 = switch (eval(a, context))
-		{
-			case EBool(b): b;
-			default: throw "unexpected value";
-		}
-
-		function evalV2()
-		{
-			return switch (eval(b, context))
-			{
-				case EBool(b): b;
-				default: throw "unexpected value";
-			}
-		}
-
-		return switch (op)
-		{
-			case OpBoolAnd:
-				return EBool(v1 && evalV2());
-
-			case OpBoolOr:
-				return EBool(v1 || evalV2());
-
-			default:
-				throw "not boolean";
+			case Arithmetic, Bitwise, Comparison, Boolean: doBinop(eval(a, context), op, eval(b, context));
+			case Assignation: binopAssign(op, a, b, context, eval);
+			case Arrow, In, Interval: throw "not supported";
 		}
 	}
 
@@ -206,19 +40,45 @@ class Operator
 				//TODO check var can hold value?
 				switch (a.expr)
 				{
-					//TODO make it work on field access
 					case TLocal(v):
 						context[v.id] = v2;
 
+					case TField(e, fa):
+						var fieldEVal = context.findFieldEVal(e, fa);
+						fieldEVal.val = v2;
 					default:
 						throw "can only assign to var " + a.expr;
 				}
 
 			case OpAssignOp(subOp):
-				throw "not supported";
+				switch (a.expr)
+				{
+					case TLocal(v):
+						context[v.id] = doBinop(context[v.id], subOp, v2);
+					case TField(e, fa):
+						var fieldEVal = context.findFieldEVal(e, fa);
+						fieldEVal.val = doBinop(fieldEVal.val, subOp, v2);
+					default:
+						throw "can only assign to var " + a.expr;
+				}
 
 			default:
 				throw "not assign";
+		}
+	}
+
+	public static function typeOf(op:Binop) : OperatorType
+	{
+		return switch (op)
+		{
+			case OpMod, OpMult, OpDiv, OpAdd, OpSub: Arithmetic;
+			case OpShl, OpShr, OpUShr, OpAnd, OpOr, OpXor: Bitwise;
+			case OpEq, OpNotEq, OpLt, OpLte, OpGt, OpGte: Comparison;
+			case OpBoolAnd, OpBoolOr: Boolean;
+			case OpAssign, OpAssignOp(_): Assignation;
+			case OpArrow: Arrow;
+			case OpIn: In;
+			case OpInterval: Interval;
 		}
 	}
 
@@ -227,6 +87,19 @@ class Operator
 		return switch (op)
 		{
 			case OpDecrement, OpIncrement:
+				function update(before:EVal) : {val:EVal, ret:EVal}
+				{
+					switch (before)
+					{
+						case EInt(i):
+							var after = op.match(OpDecrement) ? EVal.EInt(i - 1) : EVal.EInt(i + 1);
+							var ret = postFix ? before : after;
+							return {ret:ret, val:after};
+						default:
+							throw "unexpected type, want EInt, got " + before;
+					}
+				}
+
 				switch (e.expr)
 				{
 					case TConst(_):
@@ -234,23 +107,30 @@ class Operator
 
 					case TLocal(v):
 						var val = context[v.id];
-
-						switch (val)
-						{
-							case EInt(i):
-								var before = context[v.id];
-								context[v.id] = op.match(OpDecrement) ? EVal.EInt(i - 1) : EVal.EInt(i + 1);
-								postFix ? before : context[v.id];
-
-							default:
-								throw "unexpected type, want EInt, got " + val;
-						}
+						var result = update(val);
+						context[v.id] = result.val;
+						result.ret;
+					case TField(e, fa):
+						var fieldEVal = context.findFieldEVal(e, fa);
+						var result = update(fieldEVal.val);
+						fieldEVal.val = result.val;
+						result.ret;
 
 					default:
 						throw "not implemented";
 				}
 
 			case OpNeg:
+				function update (before:EVal) : EVal
+				{
+					return switch (before)
+					{
+						case EInt(i): EInt(-i);
+						case EFloat(f): EFloat(-f);
+						default:
+							throw "unexpected type, want EInt or EFloat, got " + before;
+					}
+				}
 				switch (e.expr)
 				{
 					case TConst(TInt(i)):
@@ -258,22 +138,26 @@ class Operator
 
 					case TLocal(v):
 						var val = context[v.id];
+						update(val);
 
-						switch (val)
-						{
-							case EInt(i):
-								context[v.id] = EVal.EInt(-i);
-								context[v.id];
-
-							default:
-								throw "unexpected type, want EInt, got " + val;
-						}
+					case TField(e, fa):
+						var fieldEVal = context.findFieldEVal(e, fa);
+						update(fieldEVal.val);
 
 					default:
 						throw "not implemented";
 				}
 
 			case OpNegBits:
+				function update (before:EVal) : EVal
+				{
+					return switch (before)
+					{
+						case EInt(i): EInt(~i);
+						default:
+							throw "unexpected type, want EInt, got " + before;
+					}
+				}
 				switch (e.expr)
 				{
 					case TConst(TInt(i)):
@@ -281,22 +165,26 @@ class Operator
 
 					case TLocal(v):
 						var val = context[v.id];
+						update(val);
 
-						switch (val)
-						{
-							case EInt(i):
-								context[v.id] = EVal.EInt(~i);
-								context[v.id];
-
-							default:
-								throw "unexpected type, want EInt, got " + val;
-						}
+					case TField(e, fa):
+						var fieldEVal = context.findFieldEVal(e, fa);
+						update(fieldEVal.val);
 
 					default:
 						throw "not implemented";
 				}
 
 			case OpNot:
+				function update (before:EVal) : EVal
+				{
+					return switch (before)
+					{
+						case EBool(b): EBool(!b);
+						default:
+							throw "unexpected type, want EBool, got " + before;
+					}
+				}
 				switch(e.expr)
 				{
 					case TConst(TBool(b)):
@@ -304,20 +192,119 @@ class Operator
 
 					case TLocal(v):
 						var val = context[v.id];
+						update(val);
 
-						switch (val)
-						{
-							case EBool(b):
-								context[v.id] = EVal.EBool(!b);
-								context[v.id];
-
-							default:
-								throw "unexpected type, want EBool, got " + val;
-						}
+					case TField(e, fa):
+						var fieldEVal = context.findFieldEVal(e, fa);
+						update(fieldEVal.val);
 
 					default:
 						throw "not implemented";
 				}
+		}
+	}
+
+	public static function doBinop(a:EVal, op:Binop, b:EVal) : EVal
+	{
+		return switch (typeOf(op))
+		{
+			case Arithmetic:
+				var i = intOrFloat(a, op);
+				var j = intOrFloat(b, op);
+
+				var isFloat = i.isFloat || j.isFloat;
+
+				switch (op)
+				{
+					case OpMod: (isFloat) ? throw 'Modulo operation is only between EInt, not ${a} and ${b}' : EInt(i.i % j.i);
+					case OpMult: (isFloat) ? EFloat(i.f * j.f) : EInt(i.i * j.i);
+					case OpDiv: EFloat(i.f / j.f);
+					case OpAdd: (isFloat) ? EFloat(i.f + j.f) : EInt(i.i + j.i);
+					case OpSub: (isFloat) ? EFloat(i.f - j.f) : EInt(i.i - j.i);
+					default: throw 'Unexpected operator ${op}';
+				}
+			case Bitwise:
+				switch ([a, b])
+				{
+					case [EInt(i), EInt(j)]:
+						switch (op)
+						{
+							case OpShl: EInt(i << j);
+							case OpShr: EInt(i >> j);
+							case OpUShr: EInt(i >>> j);
+							case OpAnd: EInt(i & j);
+							case OpOr: EInt(i | j);
+							case OpXor: EInt(i ^ j);
+							default: throw 'Unexpected operator ${op}';
+						}
+					default:
+						throw 'Bitwise operations are only between EInt, not ${a} and ${b}';
+				}
+			case Comparison:
+				switch (op)
+				{
+					case OpEq, OpNotEq:
+						switch ([a, b])
+						{
+							case [EFloat(i), EInt(j)]:
+								EBool(op == OpEq ? i == j : i != j);
+							case [EInt(i), EFloat(j)]:
+								EBool(op == OpEq ? i == j : i != j);
+							default:
+								if (EValTools.isSameType(a, b))
+								{
+									var eq = a.equals(b);
+									EBool(op == OpEq ? eq : !eq);
+								}
+								else
+								{
+									throw '${a} and ${b} cannot be compared';
+								}
+						}
+					case OpLt, OpLte, OpGt, OpGte:
+						var i = intOrFloat(a, op);
+						var j = intOrFloat(b, op);
+						switch (op)
+						{
+							case OpLt:
+								EBool(((i.isFloat) ? i.f : i.i) < ((j.isFloat) ? j.f : j.i));
+							case OpLte:
+								EBool(((i.isFloat) ? i.f : i.i) <= ((j.isFloat) ? j.f : j.i));
+							case OpGt:
+								EBool(((i.isFloat) ? i.f : i.i) > ((j.isFloat) ? j.f : j.i));
+							case OpGte:
+								EBool(((i.isFloat) ? i.f : i.i) >= ((j.isFloat) ? j.f : j.i));
+							default:
+								throw 'unexpected operator ${op}';
+						}
+					default: throw 'Unexpected operator ${op}';
+				}
+			case Boolean:
+				switch ([a, b])
+				{
+					case [EBool(i), EBool(j)]:
+						switch (op)
+						{
+							case OpBoolAnd: EBool(i && j);
+							case OpBoolOr: EBool(i || j);
+							default: throw 'Unexpected operator ${op}';
+						}
+					default:
+						throw 'Operator ${op} only supported EBool, got ${a} and ${b}';
+				}
+			case Assignation: throw 'Value cannot be reassigned';
+			case Arrow,In, Interval: throw "not supported";
+		}
+	}
+
+	static function intOrFloat (val:EVal, op:Binop) : {i:Int, f:Float, isFloat:Bool}
+	{
+		return switch (val)
+		{
+			case EInt(i): {i:i, f:i, isFloat:false};
+			case EFloat(f): {i:0, f:f, isFloat:true};
+			default:
+				throw 'Operator ${op} expect EInt or EFloat, got ${val}';
 		}
 	}
 }
