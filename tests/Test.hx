@@ -5,6 +5,12 @@ import utest.ui.Report;
 
 using haxe.io.Path;
 
+enum CompileResult
+{
+	Success(output:String);
+	Error(output:String);
+}
+
 class Test extends utest.Test
 {
 	public static function main()
@@ -17,7 +23,7 @@ class Test extends utest.Test
 		r.run();
 	}
 
-	function runFile(file:String, realHaxe:Bool) : String
+	function runFile(file:String, realHaxe:Bool) : CompileResult
 	{
 		var args = if (realHaxe)
 		{
@@ -33,18 +39,34 @@ class Test extends utest.Test
 		var output = process.stdout.readAll().toString();
 		var error = process.stderr.readAll().toString();
 
-		if (error != "")
-		{
-			Assert.fail(error);
-		}
-
 		process.close();
 
-		return output;
+		if (error != "")
+		{
+			return Error(error);
+		}
+
+		return Success(output);
 	}
 
 	function compareFile(file:String)
 	{
-		Assert.equals(runFile(file, true), runFile(file, false));
+		var real = runFile(file, true);
+		var haxevm = runFile(file, false);
+
+		switch ([real, haxevm])
+		{
+			case [Success(oreal), Success(ovm)]:
+				Assert.equals(oreal, ovm);
+
+			case [Error(oreal), Error(ovm)]:
+				Assert.equals(oreal, ovm);
+
+			case [Success(oreal), Error(ovm)]:
+				Assert.fail('Should have compiled with "$oreal" but failed with "$ovm"');
+
+			case [Error(oreal), Success(ovm)]:
+				Assert.fail('Should have errored with "$oreal" but compiled with "$ovm"');
+		}
 	}
 }

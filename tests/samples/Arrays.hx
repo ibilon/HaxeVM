@@ -11,5 +11,15 @@ class Arrays
 		trace(b);
 		b = -2;
 		trace(b);
+
+		a[0] += 1;
+		trace(a[0]);
+		a[0] -= 2;
+		trace(a[0]);
+		a[0] *= 2;
+		trace(a[0]);
+
+		a[0] = 7;
+		trace(a[0]);
 	}
 }

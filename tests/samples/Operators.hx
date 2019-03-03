@@ -3,6 +3,10 @@ class Operators
 	public static function main()
 	{
 		var i = 10;
+		var b = -9;
+
+		trace(i);
+		trace(-i);
 
 		trace(i--);
 		trace(i);
@@ -20,6 +24,60 @@ class Operators
 		trace(i >= 0);
 		trace(i == 0);
 		trace(i != 0);
+		trace(i < b);
+		trace(i <= b);
+		trace(i > b);
+		trace(i >= b);
+		trace(i == b);
+		trace(i != b);
+
+		trace(i % 2);
+		trace(i % -2);
+		trace(125 % i);
+		trace(125 % -i);
+
+		trace(i * b);
+		trace(i * -b);
+		trace(-i * b);
+		trace(-i * -b);
+		trace(b * i);
+		trace((i + 2) * (b - 1));
+
+		trace(i / b);
+		trace(i / -b);
+		trace(-i / b);
+		trace(-i / -b);
+
+		trace(i - b);
+		trace(i - -b);
+		trace(-i - b);
+		trace(-i - -b);
+
+		trace(i + b);
+		trace(i + -b);
+		trace(-i + b);
+		trace(-i + -b);
+
+		trace(i << 2);
+		trace(i >> 2);
+		trace(i >>> 2);
+		trace(i & b);
+		trace(i | b);
+		trace(i ^ b);
+		trace(i & (b + 2));
+		trace(i | (b + 2));
+		trace(i ^ (b + 2));
+		trace(~i);
+
+		i += 2;
+		trace(i);
+		i -= 1;
+		trace(i);
+		i *= 10;
+		trace(i);
+		var f = 1.2;
+		f /= 5;
+		trace(f);
 
 		var a = true;
 		var b = false;
