@@ -7,19 +7,33 @@ abstract Context (Map<Int, Array<EVal>>)
 		this = new Map<Int, Array<EVal>>();
 	}
 
+	public inline function create (key:Int, value:EVal)
+	{
+		var tmp = this.exists(key) ? this.get(key) : [];
+		tmp.push(value);
+		this.set(key, tmp);
+	}
+
 	@:arrayAccess
 	inline function _get(key:Int) : EVal
 	{
+		if (!this.exists(key))
+		{
+			throw "using unbound variable " + key;
+		}
 		var tmp = this.get(key);
-		return (tmp == null) ? null : tmp[tmp.length - 1];
+		return tmp[tmp.length - 1];
 	}
 
 	@:arrayAccess
 	public inline function _set(key:Int, value:EVal) : EVal
 	{
-		var tmp = this.exists(key) ? this.get(key) : [];
-		tmp.push(value);
-		this.set(key, tmp);
+		if (!this.exists(key))
+		{
+			throw "using unbound variable " + key;
+		}
+		var tmp = this.get(key);
+		tmp[tmp.length - 1] = value;
 		return value;
 	}
 
