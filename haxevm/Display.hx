@@ -6,7 +6,8 @@ class Display
 {
 	public static function displayTExpr(expr:TypedExpr)
 	{
-		//print(expr.t); //TODO proper/less verbose print of type
+		// print(expr.t);
+		// TODO proper/less verbose print of type
 
 		switch (expr.expr)
 		{
@@ -28,7 +29,8 @@ class Display
 				indent--;
 
 			case TField(e, field):
-				print("TField"); //, field); //TODO displayFieldAccess(field)
+				// TODO displayFieldAccess(field)
+				print("TField"); // , field);
 				indent++;
 				displayTExpr(e);
 				indent--;
@@ -113,7 +115,7 @@ class Display
 				indent--;
 
 			case TFor(v, e1, e2):
-				print("TFor"); //TODO
+				print("TFor"); // TODO
 				indent++;
 				displayTExpr(e2);
 				indent--;
@@ -221,7 +223,7 @@ class Display
 		}
 	}
 
-	static var indent = 0;
+	static var indent:Int = 0;
 
 	static function print(value:Dynamic, ?value2:Dynamic)
 	{
@@ -229,6 +231,7 @@ class Display
 		{
 			Sys.print("\t");
 		}
+
 		Sys.print(value);
 
 		if (value2 != null)

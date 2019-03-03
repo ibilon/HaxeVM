@@ -20,7 +20,7 @@ enum OperatorType {
 
 class Operator
 {
-	public static function binop(op:Binop, a:TypedExpr, b:TypedExpr, context:Map<Int, EVal>, eval:EvalFn) : EVal
+	public static function binop(op:Binop, a:TypedExpr, b:TypedExpr, context:Map<Int, EVal>, eval:EvalFn):EVal
 	{
 		return switch (typeOf(op))
 		{
@@ -30,14 +30,14 @@ class Operator
 		}
 	}
 
-	public static function binopAssign(op:Binop, a:TypedExpr, b:TypedExpr, context:Map<Int, EVal>, eval:EvalFn) : EVal
+	public static function binopAssign(op:Binop, a:TypedExpr, b:TypedExpr, context:Map<Int, EVal>, eval:EvalFn):EVal
 	{
 		var v2 = eval(b, context);
 
 		return switch (op)
 		{
 			case OpAssign:
-				//TODO check var can hold value?
+				// TODO check var can hold value?
 				switch (a.expr)
 				{
 					case TLocal(v):
@@ -46,6 +46,7 @@ class Operator
 					case TField(e, fa):
 						var fieldEVal = context.findFieldEVal(e, fa);
 						fieldEVal.val = v2;
+
 					default:
 						throw "can only assign to var " + a.expr;
 				}
@@ -82,7 +83,7 @@ class Operator
 		}
 	}
 
-	public static function unop(op:Unop, postFix:Bool, e:TypedExpr, context:Map<Int, EVal>) : EVal
+	public static function unop(op:Unop, postFix:Bool, e:TypedExpr, context:Map<Int, EVal>):EVal
 	{
 		return switch (op)
 		{
@@ -176,16 +177,19 @@ class Operator
 				}
 
 			case OpNot:
-				function update (before:EVal) : EVal
+				function update(before:EVal):EVal
 				{
 					return switch (before)
 					{
-						case EBool(b): EBool(!b);
+						case EBool(b):
+							EBool(!b);
+
 						default:
 							throw "unexpected type, want EBool, got " + before;
 					}
 				}
-				switch(e.expr)
+
+				switch (e.expr)
 				{
 					case TConst(TBool(b)):
 						EBool(!b);

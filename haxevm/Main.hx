@@ -13,9 +13,14 @@ class Main
 
 		switch (args.length)
 		{
-			case 0: Sys.println("haxelib run haxevm filename.hx");
-			case 1: runFile(args[0]);
-			default: Sys.println("too much args");
+			case 0:
+				Sys.println("haxelib run haxevm filename.hx");
+
+			case 1:
+				runFile(args[0]);
+
+			default:
+				Sys.println("too much args");
 		}
 	}
 
@@ -33,7 +38,7 @@ class Main
 			if (s.name == "main")
 			{
 				var typed = s.expr();
-				//Display.displayTExpr(typed);
+				// Display.displayTExpr(typed);
 				VM.evalExpr(typed);
 				return;
 			}

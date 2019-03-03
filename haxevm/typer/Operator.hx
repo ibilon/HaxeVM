@@ -5,20 +5,31 @@ import haxe.macro.Type;
 
 class Operator
 {
-	public static function binop(op:Binop, a:Type, b:Type) : Type
+	public static function binop(op:Binop, a:Type, b:Type):Type
 	{
 		return switch (op)
 		{
-			case OpMod, OpMult, OpDiv, OpAdd, OpSub: binopArithmetic(op, a, b);
-			case OpShl, OpShr, OpUShr, OpAnd, OpOr, OpXor: binopBitwise(op, a, b);
-			case OpEq, OpNotEq, OpLt, OpLte, OpGt, OpGte, OpBoolAnd, OpBoolOr: binopBoolean(op, a, b);
-			case OpAssign: a; //TODO check b unify with a
-			case OpAssignOp(op): binop(op, a, b);
-			case OpArrow, OpIn, OpInterval: throw "not supported";
+			case OpMod, OpMult, OpDiv, OpAdd, OpSub:
+				binopArithmetic(op, a, b);
+
+			case OpShl, OpShr, OpUShr, OpAnd, OpOr, OpXor:
+				binopBitwise(op, a, b);
+
+			case OpEq, OpNotEq, OpLt, OpLte, OpGt, OpGte, OpBoolAnd, OpBoolOr:
+				binopBoolean(op, a, b);
+
+			case OpAssign:
+				a; // TODO check b unify with a
+
+			case OpAssignOp(op):
+				binop(op, a, b);
+
+			case OpArrow, OpIn, OpInterval:
+				throw "not supported";
 		}
 	}
 
-	public static function binopArithmetic(op:Binop, a:Type, b:Type) : Type
+	public static function binopArithmetic(op:Binop, a:Type, b:Type):Type
 	{
 		if (!haxevm.typer.BaseType.isNumeric(a) || !haxevm.typer.BaseType.isNumeric(b))
 		{
@@ -37,13 +48,15 @@ class Operator
 					haxevm.typer.BaseType.Int;
 				}
 
-			case OpDiv: haxevm.typer.BaseType.Float;
+			case OpDiv:
+				haxevm.typer.BaseType.Float;
 
-			default: throw "not arithmetic";
+			default:
+				throw "not arithmetic";
 		}
 	}
 
-	public static function binopBitwise(op:Binop, a:Type, b:Type) : Type
+	public static function binopBitwise(op:Binop, a:Type, b:Type):Type
 	{
 		return switch (op)
 		{
@@ -60,11 +73,12 @@ class Operator
 
 				haxevm.typer.BaseType.Int;
 
-			default: throw "not bitwise";
+			default:
+				throw "not bitwise";
 		}
 	}
 
-	public static function binopBoolean(op:Binop, a:Type, b:Type) : Type
+	public static function binopBoolean(op:Binop, a:Type, b:Type):Type
 	{
 		return switch (op)
 		{
@@ -101,11 +115,12 @@ class Operator
 
 				haxevm.typer.BaseType.Bool;
 
-			default: throw "not boolean";
+			default:
+				throw "not boolean";
 		}
 	}
 
-	public static function unop(op:Unop, a:Type) : Type
+	public static function unop(op:Unop, a:Type):Type
 	{
 		switch (op)
 		{

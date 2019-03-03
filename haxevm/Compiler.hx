@@ -9,15 +9,16 @@ import sys.io.File;
 
 using haxe.io.Path;
 
-typedef Module = {
-	name : String,
-	types : Array<ModuleType>,
-	mainType : ClassType,
+typedef Module =
+{
+	name:String,
+	types:Array<ModuleType>,
+	mainType:ClassType,
 }
 
 class Compiler
 {
-	public static function compileFile(filename:String) : Module
+	public static function compileFile(filename:String):Module
 	{
 		var name = filename.withoutDirectory().withoutExtension();
 		var types = [];
@@ -63,6 +64,10 @@ class Compiler
 			}
 		}
 
-		return { name: name, types: types, mainType: mainType };
+		return {
+			name: name,
+			types: types,
+			mainType: mainType
+		};
 	}
 }

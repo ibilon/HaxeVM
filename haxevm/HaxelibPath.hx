@@ -3,11 +3,12 @@ package haxevm;
 import haxe.io.Path;
 import haxe.macro.Context;
 import haxe.macro.Compiler;
+import haxe.macro.Expr;
 
 @:noCompletion
 class HaxelibPath
 {
-	static macro function init()
+	macro static function init():Expr
 	{
 		switch (Context.getType("haxevm.HaxelibPath"))
 		{

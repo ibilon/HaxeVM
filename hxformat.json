@@ -1,0 +1,19 @@
+{
+	"disableFormatting": true,
+	"lineEnds": {
+		"leftCurly": "both"
+	},
+	"sameLine": {
+		"ifElse": "next",
+		"tryCatch": "next",
+		"doWhile": "next"
+	},
+	"whitespace": {
+		"bracesConfig": {
+			"objectLiteralBraces": {
+				"openingPolicy": "after",
+				"closingPolicy": "before"
+			}
+		}
+	}
+}

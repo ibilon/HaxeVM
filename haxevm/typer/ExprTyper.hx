@@ -13,7 +13,7 @@ class ExprTyper
 		insertTrace();
 	}
 
-	public function typeExpr(expr:Expr) : TypedExpr
+	public function typeExpr(expr:Expr):TypedExpr
 	{
 		switch (expr.expr)
 		{
@@ -44,10 +44,11 @@ class ExprTyper
 					case CIdent(s):
 						var sid = getSymbol(s);
 						var type = typeTable[sid];
+
 						return makeTyped(expr, makeTypedVar(s, sid, type), type);
 
 					case CRegexp(r, opt):
-						//return makeTyped(expr, TConst(TCRegexp(r, opt)), TRegexp);
+						// return makeTyped(expr, TConst(TCRegexp(r, opt)), TRegexp);
 						throw "no regex support";
 
 					case CString(s):
@@ -60,8 +61,11 @@ class ExprTyper
 
 				var of = switch (t1.t)
 				{
-					case TInst(_.get() => t, params) if (BaseType.isArray(t1.t)): params[0];
-					default: throw "Array access only allowed on arrays";
+					case TInst(_.get() => t, params) if (BaseType.isArray(t1.t)):
+						params[0];
+
+					default:
+						throw "Array access only allowed on arrays";
 				}
 
 				if (!BaseType.isInt(t2.t))
@@ -80,7 +84,7 @@ class ExprTyper
 			case EField(e, field):
 				var t = typeExpr(e);
 
-				//TODO class
+				// TODO class
 				var sub = null;
 
 				switch (t.t)
@@ -95,7 +99,8 @@ class ExprTyper
 							}
 						}
 
-					default: throw "field access on non object " + t.t;
+					default:
+						throw "field access on non object " + t.t;
 				}
 
 				if (sub == null)
@@ -107,7 +112,7 @@ class ExprTyper
 
 			case EParenthesis(e):
 				enter();
-					var t = typeExpr(e);
+				var t = typeExpr(e);
 				leave();
 
 				return makeTyped(expr, TParenthesis(t), t.t);
@@ -165,7 +170,7 @@ class ExprTyper
 					}
 					else
 					{
-						if (t != st.t) //TODO monomorph/unify
+						if (t != st.t) // TODO monomorph/unify
 						{
 							throw "array must be of single type";
 						}
@@ -180,8 +185,11 @@ class ExprTyper
 
 				var r = switch (t.t)
 				{
-					case TFun(_, ret): ret;
-					default: throw "Can only call functions";
+					case TFun(_, ret):
+						ret;
+
+					default:
+						throw "Can only call functions";
 				}
 
 				for (e in params)
@@ -194,7 +202,7 @@ class ExprTyper
 					elems.unshift(tracePosition(e));
 				}
 
-				return makeTyped(expr, TCall(t, elems), r); //TODO check function sign and param
+				return makeTyped(expr, TCall(t, elems), r); // TODO check function sign and param
 
 			case ENew(t, params):
 				/*
@@ -205,7 +213,7 @@ class ExprTyper
 					elems.push(typeExpr(e));
 				}
 
-				return makeTyped(expr, TNew(t, elems), makeMonomorph()); //TODO type of the TypePath
+				return makeTyped(expr, TNew(t, elems), makeMonomorph()); // TODO type of the TypePath
 				*/
 				throw "no class support";
 
@@ -221,24 +229,52 @@ class ExprTyper
 				var fid = name != null ? addSymbol(name) : -1;
 
 				enter();
-					for (a in f.args)
-					{
-						var sid = addSymbol(a.name);
-						typeTable[sid] = convertComplexType(a.type);
-						at.push({ name: a.name, opt: a.opt, t: typeTable[sid] });
-						args.push({ value: null, v: { capture: false, extra: null, id: sid, meta: null, name: a.name, t: null } });
-					}
+				for (a in f.args)
+				{
+					var sid = addSymbol(a.name);
+					typeTable[sid] = convertComplexType(a.type);
 
-					var t = typeExpr(f.expr);
+					at.push({
+						name: a.name,
+						opt: a.opt,
+						t: typeTable[sid]
+					});
+
+					args.push({
+						value: null,
+						v: {
+							capture: false,
+							extra: null,
+							id: sid,
+							meta: null,
+							name: a.name,
+							t: null
+						}
+					});
+				}
+
+				var t = typeExpr(f.expr);
 				leave();
 
 				var ft = TFun(at, t.t);
-				var te = makeTyped(expr, TFunction({ args: args, expr: t, t: t.t }), ft);
+				var te = makeTyped(expr, TFunction({
+					args: args,
+					expr: t,
+					t: t.t
+				}), ft);
 
 				if (fid != -1)
 				{
 					typeTable[fid] = ft;
-					return makeTyped(expr, TVar({ t: null, name: name, meta: null, id: fid, extra: null, capture: false }, te), ft);
+
+					return makeTyped(expr, TVar({
+						t: null,
+						name: name,
+						meta: null,
+						id: fid,
+						extra: null,
+						capture: false
+					}, te), ft);
 				}
 				else
 				{
@@ -246,21 +282,28 @@ class ExprTyper
 				}
 
 			case EVars(vars):
-				var v = vars[0]; //TODO how to make multiple nodes from this?
+				var v = vars[0]; // TODO how to make multiple nodes from this?
 				var sid = addSymbol(v.name);
 				var t = typeExpr(v.expr);
 				typeTable[sid] = t.t;
 
-				return makeTyped(expr, TVar({ capture: false, extra: null, id: sid, meta: null, name: v.name, t: null }, t), t.t);
+				return makeTyped(expr, TVar({
+					capture: false,
+					extra: null,
+					id: sid,
+					meta: null,
+					name: v.name,
+					t: null
+				}, t), t.t);
 
 			case EBlock(exprs):
 				var elems = [];
 
 				enter();
-					for (e in exprs)
-					{
-						elems.push(typeExpr(e));
-					}
+				for (e in exprs)
+				{
+					elems.push(typeExpr(e));
+				}
 				leave();
 
 				var t = elems.length > 0 ? elems[elems.length - 1].t : BaseType.Void;
@@ -277,8 +320,11 @@ class ExprTyper
 					case EBinop(OpIn, e1, e2):
 						s = switch (e1.expr)
 						{
-							case EConst(CIdent(s)): s;
-							default: throw "unsuported for syntax";
+							case EConst(CIdent(s)):
+								s;
+
+							default:
+								throw "unsuported for syntax";
 						}
 
 						switch (e2.expr)
@@ -286,14 +332,20 @@ class ExprTyper
 							case EBinop(OpInterval, e1, e2):
 								switch (e1.expr)
 								{
-									case EConst(CInt(i)): min = Std.parseInt(i);
-									default: throw "unsuported for syntax";
+									case EConst(CInt(i)):
+										min = Std.parseInt(i);
+
+									default:
+										throw "unsuported for syntax";
 								}
 
 								switch (e2.expr)
 								{
-									case EConst(CInt(i)): max = Std.parseInt(i);
-									default: throw "unsuported for syntax";
+									case EConst(CInt(i)):
+										max = Std.parseInt(i);
+
+									default:
+										throw "unsuported for syntax";
 								}
 
 							default:
@@ -314,67 +366,104 @@ class ExprTyper
 				if (min < max)
 				{
 					enter();
-						var min = { expr: EConst(CInt('${min - 1}')), pos: null };
-						var v = typeExpr({ expr: EVars([{ name: s, expr: min, type: null }]), pos: null });
+					var min = {
+						expr: EConst(CInt('${min - 1}')),
+						pos: null
+					};
 
-						var id = { expr: EConst(CIdent(s)), pos: null };
-						var it = { expr: EUnop(OpIncrement, false, id), pos: null };
-						var cond = { expr: EBinop(OpLte, it, { expr: EConst(CInt('$max')), pos: null }), pos: null };
-						var w = typeExpr({ expr: EWhile(cond, expr, true), pos: null });
+					var v = typeExpr({
+						expr: EVars([{
+							name: s,
+							expr: min,
+							type: null
+						}]),
+						pos: null
+					});
 
-						block = [v, w];
+					var id = {
+						expr: EConst(CIdent(s)),
+						pos: null
+					};
+
+					var it = {
+						expr: EUnop(OpIncrement, false, id),
+						pos: null
+					};
+
+					var cond = {
+						expr: EBinop(OpLte, it, {
+							expr: EConst(CInt('$max')),
+							pos: null
+						}),
+						pos: null
+					};
+
+					var w = typeExpr({
+						expr: EWhile(cond, expr, true),
+						pos: null
+					});
+
+					block = [v, w];
 					leave();
 				}
 
-				return makeTyped(expr, TBlock(block), BaseType.Void); //TODO check
+				return makeTyped(expr, TBlock(block), BaseType.Void); // TODO check
 
 			case EIf(econd, eif, eelse):
 				enter();
-					var c = typeExpr(econd);
+				var c = typeExpr(econd);
 
-					if (!BaseType.isBool(c.t))
-					{
-						throw "if condition must be bool is " + c.t;
-					}
+				if (!BaseType.isBool(c.t))
+				{
+					throw "if condition must be bool is " + c.t;
+				}
 
-					enter();
-						var i = typeExpr(eif);
-					leave();
-					enter();
-						var e = eelse != null ? typeExpr(eelse) : null;
-					leave();
+				enter();
+				var i = typeExpr(eif);
+				leave();
+				enter();
+				var e = eelse != null ? typeExpr(eelse) : null;
+				leave();
 				leave();
 
-				return makeTyped(expr, TIf(c, i, e), BaseType.Void); //TODO check
+				return makeTyped(expr, TIf(c, i, e), BaseType.Void); // TODO check
 
 			case EWhile(econd, e, normalWhile):
 				enter();
-					var c = typeExpr(econd);
+				var c = typeExpr(econd);
 
-					if (!BaseType.isBool(c.t))
-					{
-						throw "while condition must be bool is " + c.t;
-					}
+				if (!BaseType.isBool(c.t))
+				{
+					throw "while condition must be bool is " + c.t;
+				}
 
-					enter();
-						var t = typeExpr(e);
-					leave();
+				enter();
+				var t = typeExpr(e);
+				leave();
 				leave();
 
-				return makeTyped(expr, TWhile(c, t, normalWhile), BaseType.Void); //TODO check
+				return makeTyped(expr, TWhile(c, t, normalWhile), BaseType.Void); // TODO check
 
 			case ESwitch(e, cases, edef):
-				//TODO cases exprs must be from the switch expr
+				// TODO cases exprs must be from the switch expr
 				var eif = edef;
 				var i = cases.length - 1;
+
 				while (i >= 0)
 				{
 					var c = cases[i--];
-					var cond = { expr: EBinop(OpEq, e, c.values[0]), pos: null }; // TODO OpEq wont work on anon type
+					var cond = {
+						expr: EBinop(OpEq, e, c.values[0]),
+						pos: null
+					}; // TODO OpEq wont work on anon type
+
 					for (j in 1...c.values.length)
 					{
 						cond = {
-							expr: EBinop(OpBoolOr, cond, { expr: EBinop(OpEq, e, c.values[j]), pos: null}),
+							expr: EBinop(OpBoolOr, cond, {
+								expr: EBinop(OpEq, e, c.values[j]),
+								pos: null
+							}),
 							pos: null
 						};
 					}
@@ -382,33 +471,50 @@ class ExprTyper
 					if (c.guard != null)
 					{
 						cond = {
-							expr: EBinop(OpBoolAnd,
-								{ expr: EParenthesis(cond), pos:null },
-								c.guard),
+							expr: EBinop(OpBoolAnd, {
+								expr: EParenthesis(cond),
+								pos: null
+							}, c.guard),
 							pos: null
 						};
 					}
 
-					eif = { expr: EIf(cond, c.expr, eif), pos: null };
+					eif = {
+						expr: EIf(cond, c.expr, eif),
+						pos: null
+					};
 				}
+
 				return typeExpr(eif);
+
 			case ETry(e, catches):
 				enter();
-					var t = typeExpr(e);
-					var elems = [];
+				var t = typeExpr(e);
+				var elems = [];
 
-					for (c in catches)
-					{
-						enter();
-							var sid = addSymbol(c.name);
-							typeTable[sid] = convertComplexType(c.type);
-							var t = typeExpr(c.expr);
-							elems.push({ v: { capture: false, extra: null, id: sid, meta: null, name: c.name, t: typeTable[sid] }, expr: t });
-						leave();
-					}
+				for (c in catches)
+				{
+					enter();
+					var sid = addSymbol(c.name);
+					typeTable[sid] = convertComplexType(c.type);
+					var t = typeExpr(c.expr);
+
+					elems.push({
+						v: {
+							capture: false,
+							extra: null,
+							id: sid,
+							meta: null,
+							name: c.name,
+							t: typeTable[sid]
+						},
+						expr: t
+					});
+					leave();
+				}
 				leave();
 
-				return makeTyped(expr, TTry(t, elems), BaseType.Void); //TODO check
+				return makeTyped(expr, TTry(t, elems), BaseType.Void); // TODO check
 
 			case EReturn(e):
 				var t = typeExpr(e);
@@ -429,7 +535,7 @@ class ExprTyper
 			case ECast(e, t):
 				var t = typeExpr(e);
 
-				return makeTyped(expr, TCast(t, null), makeMonomorph()); //TODO type of the TypePath
+				return makeTyped(expr, TCast(t, null), makeMonomorph()); // TODO type of the TypePath
 
 			case EMeta(s, e):
 				var t = typeExpr(e);
@@ -439,26 +545,26 @@ class ExprTyper
 			case ECheckType(e, t):
 				var t = typeExpr(e);
 
-				return makeTyped(expr, TParenthesis(t), makeMonomorph()); //TODO
+				return makeTyped(expr, TParenthesis(t), makeMonomorph()); // TODO
 
 			case ETernary(econd, eif, eelse):
 				enter();
-					var c = typeExpr(econd);
+				var c = typeExpr(econd);
 
-					if (!BaseType.isBool(c.t))
-					{
-						throw "ternary condition must be bool is " + c.t;
-					}
+				if (!BaseType.isBool(c.t))
+				{
+					throw "ternary condition must be bool is " + c.t;
+				}
 
-					enter();
-						var i = typeExpr(eif);
-					leave();
-					enter();
-						var e = typeExpr(eelse); //TODO needs to unify with t
-					leave();
+				enter();
+				var i = typeExpr(eif);
+				leave();
+				enter();
+				var e = typeExpr(eelse); // TODO needs to unify with t
+				leave();
 				leave();
 
-				return makeTyped(expr, TIf(c, i, e), i.t); //TODO type
+				return makeTyped(expr, TIf(c, i, e), i.t); // TODO type
 
 			case EUntyped(e):
 				throw "Untyped is not supported";
@@ -469,7 +575,7 @@ class ExprTyper
 	}
 
 	var symbolTable = new Map<String, Array<Int>>();
-	var currentScope : Array<Array<String>> = [[]];
+	var currentScope:Array<Array<String>> = [[]];
 	var id = 0;
 	var typeTable = new Map<Int, Type>();
 	var linesDatas = new Map<String, Array<Int>>(); // Map<file, [lineEndChar]>
@@ -477,27 +583,42 @@ class ExprTyper
 	function insertTrace()
 	{
 		var sid = addSymbol("trace");
-		typeTable[sid] = TFun([{ t: makeMonomorph(), opt:false, name: "value" }], BaseType.Void);
+		typeTable[sid] = TFun([{
+			t: makeMonomorph(),
+			opt: false,
+			name: "value"
+		}], BaseType.Void);
 	}
 
-	inline function isTrace(e:Expr) : Bool
+	inline function isTrace(e:Expr):Bool
 	{
 		return e.expr.match(EConst(CIdent("trace")));
 	}
 
-	function makeTyped(expr:Expr, texpr:TypedExprDef, type:Type) : TypedExpr
+	function makeTyped(expr:Expr, texpr:TypedExprDef, type:Type):TypedExpr
 	{
-		return { expr: texpr, pos: expr.pos, t: type };
+		return {
+			expr: texpr,
+			pos: expr.pos,
+			t: type
+		};
 	}
 
-	function makeTypedVar(name:String, sid:Int, type:Type) : TypedExprDef
+	function makeTypedVar(name:String, sid:Int, type:Type):TypedExprDef
 	{
-		return TLocal({ capture: false, extra: null, id: sid, meta: null, name: name, t: type });
+		return TLocal({
+			capture: false,
+			extra: null,
+			id: sid,
+			meta: null,
+			name: name,
+			t: type
+		});
 	}
 
-	function makeMonomorph() : Type
+	function makeMonomorph():Type
 	{
-		//TODO allow this to be changed after unification
+		// TODO allow this to be changed after unification
 		return TMono(new RefImpl(null));
 	}
 
@@ -516,7 +637,7 @@ class ExprTyper
 		}
 	}
 
-	function addSymbol(name:String) : Int
+	function addSymbol(name:String):Int
 	{
 		var sid = id++;
 		currentScope[currentScope.length - 1].push(name);
@@ -535,7 +656,7 @@ class ExprTyper
 		return sid;
 	}
 
-	function getSymbol(name:String) : Int
+	function getSymbol(name:String):Int
 	{
 		if (!symbolTable.exists(name) || symbolTable[name].length == 0)
 		{
@@ -546,11 +667,11 @@ class ExprTyper
 		return sids[sids.length - 1];
 	}
 
-	function convertComplexType(t:ComplexType) : Type
+	function convertComplexType(t:ComplexType):Type
 	{
 		return switch (t)
 		{
-			case TPath(p): //TODO convert TPath to Type
+			case TPath(p): // TODO convert TPath to Type
 				switch (p.name)
 				{
 					case "Int":
@@ -568,57 +689,70 @@ class ExprTyper
 					default: throw "unknown type";
 				}
 
-			default: makeMonomorph(); //TODO TAnonymous | TExtend | TFunction | TIntersection | TNamed | TOptional | TParent
+			default: // TODO TAnonymous | TExtend | TFunction | TIntersection | TNamed | TOptional | TParent
+				makeMonomorph();
 		}
 	}
 
-	function tracePosition(expr:Expr) : TypedExpr
+	function tracePosition(expr:Expr):TypedExpr
 	{
 		var file = expr.pos.file;
+
 		if (!linesDatas.exists(file))
 		{
 			linesDatas.set(file, preparseLinesData(file));
 		}
 
 		var data = linesDatas.get(file);
-		var bounds = {min:0, max:data.length-1};
+		var bounds = {
+			min: 0,
+			max: data.length - 1
+		};
+
 		while (bounds.max - bounds.min > 1)
 		{
 			var i = Std.int((bounds.min + bounds.max) / 2);
 			var end = data[i];
+
 			if (expr.pos.min <= end)
 			{
 				bounds.max = i;
 			}
+
 			if (expr.pos.min >= end)
 			{
 				bounds.min = i;
 			}
 		}
+
 		var line = bounds.max + 1;
 		return makeTyped(expr, TConst(TString(file + ":" + line + ":")), BaseType.String);
 	}
 
-	function preparseLinesData(file:String) : Array<Int>
+	function preparseLinesData(file:String):Array<Int>
 	{
 		var content = sys.io.File.getContent(file);
 		var data = [];
 		var i = 0;
+
 		while (i < content.length)
 		{
 			switch (content.charAt(i++))
 			{
 				case "\r":
-					if (content.charAt(i+1) == "\n")
+					if (content.charAt(i + 1) == "\n")
 					{
 						i++;
 					}
 					data.push(i);
+
 				case "\n":
 					data.push(i);
+
 				default:
 			}
 		}
+
 		data.push(i);
 		return data;
 	}

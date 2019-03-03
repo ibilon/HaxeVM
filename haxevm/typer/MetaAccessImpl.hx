@@ -4,24 +4,24 @@ import haxe.macro.Expr;
 
 class MetaAccessImpl
 {
-	var meta : Metadata;
+	var meta:Metadata;
 
 	public function new(meta:Metadata)
 	{
 		this.meta = meta;
 	}
 
-	public function get() : Metadata
+	public function get():Metadata
 	{
 		return meta.copy();
 	}
 
-	public function extract(name:String) : Array<MetadataEntry>
+	public function extract(name:String):Array<MetadataEntry>
 	{
 		return meta.filter(f -> f.name == name);
 	}
 
-	public function add(name:String, params:Array<Expr>, pos:Position) : Void
+	public function add(name:String, params:Array<Expr>, pos:Position):Void
 	{
 		meta.push({
 			name: name,
@@ -30,12 +30,12 @@ class MetaAccessImpl
 		});
 	}
 
-	public function remove(name:String) : Void
+	public function remove(name:String):Void
 	{
 		meta = meta.filter(f -> f.name != name);
 	}
 
-	public function has(name:String) : Bool
+	public function has(name:String):Bool
 	{
 		for (m in meta)
 		{

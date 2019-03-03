@@ -34,7 +34,7 @@
 				"-rnw",
 				"'haxevm'",
 				"-e",
-				"'//TODO'"
+				"'// TODO'"
 			],
 			"problemMatcher": []
 		}

@@ -6,15 +6,13 @@ import haxeparser.Data;
 
 class ClassTyper
 {
-	public function new()
-	{
-	}
+	public function new() {}
 
-	public function typeClass(module:String, def:Definition<ClassFlag, Array<Field>>) : ClassType
+	public function typeClass(module:String, def:Definition<ClassFlag, Array<Field>>):ClassType
 	{
-		var fields : Array<ClassField> = [];
-		var statics : Array<ClassField> = [];
-		var overrides : Array<ClassField> = [];
+		var fields:Array<ClassField> = [];
+		var statics:Array<ClassField> = [];
+		var overrides:Array<ClassField> = [];
 
 		var cls = {
 			constructor: null,
@@ -32,7 +30,7 @@ class ClassTyper
 			name: def.name,
 			overrides: cast new RefImpl(overrides),
 			pack: [],
-			params: [], //def.params,
+			params: [], // def.params,
 			pos: null,
 			statics: cast new RefImpl(statics),
 			superClass: null,
@@ -54,11 +52,11 @@ class ClassTyper
 
 				case HExtends(t):
 					throw "not implemented";
-					//cls.superClass = { t: new RefImpl(null), params: t.params };
+					// cls.superClass = { t: new RefImpl(null), params: t.params };
 
 				case HImplements(t):
 					throw "not implemented";
-					//cls.interfaces.push({ t: new RefImpl(null), params: t.params });
+					// cls.interfaces.push({ t: new RefImpl(null), params: t.params });
 			}
 		}
 
@@ -94,22 +92,33 @@ class ClassTyper
 					{
 						return switch (a)
 						{
-							case "default": AccNormal;
-							case "null": AccNo;
-							case "never": AccNever;
-							case "get", "set", "dynamic": AccCall;
-							case "inline": AccInline;
-							default: throw "invalid access";
+							case "default":
+								AccNormal;
+
+							case "null":
+								AccNo;
+
+							case "never":
+								AccNever;
+
+							case "get", "set", "dynamic":
+								AccCall;
+
+							case "inline":
+								AccInline;
+
+							default:
+								throw "invalid access";
 						}
 					}
 
-					field.type = typed.t; //TODO unify typed.t and t
+					field.type = typed.t; // TODO unify typed.t and t
 					field.kind = FVar(resolveAccess(get), resolveAccess(set));
 
 				case FVar(t, e):
 					var typed = new haxevm.typer.ExprTyper().typeExpr(e);
 
-					field.type = typed.t; //TODO unify typed.t and t
+					field.type = typed.t; // TODO unify typed.t and t
 					field.kind = FVar(AccNormal, AccNormal);
 			}
 
