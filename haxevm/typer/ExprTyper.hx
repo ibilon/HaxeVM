@@ -472,6 +472,7 @@ class ExprTyper
 	var currentScope : Array<Array<String>> = [[]];
 	var id = 0;
 	var typeTable = new Map<Int, Type>();
+	var linesDatas = new Map<String, Array<Int>>(); // Map<file, [lineEndChar]>
 
 	function insertTrace()
 	{
@@ -573,10 +574,37 @@ class ExprTyper
 
 	function tracePosition(expr:Expr) : TypedExpr
 	{
-		var content = sys.io.File.getContent(expr.pos.file);
+		var file = expr.pos.file;
+		if (!linesDatas.exists(file))
+		{
+			linesDatas.set(file, preparseLinesData(file));
+		}
+
+		var data = linesDatas.get(file);
+		var bounds = {min:0, max:data.length-1};
+		while (bounds.max - bounds.min > 1)
+		{
+			var i = Std.int((bounds.min + bounds.max) / 2);
+			var end = data[i];
+			if (expr.pos.min <= end)
+			{
+				bounds.max = i;
+			}
+			if (expr.pos.min >= end)
+			{
+				bounds.min = i;
+			}
+		}
+		var line = bounds.max + 1;
+		return makeTyped(expr, TConst(TString(file + ":" + line + ":")), BaseType.String);
+	}
+
+	function preparseLinesData(file:String) : Array<Int>
+	{
+		var content = sys.io.File.getContent(file);
+		var data = [];
 		var i = 0;
-		var line = 1;
-		while (i < expr.pos.min)
+		while (i < content.length)
 		{
 			switch (content.charAt(i++))
 			{
@@ -585,12 +613,13 @@ class ExprTyper
 					{
 						i++;
 					}
-					line++;
+					data.push(i);
 				case "\n":
-					line++;
+					data.push(i);
 				default:
 			}
 		}
-		return makeTyped(expr, TConst(TString(expr.pos.file + ":" + line + ":")), BaseType.String);
+		data.push(i);
+		return data;
 	}
 }
