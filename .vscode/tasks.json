@@ -37,6 +37,18 @@
 				"'// TODO'"
 			],
 			"problemMatcher": []
+		},
+		{
+			"label": "checkstyle",
+			"type": "shell",
+			"command": "haxelib",
+			"args": [
+				"run",
+				"checkstyle",
+				"-s",
+				"haxevm"
+			],
+			"problemMatcher": []
 		}
 	]
 }
