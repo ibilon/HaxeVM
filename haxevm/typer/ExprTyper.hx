@@ -253,14 +253,15 @@ class ExprTyper
 					});
 				}
 
-				if (fid != -1 && f.ret != null) {
+				if (fid != -1 && f.ret != null)
+				{
 					typeTable[fid] = TFun(at, convertComplexType(f.ret));
 				}
 
 				var t = typeExpr(f.expr);
 				leave();
 
-				var ft = TFun(at, t.t);
+				var ft = TFun(at, t.t); // TODO doing double work? see previous if
 				var te = makeTyped(expr, TFunction({
 					args: args,
 					expr: t,

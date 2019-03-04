@@ -35,6 +35,11 @@ class ExprTest extends Test
 		compareFile("tests/samples/Operators.hx");
 	}
 
+	public function testRecursiveFunctionSample()
+	{
+		compareFile("tests/samples/RecursiveFunction.hx");
+	}
+
 	public function testSwitchSample()
 	{
 		compareFile("tests/samples/Switch.hx");

@@ -1,60 +1,51 @@
 package haxevm.vm;
 
-abstract Context (Map<Int, Array<EVal>>)
+@:forward(stack, unstack)
+abstract Context(ContextData)
 {
-	public function new ()
+	public function new()
 	{
-		this = new Map<Int, Array<EVal>>();
-	}
-
-	public inline function create (key:Int, value:EVal)
-	{
-		var tmp = this.exists(key) ? this.get(key) : [];
-		tmp.push(value);
-		this.set(key, tmp);
+		this = new ContextData();
 	}
 
 	@:arrayAccess
-	inline function _get(key:Int) : EVal
+	inline function get(key:Int):EVal
 	{
-		if (!this.exists(key))
-		{
-			throw "using unbound variable " + key;
-		}
-		var tmp = this.get(key);
-		return tmp[tmp.length - 1];
+		return this.current[key];
 	}
 
 	@:arrayAccess
-	public inline function _set(key:Int, value:EVal) : EVal
+	inline function set(key:Int, value:EVal):EVal
 	{
-		if (!this.exists(key))
-		{
-			throw "using unbound variable " + key;
-		}
-		var tmp = this.get(key);
-		tmp[tmp.length - 1] = value;
-		return value;
+		return this.current[key] = value;
 	}
 
-	public inline function define(key:Int) : Bool
+	public inline function exists(key:Int):Bool
 	{
-		return this.exists(key);
+		return this.current.exists(key);
+	}
+}
+
+private class ContextData
+{
+	public var stacks : Array<Map<Int, EVal>>;
+	public var current : Map<Int, EVal>;
+
+	public function new()
+	{
+		current = new Map<Int, EVal>();
+		stacks = [current];
 	}
 
-	public inline function undefine(key:Int) : Void
+	public function stack()
 	{
-		var tmp = this.get(key);
-		if (tmp != null)
-		{
-			if (tmp.length <= 1)
-			{
-				this.remove(key);
-			}
-			else
-			{
-				tmp.pop();
-			}
-		}
+		current = current.copy();
+		stacks.push(current);
+	}
+
+	public function unstack()
+	{
+		stacks.pop();
+		current = stacks[stacks.length - 1];
 	}
 }

@@ -14,7 +14,7 @@ class VM
 		var context = new Context();
 
 		// insert builtin trace
-		context.create(0, EFn(function(a) {
+		context[0] = EFn(function(a) {
 			var buf = [];
 
 			for (e in a)
@@ -24,7 +24,7 @@ class VM
 
 			Sys.println(buf.join(" "));
 			return EVoid;
-		}));
+		});
 
 		return eval(texpr, context);
 	}
@@ -166,9 +166,11 @@ class VM
 			case TFunction(tfunc):
 				return EFn(function(a:Array<EVal>)
 				{
+					context.stack();
+
 					for (i in 0...tfunc.args.length)
 					{
-						context.create(tfunc.args[i].v.id, a[i]);
+						context[tfunc.args[i].v.id] = a[i];
 					}
 
 					var ret = try
@@ -187,18 +189,13 @@ class VM
 						}
 					}
 
-					for (i in 0...tfunc.args.length)
-					{
-						context.undefine(tfunc.args[i].v.id);
-					}
+					context.unstack();
 
 					return ret;
 				});
 
 			case TVar(v, expr):
-				var val = eval(expr, context);
-				context.create(v.id, val);
-				return val;
+				return context[v.id] = eval(expr, context);
 
 			case TBlock(exprs):
 				var v = EVoid;
@@ -304,7 +301,7 @@ class VM
 							{
 								if (EValTools.isSameType(v, EValTools.extractType(c.v.t)))
 								{
-									context.create(c.v.id, v);
+									context[c.v.id] = v;
 									eval(c.expr, context);
 									return EVoid;
 								}
@@ -351,6 +348,11 @@ class VM
 				throw "TIdent unimplemented";
 
 			case TLocal(v):
+				if (!context.exists(v.id))
+				{
+					throw 'using ubbound variable ${v.id}';
+				}
+
 				return context[v.id];
 		}
 	}
@@ -401,9 +403,9 @@ class VM
 				"Void";
 
 			case EIdent(id):
-				if (!context.define(id))
+				if (!context.exists(id))
 				{
-					throw "using unbound variable";
+					throw 'using unbound variable $id';
 				}
 
 				EVal2str(context[id], context);

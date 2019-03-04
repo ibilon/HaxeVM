@@ -27,15 +27,5 @@ class LocalFunction
 
 		var u = 7;
 		trace(u);
-
-		function fibonacci (n:Int) : Int
-		{
-			if ( n <= 1)
-			{
-				return n;
-			}
-			return fibonacci(n-1) + fibonacci(n-2);
-		}
-		trace(fibonacci(12));
 	}
 }
