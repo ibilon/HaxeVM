@@ -17,15 +17,28 @@ class Test extends utest.Test
 	{
 		var r = new Runner();
 
+		r.addCase(new ClassTest());
 		r.addCase(new ExprTest());
+		r.addCase(new MiscTest());
 
 		Report.create(r, NeverShowSuccessResults, AlwaysShowHeader);
 		r.run();
 	}
 
-	function runFile(file:String, realHaxe:Bool) : CompileResult
+	function runFile(file:String, realHaxe:Bool, ?defines:Map<String, String>) : CompileResult
 	{
 		var cwd = Sys.getCwd();
+
+		var definesArgs = [];
+
+		if (defines != null)
+		{
+			for (k in defines.keys())
+			{
+				definesArgs.push("-D");
+				definesArgs.push('$k=${defines[k]}');
+			}
+		}
 
 		var args = if (realHaxe)
 		{
@@ -37,7 +50,7 @@ class Test extends utest.Test
 			["extraParams.hxml", "--run", "haxevm.Main", file];
 		}
 
-		var process = new Process("haxe", args);
+		var process = new Process("haxe", args.concat(definesArgs));
 
 		var output = process.stdout.readAll().toString();
 		var error = process.stderr.readAll().toString();
@@ -53,10 +66,10 @@ class Test extends utest.Test
 		return Success(output);
 	}
 
-	function compareFile(file:String)
+	function compareFile(file:String, ?defines:Map<String, String>)
 	{
-		var real = runFile(file, true);
-		var haxevm = runFile(file, false);
+		var real = runFile(file, true, defines);
+		var haxevm = runFile(file, false, defines);
 
 		switch ([real, haxevm])
 		{

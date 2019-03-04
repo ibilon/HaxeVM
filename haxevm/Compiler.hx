@@ -21,13 +21,15 @@ class Compiler
 	var modules:Array<Module>;
 	var fileReader:String->String;
 	var mainClass:String;
+	var defines:Map<String, String>;
 
-	public function new(fileReader:String->String, mainClass:String)
+	public function new(fileReader:String->String, mainClass:String, defines:Map<String, String>)
 	{
 		symbolTable = new SymbolTable();
 		modules = [];
 		this.fileReader = fileReader;
 		this.mainClass = mainClass;
+		this.defines = defines;
 	}
 
 	public function compile():CompilationOutput
@@ -61,6 +63,12 @@ class Compiler
 		module.linesData = preparseLinesData(content);
 
 		var parser = new HaxeParser(ByteData.ofString(content), filename);
+
+		for (k => v in defines)
+		{
+			parser.define(k, v);
+		}
+
 		var file = parser.parse();
 
 		// First pass: add types symbols

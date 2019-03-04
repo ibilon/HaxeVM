@@ -40,12 +40,6 @@ class ExprTest extends Test
 		compareFile("tests/samples/RecursiveFunction.hx");
 	}
 
-	@Ignored
-	public function testStaticFunctionSample()
-	{
-		compareFile("tests/samples/StaticFunction.hx");
-	}
-
 	public function testSwitchSample()
 	{
 		compareFile("tests/samples/Switch.hx");
