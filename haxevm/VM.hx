@@ -1,6 +1,7 @@
 package haxevm;
 
 import haxe.macro.Type;
+import haxevm.Compiler.CompilationOutput;
 import haxevm.vm.Context;
 import haxevm.vm.EVal;
 import haxevm.vm.EValTools;
@@ -9,7 +10,48 @@ import haxevm.vm.Operator;
 
 class VM
 {
-	public static function evalExpr(texpr:TypedExpr):EVal
+	var compilationOutput:CompilationOutput;
+	var mainClass:String;
+
+	public function new(compilationOutput:CompilationOutput, mainClass:String)
+	{
+		this.compilationOutput = compilationOutput;
+		this.mainClass = mainClass;
+	}
+
+	public function run():Void
+	{
+		for (module in compilationOutput.modules)
+		{
+			if (module.name == mainClass)
+			{
+				for (type in module.types)
+				{
+					switch (type)
+					{
+						case TClassDecl(_.get() => c) if (c.name == mainClass):
+							for (f in c.statics.get())
+							{
+								if (f.name == "main")
+								{
+									evalExpr(f.expr());
+									return;
+								}
+							}
+
+							throw "no main function";
+
+						default:
+							// pass
+					}
+				}
+
+				throw 'module "$mainClass" doesn\'t define a main type';
+			}
+		}
+	}
+
+	static function evalExpr(texpr:TypedExpr):EVal
 	{
 		var context = new Context();
 

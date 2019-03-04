@@ -1,5 +1,8 @@
 package haxevm;
 
+import sys.io.File;
+using haxe.io.Path;
+
 class Main
 {
 	static function main()
@@ -17,33 +20,19 @@ class Main
 				Sys.println("haxelib run haxevm filename.hx");
 
 			case 1:
-				runFile(args[0]);
+				var mainClass = args[0].withoutDirectory().withoutExtension();
+				var classPath = args[0].directory();
+
+				var fileLoader = function(path:String)
+				{
+					return File.getContent(Path.join([classPath, path]));
+				}
+
+				var compilationOutput = new Compiler(fileLoader, mainClass).compile();
+				new VM(compilationOutput, mainClass).run();
 
 			default:
 				Sys.println("too much args");
 		}
-	}
-
-	static function runFile(filename:String)
-	{
-		var module = Compiler.compileFile(filename);
-
-		if (module.mainType == null)
-		{
-			throw "no main class";
-		}
-
-		for (s in module.mainType.statics.get())
-		{
-			if (s.name == "main")
-			{
-				var typed = s.expr();
-				// Display.displayTExpr(typed);
-				VM.evalExpr(typed);
-				return;
-			}
-		}
-
-		throw "no main function";
 	}
 }

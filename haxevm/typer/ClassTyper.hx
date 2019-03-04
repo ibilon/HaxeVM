@@ -3,18 +3,30 @@ package haxevm.typer;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxeparser.Data;
+import haxevm.SymbolTable.Symbol;
 
 class ClassTyper
 {
-	public function new() {}
+	var symbolTable:SymbolTable;
+	var module:Module;
+	var def:Definition<ClassFlag, Array<Field>>;
 
-	public function typeClass(module:String, def:Definition<ClassFlag, Array<Field>>):ClassType
+	public function new(symbolTable:SymbolTable, module:Module, def:Definition<ClassFlag, Array<Field>>)
 	{
+		this.symbolTable = symbolTable;
+		this.module = module;
+		this.def = def;
+	}
+
+	public function type():ClassType
+	{
+		symbolTable.enter();
+
 		var fields:Array<ClassField> = [];
 		var statics:Array<ClassField> = [];
 		var overrides:Array<ClassField> = [];
 
-		var cls = {
+		var cls:ClassType = {
 			constructor: null,
 			doc: def.doc,
 			fields: cast new RefImpl(fields),
@@ -26,7 +38,7 @@ class ClassTyper
 			isPrivate: false,
 			kind: KNormal,
 			meta: cast new MetaAccessImpl(def.meta),
-			module: module,
+			module: module.name,
 			name: def.name,
 			overrides: cast new RefImpl(overrides),
 			pack: [],
@@ -60,9 +72,20 @@ class ClassTyper
 			}
 		}
 
+		// First pass: add class symbols
+		var ids = new Map<String, Int>();
+
+		for (field in def.data)
+		{
+			ids[field.name] = symbolTable.addField(field.name);
+		}
+
+		// Second pass: type class symbols
 		for (d in def.data)
 		{
-			var field = {
+			var typed = null;
+
+			var field:ClassField = {
 				doc: d.doc,
 				isExtern: false,
 				isFinal: false,
@@ -74,19 +97,19 @@ class ClassTyper
 				params: [],
 				pos: null,
 				type: null,
-				expr: null
+				expr: () -> typed
 			};
 
 			switch (d.kind)
 			{
 				case FFun(f):
-					var typed = new haxevm.typer.ExprTyper().typeExpr(f.expr);
+					// TODO f args?
+					typed = new ExprTyper(symbolTable, cls, f.expr).type();
 
 					field.type = typed.t;
-					field.expr = () -> typed;
 
 				case FProp(get, set, t, e):
-					var typed = new haxevm.typer.ExprTyper().typeExpr(e);
+					typed = new ExprTyper(symbolTable, cls, e).type();
 
 					function resolveAccess(a)
 					{
@@ -116,7 +139,7 @@ class ClassTyper
 					field.kind = FVar(resolveAccess(get), resolveAccess(set));
 
 				case FVar(t, e):
-					var typed = new haxevm.typer.ExprTyper().typeExpr(e);
+					typed = new haxevm.typer.ExprTyper(symbolTable, cls, e).type();
 
 					field.type = typed.t; // TODO unify typed.t and t
 					field.kind = FVar(AccNormal, AccNormal);
@@ -170,7 +193,11 @@ class ClassTyper
 			{
 				fields.push(field);
 			}
+
+			symbolTable[ids[field.name]] = SField(field);
 		}
+
+		symbolTable.leave();
 
 		return cls;
 	}
