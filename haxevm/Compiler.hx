@@ -44,21 +44,23 @@ class Compiler
 	{
 		symbolTable.enter();
 
-		// Map<file, [lineEndChar]>
-		//var linesDatas:Map<String, Array<Int>>;
-
 		var name = filename.withoutExtension();
 		var types = [];
 		var module = {
+			file: filename,
 			name: name,
-			types: types
+			types: types,
+			linesData: []
 		};
 
 		// Add module to top level symbols
 		symbolTable.addModule(module);
 		modules.push(module);
 
-		var parser = new HaxeParser(ByteData.ofString(fileReader(filename)), filename);
+		var content = fileReader(filename);
+		module.linesData = preparseLinesData(content);
+
+		var parser = new HaxeParser(ByteData.ofString(content), filename);
 		var file = parser.parse();
 
 		// First pass: add types symbols
@@ -121,46 +123,8 @@ class Compiler
 		symbolTable.leave();
 	}
 
-	/*
-	function tracePosition(expr:Expr):TypedExpr
+	function preparseLinesData(content:String):Array<Int>
 	{
-		var file = expr.pos.file;
-
-		if (!linesDatas.exists(file))
-		{
-			linesDatas.set(file, preparseLinesData(file));
-		}
-
-		var data = linesDatas.get(file);
-		var bounds = {
-			min: 0,
-			max: data.length - 1
-		};
-
-		while (bounds.max - bounds.min > 1)
-		{
-			var i = Std.int((bounds.min + bounds.max) / 2);
-			var end = data[i];
-
-			if (expr.pos.min <= end)
-			{
-				bounds.max = i;
-			}
-
-			if (expr.pos.min >= end)
-			{
-				bounds.min = i;
-			}
-		}
-
-		var line = bounds.max + 1;
-		return makeTyped(expr, TConst(TString(file + ":" + line + ":")), BaseType.String);
-	}
-
-	function preparseLinesData(file:String):Array<Int>
-	{
-		return []; // TODO no sys access inside compiler
-		var content = sys.io.File.getContent(file);
 		var data = [];
 		var i = 0;
 
@@ -185,5 +149,4 @@ class Compiler
 		data.push(i);
 		return data;
 	}
-	*/
 }

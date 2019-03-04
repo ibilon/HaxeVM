@@ -237,7 +237,12 @@ class VM
 				});
 
 			case TVar(v, expr):
-				return context[v.id] = eval(expr, context);
+				if (expr != null)
+				{
+					return context[v.id] = eval(expr, context);
+				}
+
+				return context[v.id] = EVoid;
 
 			case TBlock(exprs):
 				var v = EVoid;

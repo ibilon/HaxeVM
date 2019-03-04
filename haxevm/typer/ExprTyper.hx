@@ -10,12 +10,14 @@ import haxevm.typer.RefImpl;
 class ExprTyper
 {
 	var symbolTable:SymbolTable;
+	var module:Module;
 	var cls:ClassType;
 	var expr:Expr;
 
-	public function new(symbolTable:SymbolTable, cls:ClassType, expr:Expr)
+	public function new(symbolTable:SymbolTable, module:Module, cls:ClassType, expr:Expr)
 	{
 		this.symbolTable = symbolTable;
+		this.module = module;
 		this.cls = cls;
 		this.expr = expr;
 	}
@@ -200,6 +202,9 @@ class ExprTyper
 					case TFun(_, ret):
 						ret;
 
+					case TMono(_):
+						makeMonomorph();
+
 					default:
 						throw "Can only call functions";
 				}
@@ -212,7 +217,7 @@ class ExprTyper
 				if (isTrace(e))
 				{
 					// TODO propagate pos info from compiler
-					// elems.unshift(tracePosition(e));
+					elems.unshift(tracePosition(e));
 				}
 
 				return makeTyped(expr, TCall(t, elems), r); // TODO check function sign and param
@@ -302,8 +307,9 @@ class ExprTyper
 			case EVars(vars):
 				var v = vars[0]; // TODO how to make multiple nodes from this?
 				var sid = symbolTable.addVar(v.name);
-				var t = typeExpr(v.expr);
-				symbolTable[sid] = SVar(t.t);
+				var t = v.expr != null ? typeExpr(v.expr) : null;
+				var tt = t != null ? t.t : makeMonomorph();
+				symbolTable[sid] = SVar(tt);
 
 				return makeTyped(expr, TVar({
 					capture: false,
@@ -312,7 +318,7 @@ class ExprTyper
 					meta: null,
 					name: v.name,
 					t: null
-				}, t), t.t);
+				}, t), tt);
 
 			case EBlock(exprs):
 				var elems = [];
@@ -649,5 +655,32 @@ class ExprTyper
 			default: // TODO TAnonymous | TExtend | TFunction | TIntersection | TNamed | TOptional | TParent
 				makeMonomorph();
 		}
+	}
+
+	function tracePosition(expr:Expr):TypedExpr
+	{
+		var bounds = {
+			min: 0,
+			max: module.linesData.length - 1
+		};
+
+		while (bounds.max - bounds.min > 1)
+		{
+			var i = Std.int((bounds.min + bounds.max) / 2);
+			var end = module.linesData[i];
+
+			if (expr.pos.min <= end)
+			{
+				bounds.max = i;
+			}
+
+			if (expr.pos.min >= end)
+			{
+				bounds.min = i;
+			}
+		}
+
+		var line = bounds.max + 1;
+		return makeTyped(expr, TConst(TString(module.file + ":" + line + ":")), BaseType.String);
 	}
 }

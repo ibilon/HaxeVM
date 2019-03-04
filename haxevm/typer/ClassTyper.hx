@@ -104,12 +104,12 @@ class ClassTyper
 			{
 				case FFun(f):
 					// TODO f args?
-					typed = new ExprTyper(symbolTable, cls, f.expr).type();
+					typed = new ExprTyper(symbolTable, module, cls, f.expr).type();
 
 					field.type = typed.t;
 
 				case FProp(get, set, t, e):
-					typed = new ExprTyper(symbolTable, cls, e).type();
+					typed = new ExprTyper(symbolTable, module, cls, e).type();
 
 					function resolveAccess(a)
 					{
@@ -139,7 +139,7 @@ class ClassTyper
 					field.kind = FVar(resolveAccess(get), resolveAccess(set));
 
 				case FVar(t, e):
-					typed = new haxevm.typer.ExprTyper(symbolTable, cls, e).type();
+					typed = new haxevm.typer.ExprTyper(symbolTable, module, cls, e).type();
 
 					field.type = typed.t; // TODO unify typed.t and t
 					field.kind = FVar(AccNormal, AccNormal);

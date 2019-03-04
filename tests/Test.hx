@@ -25,9 +25,12 @@ class Test extends utest.Test
 
 	function runFile(file:String, realHaxe:Bool) : CompileResult
 	{
+		var cwd = Sys.getCwd();
+
 		var args = if (realHaxe)
 		{
-			["-cp", file.directory(), "-main", file.withoutDirectory().withoutExtension(), "--interp"];
+			Sys.setCwd(file.directory());
+			["-main", file.withoutDirectory().withoutExtension(), "--interp"];
 		}
 		else
 		{
@@ -40,6 +43,7 @@ class Test extends utest.Test
 		var error = process.stderr.readAll().toString();
 
 		process.close();
+		Sys.setCwd(cwd);
 
 		if (error != "")
 		{
