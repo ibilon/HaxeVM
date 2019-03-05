@@ -4,7 +4,7 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "run",
+			"label": "run eval",
 			"type": "shell",
 			"command": "haxe",
 			"args": [
@@ -24,6 +24,35 @@
 			}
 		},
 		{
+			"label": "run cpp",
+			"type": "shell",
+			"command": "build/cpp/Main",
+			"args": [
+				"tests/samples/Main.hx"
+			],
+			"problemMatcher": [
+				"$haxe-absolute",
+				"$haxe",
+				"$haxe-error"
+			],
+			"dependsOn": "build cpp"
+		},
+		{
+			"label": "run js",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"build/haxevm.js",
+				"tests/samples/Main.hx"
+			],
+			"problemMatcher": [
+				"$haxe-absolute",
+				"$haxe",
+				"$haxe-error"
+			],
+			"dependsOn": "build js"
+		},
+		{
 			"label": "build cpp",
 			"type": "shell",
 			"command": "haxe",
@@ -33,6 +62,25 @@
 				"haxevm.Main",
 				"-cpp",
 				"build/cpp"
+			],
+			"problemMatcher": [
+				"$haxe-absolute",
+				"$haxe",
+				"$haxe-error"
+			]
+		},
+		{
+			"label": "build js",
+			"type": "shell",
+			"command": "haxe",
+			"args": [
+				"extraParams.hxml",
+				"--main",
+				"haxevm.Main",
+				"-js",
+				"build/haxevm.js",
+				"-lib",
+				"hxnodejs"
 			],
 			"problemMatcher": [
 				"$haxe-absolute",
