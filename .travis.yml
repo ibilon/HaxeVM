@@ -12,3 +12,4 @@ sudo: false
 script:
   - haxe extraParams.hxml --run haxevm.Main tests/samples/Main.hx
   - haxe test.hxml
+  - haxe extraParams.hxml --main haxevm.Main -cpp build/cpp/
