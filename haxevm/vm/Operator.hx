@@ -94,7 +94,14 @@ class Operator
 				switch (a.expr)
 				{
 					case TLocal(v):
-						context[v.id] = doBinop(context[v.id], subOp, v2);
+						context[v.id] = switch (context[v.id])
+						{
+							case null:
+								throw "var isn't in context";
+
+							case value:
+								doBinop(value, subOp, v2);
+						}
 
 					case TField(e, fa):
 						var fieldEVal = findField(e, fa, eval, context);

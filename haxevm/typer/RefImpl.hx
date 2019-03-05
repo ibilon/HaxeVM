@@ -1,10 +1,17 @@
 package haxevm.typer;
 
+import haxe.macro.Type.Ref;
+
 class RefImpl<T>
 {
+	public static function make<T>(value:T):Ref<T>
+	{
+		return new RefImpl(value);
+	}
+
 	var value:T;
 
-	public function new(value:T)
+	function new(value:T)
 	{
 		this.value = value;
 	}

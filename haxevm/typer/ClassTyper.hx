@@ -29,7 +29,7 @@ class ClassTyper
 		var cls:ClassType = {
 			constructor: null,
 			doc: def.doc,
-			fields: (new RefImpl(fields) : Ref<Array<ClassField>>),
+			fields: RefImpl.make(fields),
 			init: null,
 			interfaces: [],
 			isExtern: false,
@@ -37,14 +37,14 @@ class ClassTyper
 			isInterface: false,
 			isPrivate: false,
 			kind: KNormal,
-			meta: (new MetaAccessImpl(def.meta) : MetaAccess),
+			meta: MetaAccessImpl.make(def.meta),
 			module: module.name,
 			name: def.name,
 			overrides: overrides,
 			pack: [],
 			params: [], // def.params,
 			pos: null,
-			statics: (new RefImpl(statics) : Ref<Array<ClassField>>),
+			statics: RefImpl.make(statics),
 			superClass: null,
 			exclude: () -> {}
 		};
@@ -91,9 +91,9 @@ class ClassTyper
 				isFinal: false,
 				isPublic: false,
 				kind: null,
-				meta: (new MetaAccessImpl(d.meta) : MetaAccess),
+				meta: MetaAccessImpl.make(d.meta),
 				name: d.name,
-				overloads: (new RefImpl([]) : Ref<Array<ClassField>>),
+				overloads: RefImpl.make([]),
 				params: [],
 				pos: null,
 				type: null,
@@ -148,7 +148,8 @@ class ClassTyper
 			var isStatic = false;
 			var isOverride = false;
 
-			for (a in d.access)
+			var daccess = d.access;
+			for (a in (daccess != null ? daccess : []))
 			{
 				switch (a)
 				{
@@ -183,7 +184,7 @@ class ClassTyper
 
 			if (isOverride)
 			{
-				overrides.push(new RefImpl(field));
+				overrides.push(RefImpl.make(field));
 			}
 			if (isStatic)
 			{
@@ -194,7 +195,15 @@ class ClassTyper
 				fields.push(field);
 			}
 
-			symbolTable[ids[field.name]] = SField(field);
+			var id = switch (ids[field.name])
+			{
+				case null:
+					throw 'field "${field.name}" didn\'t get registered during prepass';
+
+				case value:
+					value;
+			}
+			symbolTable[id] = SField(field);
 		}
 
 		symbolTable.leave();

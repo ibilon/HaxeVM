@@ -13,7 +13,14 @@ class Main
 
 		if (Sys.environment().exists("HAXELIB_RUN"))
 		{
-			Sys.setCwd(args.pop());
+			switch (args.pop())
+			{
+				case null:
+					throw "missing haxelib provided cwd";
+
+				case value:
+					Sys.setCwd(value);
+			}
 		}
 
 		if (args.length == 0)

@@ -1,12 +1,18 @@
 package haxevm.typer;
 
 import haxe.macro.Expr;
+import haxe.macro.Type.MetaAccess;
 
 class MetaAccessImpl
 {
+	public static function make(meta:Null<Metadata>):MetaAccess
+	{
+		return new MetaAccessImpl(meta != null ? meta : []);
+	}
+
 	var meta:Metadata;
 
-	public function new(meta:Metadata)
+	function new(meta:Metadata)
 	{
 		this.meta = meta;
 	}

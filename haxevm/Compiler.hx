@@ -107,8 +107,16 @@ class Compiler
 			{
 				case EClass(d):
 					var cls = new ClassTyper(symbolTable, module, d).type();
-					var type = ModuleType.TClassDecl(new RefImpl(cls));
-					symbolTable[ids[d.name]] = Symbol.SType(type);
+					var type = ModuleType.TClassDecl(RefImpl.make(cls));
+					var id = switch (ids[d.name])
+					{
+						case null:
+							throw 'type "${d.name}" wasn\'t included in symbol registering prepass';
+
+						case value:
+							value;
+					}
+					symbolTable[id] = Symbol.SType(type);
 					types.push(type);
 
 				case EEnum(d):

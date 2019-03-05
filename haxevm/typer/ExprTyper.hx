@@ -12,9 +12,9 @@ class ExprTyper
 	var symbolTable:SymbolTable;
 	var module:Module;
 	var cls:ClassType;
-	var expr:Expr;
+	var expr:Null<Expr>;
 
-	public function new(symbolTable:SymbolTable, module:Module, cls:ClassType, expr:Expr)
+	public function new(symbolTable:SymbolTable, module:Module, cls:ClassType, expr:Null<Expr>)
 	{
 		this.symbolTable = symbolTable;
 		this.module = module;
@@ -24,7 +24,33 @@ class ExprTyper
 
 	public function type():TypedExpr
 	{
-		return typeExpr(expr);
+		var expr = expr;
+
+		if (expr != null)
+		{
+			return typeExpr(expr);
+		}
+		else
+		{
+			return emptyTypedExpr();
+		}
+	}
+
+	function emptyExpr():Expr
+	{
+		return {
+			expr: EBlock([]),
+			pos: PositionImpl.make("", 0, 0)
+		}
+	}
+
+	function emptyTypedExpr():TypedExpr
+	{
+		return {
+			expr: TBlock([]),
+			pos: PositionImpl.make("", 0, 0),
+			t: BaseType.tVoid
+		};
 	}
 
 	function typeExpr(expr:Expr):TypedExpr
@@ -35,7 +61,16 @@ class ExprTyper
 				switch (c)
 				{
 					case CInt(v):
-						return makeTyped(expr, TConst(TInt(Std.parseInt(v))), BaseType.tInt);
+						var value = switch (Std.parseInt(v))
+						{
+							case null:
+								throw "invalid integer";
+
+							case value:
+								value;
+						}
+
+						return makeTyped(expr, TConst(TInt(value)), BaseType.tInt);
 
 					case CFloat(f):
 						return makeTyped(expr, TConst(TFloat(f)), BaseType.tFloat);
@@ -57,7 +92,14 @@ class ExprTyper
 
 					case CIdent(s):
 						var sid = symbolTable.getSymbol(s);
-						var type = symbolTable.getVar(sid); // TODO ident could be a package or module or type or field
+						var type = switch (symbolTable.getVar(sid)) // TODO ident could be a package or module or type or field
+						{
+							case null:
+								throw "unknown symbol";
+
+							case value:
+								value;
+						}
 
 						return makeTyped(expr, makeTypedVar(s, sid, type), type);
 
@@ -99,7 +141,7 @@ class ExprTyper
 				var t = typeExpr(e);
 
 				// TODO class
-				var sub = null;
+				var sub:Null<ClassField> = null;
 
 				switch (t.t)
 				{
@@ -121,8 +163,11 @@ class ExprTyper
 				{
 					throw "object has no field " + field;
 				}
-
-				return makeTyped(expr, TField(t, FAnon(new RefImpl(sub))), sub.type);
+				else
+				{
+					var sub:ClassField = sub;
+					return makeTyped(expr, TField(t, FAnon(RefImpl.make(sub))), sub.type);
+				}
 
 			case EParenthesis(e):
 				symbolTable.enter();
@@ -152,7 +197,7 @@ class ExprTyper
 						kind: FVar(AccNormal, AccNormal),
 						meta: null,
 						name: f.field,
-						overloads: (new RefImpl([]) : Ref<Array<ClassField>>),
+						overloads: RefImpl.make([]),
 						params: [],
 						pos: cast {
 							file: "",
@@ -164,13 +209,13 @@ class ExprTyper
 					});
 				}
 
-				return makeTyped(expr, TObjectDecl(ofields), TAnonymous(new RefImpl({
+				return makeTyped(expr, TObjectDecl(ofields), TAnonymous(RefImpl.make({
 					fields: tfields,
 					status: AConst
 				})));
 
 			case EArrayDecl(values):
-				var t = null;
+				var t:Null<Type> = null;
 				var elems = [];
 
 				for (e in values)
@@ -191,7 +236,7 @@ class ExprTyper
 					}
 				}
 
-				return makeTyped(expr, TArrayDecl(elems), BaseType.tArray(t));
+				return makeTyped(expr, TArrayDecl(elems), BaseType.tArray(t != null ? t : makeMonomorph()));
 
 			case ECall(e, params):
 				var t = typeExpr(e);
@@ -241,7 +286,7 @@ class ExprTyper
 				return makeTyped(expr, TUnop(op, postFix, t), Operator.unop(op, t.t));
 
 			case EFunction(name, f):
-				var at = [];
+				var at:Array<{ name:String, opt:Bool, t:Type }> = [];
 				var args = [];
 
 				var fid = name != null ? symbolTable.addVar(name) : -1;
@@ -251,11 +296,20 @@ class ExprTyper
 				{
 					var sid = symbolTable.addVar(a.name);
 					symbolTable[sid] = SVar(convertComplexType(a.type));
+					var t:Type = switch (symbolTable.getVar(sid))
+					{
+						case null:
+							throw "symbol doesn't exist";
+
+						case value:
+							value;
+					}
+					var opt = a.opt;
 
 					at.push({
 						name: a.name,
-						opt: a.opt,
-						t: symbolTable.getVar(sid)
+						opt: opt != null ? opt : false,
+						t: t
 					});
 
 					args.push({
@@ -276,7 +330,8 @@ class ExprTyper
 					symbolTable[fid] = SVar(TFun(at, convertComplexType(f.ret)));
 				}
 
-				var t = typeExpr(f.expr);
+				var fe = f.expr;
+				var t = fe != null ? typeExpr(fe) : emptyTypedExpr();
 				symbolTable.leave();
 
 				var ft = TFun(at, t.t); // TODO doing double work? see previous if
@@ -286,18 +341,19 @@ class ExprTyper
 					t: t.t
 				}), ft);
 
-				if (fid != -1)
+				if (name != null)
 				{
 					symbolTable[fid] = SVar(ft);
-
-					return makeTyped(expr, TVar({
-						t: null,
-						name: name,
-						meta: null,
+					var v:TVar = {
+						t: ft,
+						name: name != null ? name : "", // null safety is weird here
+						meta: MetaAccessImpl.make(null),
 						id: fid,
 						extra: null,
 						capture: false
-					}, te), ft);
+					};
+
+					return makeTyped(expr, TVar(v, te), ft);
 				}
 				else
 				{
@@ -307,7 +363,8 @@ class ExprTyper
 			case EVars(vars):
 				var v = vars[0]; // TODO how to make multiple nodes from this?
 				var sid = symbolTable.addVar(v.name);
-				var t = v.expr != null ? typeExpr(v.expr) : null;
+				var e = v.expr;
+				var t = e != null ? typeExpr(e) : null;
 				var tt = t != null ? t.t : makeMonomorph();
 				symbolTable[sid] = SVar(tt);
 
@@ -335,7 +392,7 @@ class ExprTyper
 				return makeTyped(expr, TBlock(elems), t);
 
 			case EFor(it, expr):
-				var s = null;
+				var s;
 				var min = 0;
 				var max = 0;
 
@@ -357,7 +414,14 @@ class ExprTyper
 								switch (e1.expr)
 								{
 									case EConst(CInt(i)):
-										min = Std.parseInt(i);
+										min = switch (Std.parseInt(i))
+										{
+											case null:
+												throw "invalid integer";
+
+											case value:
+												value;
+										}
 
 									default:
 										throw "unsuported for syntax";
@@ -366,7 +430,14 @@ class ExprTyper
 								switch (e2.expr)
 								{
 									case EConst(CInt(i)):
-										max = Std.parseInt(i);
+										max = switch (Std.parseInt(i))
+										{
+											case null:
+												throw "invalid integer";
+
+											case value:
+												value;
+										}
 
 									default:
 										throw "unsuported for syntax";
@@ -492,19 +563,21 @@ class ExprTyper
 						};
 					}
 
-					if (c.guard != null)
+					var g = c.guard;
+					if (g != null)
 					{
 						cond = {
 							expr: EBinop(OpBoolAnd, {
 								expr: EParenthesis(cond),
 								pos: null
-							}, c.guard),
+							}, g),
 							pos: null
 						};
 					}
 
+					var ce = c.expr;
 					eif = {
-						expr: EIf(cond, c.expr, eif),
+						expr: EIf(cond, ce != null ? ce : emptyExpr(), eif),
 						pos: null
 					};
 				}
@@ -514,7 +587,7 @@ class ExprTyper
 			case ETry(e, catches):
 				symbolTable.enter();
 				var t = typeExpr(e);
-				var elems = [];
+				var elems:Array<{ v:TVar, expr:TypedExpr }> = [];
 
 				for (c in catches)
 				{
@@ -522,15 +595,23 @@ class ExprTyper
 					var sid = symbolTable.addVar(c.name);
 					symbolTable[sid] = SVar(convertComplexType(c.type));
 					var t = typeExpr(c.expr);
+					var vt:Type = switch (symbolTable.getVar(sid))
+					{
+						case null:
+							throw 'unknown symbol $sid';
+
+						case value:
+							value;
+					}
 
 					elems.push({
 						v: {
 							capture: false,
 							extra: null,
 							id: sid,
-							meta: null,
+							meta: MetaAccessImpl.make(null),
 							name: c.name,
-							t: symbolTable.getVar(sid)
+							t: vt
 						},
 						expr: t
 					});
@@ -541,9 +622,9 @@ class ExprTyper
 				return makeTyped(expr, TTry(t, elems), BaseType.tVoid); // TODO check
 
 			case EReturn(e):
-				var t = typeExpr(e);
+				var t = e != null ? typeExpr(e) : null;
 
-				return makeTyped(expr, TReturn(t), t.t);
+				return makeTyped(expr, TReturn(t), t != null ? t.t : BaseType.tVoid);
 
 			case EBreak:
 				return makeTyped(expr, TBreak, BaseType.tVoid);
@@ -627,11 +708,16 @@ class ExprTyper
 	function makeMonomorph():Type
 	{
 		// TODO allow this to be changed after unification
-		return TMono(new RefImpl(null));
+		return TMono(RefImpl.make(null));
 	}
 
-	function convertComplexType(t:ComplexType):Type
+	function convertComplexType(t:Null<ComplexType>):Type
 	{
+		if (t == null)
+		{
+			return makeMonomorph();
+		}
+
 		return switch (t)
 		{
 			case TPath(p): // TODO convert TPath to Type

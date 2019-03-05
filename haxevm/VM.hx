@@ -35,7 +35,14 @@ class VM
 							{
 								if (f.name == "main")
 								{
-									evalExpr(f.expr());
+									switch (f.expr())
+									{
+										case null:
+											throw "main function doesn't have expr";
+
+										case value:
+											evalExpr(value);
+									}
 									return;
 								}
 							}
@@ -365,7 +372,7 @@ class VM
 				return EVoid;
 
 			case TReturn(e):
-				throw FCReturn(eval(e, context));
+				throw FCReturn(e != null ? eval(e, context) : EVoid);
 
 			case TBreak:
 				throw FCBreak;
@@ -451,12 +458,14 @@ class VM
 				"Void";
 
 			case EIdent(id):
-				if (!context.exists(id))
+				switch (context[id])
 				{
-					throw 'using unbound variable $id';
-				}
+					case null:
+						throw 'using unbound variable $id';
 
-				EVal2str(context[id], context);
+					case value:
+						EVal2str(value, context);
+				}
 		}
 	}
 

@@ -11,7 +11,14 @@ abstract Context(ContextData)
 	@:arrayAccess
 	inline function get(key:Int):EVal
 	{
-		return this.current[key];
+		return switch (this.current[key])
+		{
+			case null:
+				throw "symbol doesn't exist";
+
+			case value:
+				value;
+		}
 	}
 
 	@:arrayAccess

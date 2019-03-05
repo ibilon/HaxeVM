@@ -1,2 +1,2 @@
 --macro haxevm.HaxelibPath.init()
-#--macro nullSafety("haxevm")
+--macro nullSafety("haxevm", Strict)

@@ -9,9 +9,9 @@ import haxevm.typer.RefImpl;
 enum Symbol
 {
 	SModule(m:Module);
-	SType(t:ModuleType);
-	SField(f:ClassField);
-	SVar(t:Type);
+	SType(t:Null<ModuleType>);
+	SField(f:Null<ClassField>);
+	SVar(t:Null<Type>);
 }
 
 @:forward(enter, leave, getSymbol)
@@ -23,7 +23,7 @@ abstract SymbolTable(SymbolTableData)
 
 		var sid = addVar("trace");
 		var arg = {
-			t: TMono(new RefImpl(null)),
+			t: TMono(RefImpl.make(null)),
 			opt: false,
 			name: "value"
 		};
@@ -33,7 +33,14 @@ abstract SymbolTable(SymbolTableData)
 	@:arrayAccess
 	inline function get(key:Int):Symbol
 	{
-		return this.data[key];
+		return switch (this.data[key])
+		{
+			case null:
+				throw "symbol doesn't exist";
+
+			case value:
+				value;
+		}
 	}
 
 	@:arrayAccess
@@ -74,7 +81,7 @@ abstract SymbolTable(SymbolTableData)
 		}
 	}
 
-	public inline function getType(id:Int):ModuleType
+	public inline function getType(id:Int):Null<ModuleType>
 	{
 		return switch (get(id))
 		{
@@ -82,11 +89,11 @@ abstract SymbolTable(SymbolTableData)
 				t;
 
 			default:
-				throw "symbol isn't of type SVar";
+				throw "symbol isn't of type SType";
 		}
 	}
 
-	public inline function getField(id:Int):ClassField
+	public inline function getField(id:Int):Null<ClassField>
 	{
 		return switch (get(id))
 		{
@@ -94,11 +101,11 @@ abstract SymbolTable(SymbolTableData)
 				f;
 
 			default:
-				throw "symbol isn't of type SVar";
+				throw "symbol isn't of type SField";
 		}
 	}
 
-	public inline function getVar(id:Int):Type
+	public inline function getVar(id:Int):Null<Type>
 	{
 		return switch (get(id))
 		{
@@ -135,7 +142,14 @@ private class SymbolTableData
 
 	public inline function getSymbol(name:String):Int
 	{
-		return current[name];
+		return switch (current[name])
+		{
+			case null:
+				throw "symbol doesn't exist";
+
+			case value:
+				value;
+		}
 	}
 
 	public inline function enter()
