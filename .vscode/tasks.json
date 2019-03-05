@@ -24,6 +24,23 @@
 			}
 		},
 		{
+			"label": "build cpp",
+			"type": "shell",
+			"command": "haxe",
+			"args": [
+				"extraParams.hxml",
+				"--main",
+				"haxevm.Main",
+				"-cpp",
+				"build/cpp"
+			],
+			"problemMatcher": [
+				"$haxe-absolute",
+				"$haxe",
+				"$haxe-error"
+			]
+		},
+		{
 			"label": "todos",
 			"type": "shell",
 			"command": "grep",

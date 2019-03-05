@@ -3,6 +3,8 @@ package haxevm;
 import haxe.macro.Type.ClassField;
 import haxe.macro.Type.ModuleType;
 import haxe.macro.Type.Type;
+import haxevm.typer.BaseType;
+import haxevm.typer.RefImpl;
 
 enum Symbol
 {
@@ -21,11 +23,11 @@ abstract SymbolTable(SymbolTableData)
 
 		var sid = addVar("trace");
 		var arg = {
-			t: TMono(new haxevm.typer.RefImpl(null)),
+			t: TMono(new RefImpl(null)),
 			opt: false,
 			name: "value"
 		};
-		this.data[sid] = SVar(TFun([arg], haxevm.typer.BaseType.Void));
+		this.data[sid] = SVar(TFun([arg], BaseType.tVoid));
 	}
 
 	@:arrayAccess

@@ -41,15 +41,15 @@ class Operator
 			case OpMod, OpMult, OpAdd, OpSub:
 				if (BaseType.isFloat(a) || BaseType.isFloat(b))
 				{
-					BaseType.Float;
+					BaseType.tFloat;
 				}
 				else
 				{
-					BaseType.Int;
+					BaseType.tInt;
 				}
 
 			case OpDiv:
-				BaseType.Float;
+				BaseType.tFloat;
 
 			default:
 				throw "not arithmetic";
@@ -71,7 +71,7 @@ class Operator
 					throw '$b should be Int';
 				}
 
-				BaseType.Int;
+				BaseType.tInt;
 
 			default:
 				throw "not bitwise";
@@ -85,7 +85,7 @@ class Operator
 			case OpEq, OpNotEq:
 				if (a == b || (BaseType.isNumeric(a) && BaseType.isNumeric(b)))
 				{
-					BaseType.Bool;
+					BaseType.tBool;
 				}
 				else
 				{
@@ -95,7 +95,7 @@ class Operator
 			case OpLt, OpLte, OpGt, OpGte:
 				if (BaseType.isNumeric(a) && BaseType.isNumeric(b))
 				{
-					BaseType.Bool;
+					BaseType.tBool;
 				}
 				else
 				{
@@ -113,7 +113,7 @@ class Operator
 					throw '$b should be Bool';
 				}
 
-				BaseType.Bool;
+				BaseType.tBool;
 
 			default:
 				throw "not boolean";

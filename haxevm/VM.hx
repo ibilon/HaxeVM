@@ -17,6 +17,7 @@ class VM
 	{
 		this.compilationOutput = compilationOutput;
 		this.mainClass = mainClass;
+		// TODO populate context with top level symbol table
 	}
 
 	public function run():Void
@@ -397,7 +398,7 @@ class VM
 			case TLocal(v):
 				if (!context.exists(v.id))
 				{
-					throw 'using ubbound variable ${v.id}';
+					throw 'using unbound variable ${v.id}';
 				}
 
 				return context[v.id];

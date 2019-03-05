@@ -35,16 +35,16 @@ class ExprTyper
 				switch (c)
 				{
 					case CInt(v):
-						return makeTyped(expr, TConst(TInt(Std.parseInt(v))), BaseType.Int);
+						return makeTyped(expr, TConst(TInt(Std.parseInt(v))), BaseType.tInt);
 
 					case CFloat(f):
-						return makeTyped(expr, TConst(TFloat(f)), BaseType.Float);
+						return makeTyped(expr, TConst(TFloat(f)), BaseType.tFloat);
 
 					case CIdent("true"):
-						return makeTyped(expr, TConst(TBool(true)), BaseType.Bool);
+						return makeTyped(expr, TConst(TBool(true)), BaseType.tBool);
 
 					case CIdent("false"):
-						return makeTyped(expr, TConst(TBool(false)), BaseType.Bool);
+						return makeTyped(expr, TConst(TBool(false)), BaseType.tBool);
 
 					case CIdent("null"):
 						return makeTyped(expr, TConst(TNull), makeMonomorph());
@@ -66,7 +66,7 @@ class ExprTyper
 						throw "no regex support";
 
 					case CString(s):
-						return makeTyped(expr, TConst(TString(s)), BaseType.String);
+						return makeTyped(expr, TConst(TString(s)), BaseType.tString);
 				}
 
 			case EArray(e1, e2):
@@ -152,7 +152,7 @@ class ExprTyper
 						kind: FVar(AccNormal, AccNormal),
 						meta: null,
 						name: f.field,
-						overloads: cast new RefImpl([]),
+						overloads: (new RefImpl([]) : Ref<Array<ClassField>>),
 						params: [],
 						pos: cast {
 							file: "",
@@ -191,7 +191,7 @@ class ExprTyper
 					}
 				}
 
-				return makeTyped(expr, TArrayDecl(elems), BaseType.Array(t));
+				return makeTyped(expr, TArrayDecl(elems), BaseType.tArray(t));
 
 			case ECall(e, params):
 				var t = typeExpr(e);
@@ -330,7 +330,7 @@ class ExprTyper
 				}
 				symbolTable.leave();
 
-				var t = elems.length > 0 ? elems[elems.length - 1].t : BaseType.Void;
+				var t = elems.length > 0 ? elems[elems.length - 1].t : BaseType.tVoid;
 
 				return makeTyped(expr, TBlock(elems), t);
 
@@ -431,7 +431,7 @@ class ExprTyper
 					symbolTable.leave();
 				}
 
-				return makeTyped(expr, TBlock(block), BaseType.Void); // TODO check
+				return makeTyped(expr, TBlock(block), BaseType.tVoid); // TODO check
 
 			case EIf(econd, eif, eelse):
 				symbolTable.enter();
@@ -450,7 +450,7 @@ class ExprTyper
 				symbolTable.leave();
 				symbolTable.leave();
 
-				return makeTyped(expr, TIf(c, i, e), BaseType.Void); // TODO check
+				return makeTyped(expr, TIf(c, i, e), BaseType.tVoid); // TODO check
 
 			case EWhile(econd, e, normalWhile):
 				symbolTable.enter();
@@ -466,7 +466,7 @@ class ExprTyper
 				symbolTable.leave();
 				symbolTable.leave();
 
-				return makeTyped(expr, TWhile(c, t, normalWhile), BaseType.Void); // TODO check
+				return makeTyped(expr, TWhile(c, t, normalWhile), BaseType.tVoid); // TODO check
 
 			case ESwitch(e, cases, edef):
 				// TODO cases exprs must be from the switch expr
@@ -538,7 +538,7 @@ class ExprTyper
 				}
 				symbolTable.leave();
 
-				return makeTyped(expr, TTry(t, elems), BaseType.Void); // TODO check
+				return makeTyped(expr, TTry(t, elems), BaseType.tVoid); // TODO check
 
 			case EReturn(e):
 				var t = typeExpr(e);
@@ -546,15 +546,15 @@ class ExprTyper
 				return makeTyped(expr, TReturn(t), t.t);
 
 			case EBreak:
-				return makeTyped(expr, TBreak, BaseType.Void);
+				return makeTyped(expr, TBreak, BaseType.tVoid);
 
 			case EContinue:
-				return makeTyped(expr, TContinue, BaseType.Void);
+				return makeTyped(expr, TContinue, BaseType.tVoid);
 
 			case EThrow(e):
 				var t = typeExpr(e);
 
-				return makeTyped(expr, TThrow(t), BaseType.Void);
+				return makeTyped(expr, TThrow(t), BaseType.tVoid);
 
 			case ECast(e, t):
 				var t = typeExpr(e);
@@ -638,16 +638,16 @@ class ExprTyper
 				switch (p.name)
 				{
 					case "Int":
-						BaseType.Int;
+						BaseType.tInt;
 
 					case "Bool":
-						BaseType.Bool;
+						BaseType.tBool;
 
 					case "Float":
-						BaseType.Float;
+						BaseType.tFloat;
 
 					case "String":
-						BaseType.String;
+						BaseType.tString;
 
 					default: throw "unknown type";
 				}
@@ -681,6 +681,6 @@ class ExprTyper
 		}
 
 		var line = bounds.max + 1;
-		return makeTyped(expr, TConst(TString(module.file + ":" + line + ":")), BaseType.String);
+		return makeTyped(expr, TConst(TString(module.file + ":" + line + ":")), BaseType.tString);
 	}
 }

@@ -4,7 +4,7 @@ import haxe.macro.Type;
 
 class BaseType
 {
-	public static final Int:Type = TAbstract(new RefImpl({
+	public static final tInt:Type = TAbstract(new RefImpl({
 		array: [],
 		binops: [],
 		doc: "",
@@ -42,7 +42,7 @@ class BaseType
 		}
 	}
 
-	public static final Float:Type = TAbstract(new RefImpl({
+	public static final tFloat:Type = TAbstract(new RefImpl({
 		array: [],
 		binops: [],
 		doc: "",
@@ -80,10 +80,10 @@ class BaseType
 		}
 	}
 
-	public static final String:Type = TInst(new RefImpl({
+	public static final tString:Type = TInst(new RefImpl({
 		constructor: null,
 		doc: "",
-		fields: cast new RefImpl([]),
+		fields: (new RefImpl([]) : Ref<Array<ClassField>>),
 		init: null,
 		interfaces: [],
 		isExtern: true,
@@ -102,7 +102,7 @@ class BaseType
 			max: 0,
 			min: 0
 		},
-		statics: cast new RefImpl([]),
+		statics: (new RefImpl([]) : Ref<Array<ClassField>>),
 		superClass: null,
 		exclude: () -> {}
 	}), []);
@@ -119,7 +119,7 @@ class BaseType
 		}
 	}
 
-	public static final Void:Type = TAbstract(new RefImpl({
+	public static final tVoid:Type = TAbstract(new RefImpl({
 		array: [],
 		binops: [],
 		doc: "",
@@ -157,12 +157,12 @@ class BaseType
 		}
 	}
 
-	public static function Array(t:Type):Type
+	public static function tArray(t:Type):Type
 	{
 		return TInst(new RefImpl({
 			constructor: null,
 			doc: "",
-			fields: cast new RefImpl([]),
+			fields: (new RefImpl([]) : Ref<Array<ClassField>>),
 			init: null,
 			interfaces: [],
 			isExtern: true,
@@ -180,7 +180,7 @@ class BaseType
 				t: TInst(new RefImpl({
 					constructor: null,
 					doc: null,
-					fields: cast new RefImpl([]),
+					fields: (new RefImpl([]) : Ref<Array<ClassField>>),
 					init: null,
 					interfaces: [],
 					isExtern: false,
@@ -199,7 +199,7 @@ class BaseType
 						max: 0,
 						min: 0
 					},
-					statics: cast new RefImpl([]),
+					statics: (new RefImpl([]) : Ref<Array<ClassField>>),
 					superClass: null,
 					exclude: () -> {}
 				}), [])
@@ -209,7 +209,7 @@ class BaseType
 				max: 0,
 				min: 0
 			},
-			statics: cast new RefImpl([]),
+			statics: (new RefImpl([]) : Ref<Array<ClassField>>),
 			superClass: null,
 			exclude: () -> {}
 		}), [t]);
@@ -227,7 +227,7 @@ class BaseType
 		}
 	}
 
-	public static final Bool:Type = TAbstract(new RefImpl({
+	public static final tBool:Type = TAbstract(new RefImpl({
 		array: [],
 		binops: [],
 		doc: "",

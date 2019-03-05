@@ -24,12 +24,12 @@ class ClassTyper
 
 		var fields:Array<ClassField> = [];
 		var statics:Array<ClassField> = [];
-		var overrides:Array<ClassField> = [];
+		var overrides:Array<Ref<ClassField>> = [];
 
 		var cls:ClassType = {
 			constructor: null,
 			doc: def.doc,
-			fields: cast new RefImpl(fields),
+			fields: (new RefImpl(fields) : Ref<Array<ClassField>>),
 			init: null,
 			interfaces: [],
 			isExtern: false,
@@ -37,14 +37,14 @@ class ClassTyper
 			isInterface: false,
 			isPrivate: false,
 			kind: KNormal,
-			meta: cast new MetaAccessImpl(def.meta),
+			meta: (new MetaAccessImpl(def.meta) : MetaAccess),
 			module: module.name,
 			name: def.name,
-			overrides: cast new RefImpl(overrides),
+			overrides: overrides,
 			pack: [],
 			params: [], // def.params,
 			pos: null,
-			statics: cast new RefImpl(statics),
+			statics: (new RefImpl(statics) : Ref<Array<ClassField>>),
 			superClass: null,
 			exclude: () -> {}
 		};
@@ -91,9 +91,9 @@ class ClassTyper
 				isFinal: false,
 				isPublic: false,
 				kind: null,
-				meta: cast new MetaAccessImpl(d.meta),
+				meta: (new MetaAccessImpl(d.meta) : MetaAccess),
 				name: d.name,
-				overloads: cast new RefImpl([]),
+				overloads: (new RefImpl([]) : Ref<Array<ClassField>>),
 				params: [],
 				pos: null,
 				type: null,
@@ -183,7 +183,7 @@ class ClassTyper
 
 			if (isOverride)
 			{
-				overrides.push(field);
+				overrides.push(new RefImpl(field));
 			}
 			if (isStatic)
 			{
