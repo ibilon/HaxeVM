@@ -261,7 +261,6 @@ class ExprTyper
 
 				if (isTrace(e))
 				{
-					// TODO propagate pos info from compiler
 					elems.unshift(tracePosition(e));
 				}
 
@@ -648,9 +647,9 @@ class ExprTyper
 				return makeTyped(expr, TMeta(s, t), t.t);
 
 			case ECheckType(e, t):
-				var t = typeExpr(e);
+				var te = typeExpr(e);
 
-				return makeTyped(expr, TParenthesis(t), makeMonomorph()); // TODO
+				return makeTyped(expr, TParenthesis(te), convertComplexType(t));
 
 			case ETernary(econd, eif, eelse):
 				symbolTable.enter();

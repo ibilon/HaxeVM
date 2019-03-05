@@ -50,7 +50,6 @@ class Switch
 			}
 		}
 
-		//TODO haxe doesn't give the same results
 		test(0, false);
 		test(1, false);
 		test(2, false);
