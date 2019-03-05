@@ -17,3 +17,4 @@ script:
   # check compilation status on cpp
   - haxelib install hxcpp
   - haxe extraParams.hxml --main haxevm.Main -cpp build/cpp/
+  - build/cpp/Main tests/samples/Main.hx
