@@ -10,6 +10,10 @@ haxe:
 sudo: false
 
 script:
+  # test compilation/show errors
   - haxe extraParams.hxml --run haxevm.Main tests/samples/Main.hx
+  # run the tests
   - haxe test.hxml
+  # check compilation status on cpp
+  - haxelib install hxcpp
   - haxe extraParams.hxml --main haxevm.Main -cpp build/cpp/
