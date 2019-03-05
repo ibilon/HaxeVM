@@ -18,3 +18,7 @@ script:
   - haxelib install hxcpp
   - haxe extraParams.hxml --main haxevm.Main -cpp build/cpp/
   - build/cpp/Main tests/samples/Main.hx
+  # check compilation status on js
+  - haxelib git hxnodejs https://github.com/HaxeFoundation/hxnodejs.git
+  - haxe extraParams.hxml --main haxevm.Main -js build/haxevm.js -lib hxnodejs
+  - node build/haxevm.js tests/samples/Main.hx
