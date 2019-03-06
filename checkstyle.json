@@ -120,7 +120,7 @@
 		{
 			"props": {
 				"ignoreSetter": true,
-				"ignoreFormat": "^(main|run)$",
+				"ignoreFormat": "^(main|run|make)$",
 				"ignoreConstructorParameter": true
 			},
 			"type": "HiddenField"

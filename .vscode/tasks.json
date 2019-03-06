@@ -80,7 +80,9 @@
 				"-js",
 				"build/haxevm.js",
 				"-lib",
-				"hxnodejs"
+				"hxnodejs",
+				"-D",
+				"js-es=6"
 			],
 			"problemMatcher": [
 				"$haxe-absolute",
