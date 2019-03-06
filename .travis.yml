@@ -20,5 +20,5 @@ script:
   - build/cpp/Main tests/samples/Main.hx
   # check compilation status on js
   - haxelib git hxnodejs https://github.com/HaxeFoundation/hxnodejs.git
-  - haxe extraParams.hxml --main haxevm.Main -js build/haxevm.js -lib hxnodejs
+  - haxe extraParams.hxml --main haxevm.Main -js build/haxevm.js -lib hxnodejs -D js-es=6
   - node build/haxevm.js tests/samples/Main.hx
