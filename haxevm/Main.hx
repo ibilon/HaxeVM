@@ -1,5 +1,6 @@
 package haxevm;
 
+import haxe.io.Output;
 import sys.FileSystem;
 import sys.io.File;
 
@@ -52,6 +53,11 @@ class Main
 			defines[define[0]] = define.length == 1 ? "1" : define[1];
 		}
 
+		runFile(fname, defines);
+	}
+
+	public static function runFile(fname:String, defines:Map<String, String>, ?output:Output)
+	{
 		var mainClass = fname.withoutDirectory().withoutExtension();
 		var classPath = fname.directory();
 
@@ -61,6 +67,8 @@ class Main
 		}
 
 		var compilationOutput = new Compiler(fileLoader, mainClass, defines).compile();
-		new VM(compilationOutput, mainClass).run();
+
+		var output:Output = output != null ? output : Sys.stdout();
+		new VM(compilationOutput, mainClass, output).run();
 	}
 }

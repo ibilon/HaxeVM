@@ -1,10 +1,12 @@
 package haxevm;
 
+import haxe.io.Output;
 import haxe.macro.Type;
 import haxevm.Compiler.CompilationOutput;
 import haxevm.vm.Context;
 import haxevm.vm.EVal;
 import haxevm.vm.EValTools;
+import haxevm.vm.FieldAccessUtils;
 import haxevm.vm.FlowControl;
 import haxevm.vm.Operator;
 
@@ -12,11 +14,13 @@ class VM
 {
 	var compilationOutput:CompilationOutput;
 	var mainClass:String;
+	var output:Output;
 
-	public function new(compilationOutput:CompilationOutput, mainClass:String)
+	public function new(compilationOutput:CompilationOutput, mainClass:String, output:Output)
 	{
 		this.compilationOutput = compilationOutput;
 		this.mainClass = mainClass;
+		this.output = output;
 		// TODO populate context with top level symbol table
 	}
 
@@ -59,7 +63,7 @@ class VM
 		}
 	}
 
-	static function evalExpr(texpr:TypedExpr):EVal
+	function evalExpr(texpr:TypedExpr):EVal
 	{
 		var context = new Context();
 
@@ -72,14 +76,15 @@ class VM
 				buf.push(EVal2str(e, context));
 			}
 
-			Sys.println(buf.join(" "));
+			output.writeString(buf.join(" "));
+			output.writeString("\n");
 			return EVoid;
 		});
 
 		return eval(texpr, context);
 	}
 
-	static function eval(texpr:TypedExpr, context:Context):EVal
+	function eval(texpr:TypedExpr, context:Context):EVal
 	{
 		switch (texpr.expr)
 		{
@@ -150,7 +155,7 @@ class VM
 				switch (parent)
 				{
 					case EObject(fields):
-						var name = nameOf(fa);
+						var name = FieldAccessUtils.nameOf(fa);
 
 						for (f in fields)
 						{
@@ -412,7 +417,7 @@ class VM
 		}
 	}
 
-	static function EVal2str(e:EVal, context:Context):String
+	function EVal2str(e:EVal, context:Context):String
 	{
 		return switch (e)
 		{
@@ -466,21 +471,6 @@ class VM
 					case value:
 						EVal2str(value, context);
 				}
-		}
-	}
-
-	public static function nameOf(fa:FieldAccess):String
-	{
-		return switch (fa)
-		{
-			case FInstance(_, _, _.get() => cf), FStatic(_, _.get() => cf), FAnon(_.get() => cf), FClosure(_, _.get() => cf):
-				cf.name;
-
-			case FDynamic(s):
-				s;
-
-			case FEnum(_, ef):
-				ef.name;
 		}
 	}
 }

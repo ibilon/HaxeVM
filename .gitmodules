@@ -7,3 +7,6 @@
 [submodule "libs/utest"]
 	path = libs/utest
 	url = https://github.com/haxe-utest/utest.git
+[submodule "libs/mcover"]
+	path = libs/mcover
+	url = https://github.com/massiveinteractive/mcover.git

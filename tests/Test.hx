@@ -1,3 +1,6 @@
+import haxe.CallStack;
+import haxe.io.Output;
+import mcover.coverage.MCoverage;
 import sys.io.Process;
 import utest.Assert;
 import utest.Runner;
@@ -5,10 +8,30 @@ import utest.ui.Report;
 
 using haxe.io.Path;
 
-enum CompileResult
+enum RunResult
 {
 	Success(output:String);
 	Error(output:String);
+}
+
+class StringBufferOutput extends Output
+{
+	var buf:StringBuf;
+
+	public function new()
+	{
+		buf = new StringBuf();
+	}
+
+	override public function writeString(value:String, ?encoding):Void
+	{
+		buf.add(value);
+	}
+
+	public function toString():String
+	{
+		return buf.toString();
+	}
 }
 
 class Test extends utest.Test
@@ -21,36 +44,25 @@ class Test extends utest.Test
 		r.addCase(new ExprTest());
 		r.addCase(new MiscTest());
 
-		Report.create(r, NeverShowSuccessResults, AlwaysShowHeader);
+		r.onComplete.add(_ -> { trace("a"); MCoverage.getLogger().report(); });
+		//Report.create(r, NeverShowSuccessResults, AlwaysShowHeader);
 		r.run();
 	}
 
-	function runFile(file:String, realHaxe:Bool, ?defines:Map<String, String>) : CompileResult
+	function runHaxe(file:String, defines:Map<String, String>):RunResult
 	{
 		var cwd = Sys.getCwd();
+		Sys.setCwd(file.directory());
 
-		var definesArgs = [];
+		var args = ["-main", file.withoutDirectory().withoutExtension(), "--interp"];
 
-		if (defines != null)
+		for (k in defines.keys())
 		{
-			for (k in defines.keys())
-			{
-				definesArgs.push("-D");
-				definesArgs.push('$k=${defines[k]}');
-			}
+			args.push("-D");
+			args.push('$k=${defines[k]}');
 		}
 
-		var args = if (realHaxe)
-		{
-			Sys.setCwd(file.directory());
-			["-main", file.withoutDirectory().withoutExtension(), "--interp"];
-		}
-		else
-		{
-			["extraParams.hxml", "--run", "haxevm.Main", file];
-		}
-
-		var process = new Process("haxe", args.concat(definesArgs));
+		var process = new Process("haxe", args);
 
 		var output = process.stdout.readAll().toString();
 		var error = process.stderr.readAll().toString();
@@ -66,10 +78,26 @@ class Test extends utest.Test
 		return Success(output);
 	}
 
+	function runFile(file:String, defines:Map<String, String>):RunResult
+	{
+		var output = new StringBufferOutput();
+
+		try
+		{
+			haxevm.Main.runFile(file, defines, output);
+			return Success(output.toString());
+		}
+		catch (a:Any)
+		{
+			return Error(CallStack.toString(CallStack.exceptionStack()));
+		}
+	}
+
 	function compareFile(file:String, ?defines:Map<String, String>)
 	{
-		var real = runFile(file, true, defines);
-		var haxevm = runFile(file, false, defines);
+		var defines = defines != null ? defines : new Map<String, String>();
+		var real = runHaxe(file, defines);
+		var haxevm = runFile(file, defines);
 
 		switch ([real, haxevm])
 		{

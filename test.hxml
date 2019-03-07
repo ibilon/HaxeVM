@@ -1,5 +1,8 @@
+extraParams.hxml
 -cp tests
 -cp libs/utest/src
 libs/utest/extraParams.hxml
+-cp libs/mcover/src
+--macro mcover.MCover.coverage(["haxevm"], ["."], null)
 -main Test
 --interp

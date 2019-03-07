@@ -524,7 +524,7 @@ class Operator
 		switch (eval(parent, context))
 		{
 			case EObject(fields):
-				var name = VM.nameOf(fa);
+				var name = FieldAccessUtils.nameOf(fa);
 
 				for (f in fields)
 				{
