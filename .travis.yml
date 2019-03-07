@@ -10,9 +10,11 @@ haxe:
 sudo: false
 
 before_script:
-  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-  - chmod +x ./cc-test-reporter
-  - ./cc-test-reporter before-build
+  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
+      curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter;
+      chmod +x ./cc-test-reporter;
+      ./cc-test-reporter before-build;
+    fi
 
 script:
   # test compilation/show errors
@@ -29,4 +31,6 @@ script:
   - node build/haxevm.js tests/samples/Main.hx
 
 after_script:
-  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
+      ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT -t lcov;
+    fi
