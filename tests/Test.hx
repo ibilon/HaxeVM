@@ -1,6 +1,7 @@
 import haxe.CallStack;
 import haxe.io.Output;
 import mcover.coverage.MCoverage;
+import mcover.coverage.client.LcovPrintClient;
 import sys.io.Process;
 import utest.Assert;
 import utest.Runner;
@@ -44,7 +45,9 @@ class Test extends utest.Test
 		r.addCase(new ExprTest());
 		r.addCase(new MiscTest());
 
-		r.onComplete.add(_ -> { trace("a"); MCoverage.getLogger().report(); });
+		MCoverage.getLogger().addClient(new LcovPrintClient("Coverage report"));
+		r.onComplete.add(_ -> { MCoverage.getLogger().report(); });
+
 		//Report.create(r, NeverShowSuccessResults, AlwaysShowHeader);
 		r.run();
 	}

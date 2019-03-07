@@ -1,3 +1,4 @@
 .temp/mcover/
 .unittest/
 build/
+lcov.info

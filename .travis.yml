@@ -9,6 +9,11 @@ haxe:
 
 sudo: false
 
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+
 script:
   # test compilation/show errors
   - haxe extraParams.hxml --run haxevm.Main tests/samples/Main.hx
@@ -22,3 +27,6 @@ script:
   - haxelib git hxnodejs https://github.com/HaxeFoundation/hxnodejs.git
   - haxe extraParams.hxml --main haxevm.Main -js build/haxevm.js -lib hxnodejs -D js-es=6
   - node build/haxevm.js tests/samples/Main.hx
+
+after_script:
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
