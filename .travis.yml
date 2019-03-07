@@ -32,5 +32,7 @@ script:
 
 after_script:
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
+      mkdir coverage;
+      mv lcov.info coverage/lcov.info;
       ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT -t lcov;
     fi
