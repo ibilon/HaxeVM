@@ -1,4 +1,3 @@
 --macro haxevm.HaxelibPath.init()
-#--macro nullSafety("haxevm", Strict)
 -dce full
 -D analyzer-optimize
