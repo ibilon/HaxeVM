@@ -15,6 +15,12 @@ You can test it using haxelib:
 haxelib git haxevm https://github.com/ibilon/HaxeVM.git
 haxelib run haxevm path/to/file.hx
 ```
+Or from the repository:
+```
+git clone https://github.com/ibilon/HaxeVM.git
+cd HaxeVM
+haxe extraParams.hxml --run haxevm.Main path/to/file.hx
+```
 
 For example:
 
