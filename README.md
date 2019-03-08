@@ -1,7 +1,9 @@
 # HaxeVM
 
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](http://opensource.org/licenses/MIT)
 [![Build Status](https://travis-ci.org/ibilon/HaxeVM.svg?branch=master)](https://travis-ci.org/ibilon/HaxeVM)
 [![Issue Count](https://codeclimate.com/github/ibilon/HaxeVM/badges/issue_count.svg)](https://codeclimate.com/github/ibilon/HaxeVM)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/74d90b1dadf7b678d8a1/test_coverage)](https://codeclimate.com/github/ibilon/HaxeVM/test_coverage)
 
 Prototype compiler/virtual machine in Haxe for Haxe. Requires Haxe 4.
 

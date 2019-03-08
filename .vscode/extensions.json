@@ -1,6 +1,7 @@
 {
 	"recommendations": [
 		"nadako.vshaxe",
-		"vshaxe.haxe-test-adapter"
+		"vshaxe.haxe-test-adapter",
+		"brainfit.vscode-coverage-highlighter"
 	]
 }

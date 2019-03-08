@@ -40,7 +40,7 @@ class ExprTyper
 	{
 		return {
 			expr: EBlock([]),
-			pos: PositionImpl.make("", 0, 0)
+			pos: PositionImpl.makeEmpty()
 		}
 	}
 
@@ -48,7 +48,7 @@ class ExprTyper
 	{
 		return {
 			expr: TBlock([]),
-			pos: PositionImpl.make("", 0, 0),
+			pos: PositionImpl.makeEmpty(),
 			t: BaseType.tVoid
 		};
 	}

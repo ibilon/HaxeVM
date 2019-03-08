@@ -17,11 +17,7 @@ class BaseType
 		name: "Int",
 		pack: [],
 		params: [],
-		pos: cast {
-			file: "",
-			max: 0,
-			min: 0
-		},
+		pos: PositionImpl.makeEmpty(),
 		resolve: null,
 		resolveWrite: null,
 		to: [],
@@ -55,11 +51,7 @@ class BaseType
 		name: "Float",
 		pack: [],
 		params: [],
-		pos: cast {
-			file: "",
-			max: 0,
-			min: 0
-		},
+		pos: PositionImpl.makeEmpty(),
 		resolve: null,
 		resolveWrite: null,
 		to: [],
@@ -97,11 +89,7 @@ class BaseType
 		overrides: [],
 		pack: [],
 		params: [],
-		pos: cast {
-			file: "",
-			max: 0,
-			min: 0
-		},
+		pos: PositionImpl.makeEmpty(),
 		statics: RefImpl.make([]),
 		superClass: null,
 		exclude: () -> {}
@@ -132,11 +120,7 @@ class BaseType
 		name: "Void",
 		pack: [],
 		params: [],
-		pos: cast {
-			file: "",
-			max: 0,
-			min: 0
-		},
+		pos: PositionImpl.makeEmpty(),
 		resolve: null,
 		resolveWrite: null,
 		to: [],
@@ -194,21 +178,13 @@ class BaseType
 					overrides: [],
 					pack: ["Array"],
 					params: [],
-					pos: cast {
-						file: "",
-						max: 0,
-						min: 0
-					},
+					pos: PositionImpl.makeEmpty(),
 					statics: RefImpl.make([]),
 					superClass: null,
 					exclude: () -> {}
 				}), [])
 			}],
-			pos: cast {
-				file: "",
-				max: 0,
-				min: 0
-			},
+			pos: PositionImpl.makeEmpty(),
 			statics: RefImpl.make([]),
 			superClass: null,
 			exclude: () -> {}
@@ -240,11 +216,7 @@ class BaseType
 		name: "Bool",
 		pack: [],
 		params: [],
-		pos: cast {
-			file: "",
-			max: 0,
-			min: 0
-		},
+		pos: PositionImpl.makeEmpty(),
 		resolve: null,
 		resolveWrite: null,
 		to: [],

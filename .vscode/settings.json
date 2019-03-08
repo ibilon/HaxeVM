@@ -8,5 +8,10 @@
 				"doc_gen"
 			]
 		}
-	]
+	],
+	"vscode-coverage-highlighter.files": [
+		"lcov.info"
+	],
+	"vscode-coverage-highlighter.defaultState": "disable",
+	"vscode-coverage-highlighter.wholeLine": true
 }

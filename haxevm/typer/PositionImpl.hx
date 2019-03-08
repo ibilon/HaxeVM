@@ -12,4 +12,9 @@ class PositionImpl
 			max: max
 		};
 	}
+
+	public static function makeEmpty():Position
+	{
+		return make("", 0, 0);
+	}
 }
