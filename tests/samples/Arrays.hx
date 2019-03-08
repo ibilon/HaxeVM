@@ -3,11 +3,16 @@ class Arrays
 	public static function main()
 	{
 		var a = [7, 5, 6];
+
+		$type(a);
+		$type(a[0]);
+
 		trace(a[0]);
 		trace(a[1]);
 		trace(a[2]);
 
 		var b = a[1] + 8.0;
+		$type(b);
 		trace(b);
 		b = -2;
 		trace(b);
@@ -36,6 +41,7 @@ class Arrays
 		trace(a);
 
 		var a = ["0","1","2"];
+		$type(a);
 		trace(a);
 		trace(a[3]);
 		trace(a);

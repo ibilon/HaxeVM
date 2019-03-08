@@ -9,6 +9,7 @@ class ConditionalCompilation
 		#end
 
 		var i = #if test 2 #else "hello" #end;
+		$type(i);
 		trace(i);
 	}
 }

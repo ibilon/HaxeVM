@@ -56,7 +56,7 @@ class Main
 		runFile(fname, defines);
 	}
 
-	public static function runFile(fname:String, defines:Map<String, String>, ?output:Output)
+	public static function runFile(fname:String, defines:Map<String, String>, ?stdout:Output, ?stderr:Output)
 	{
 		var mainClass = fname.withoutDirectory().withoutExtension();
 		var classPath = fname.directory();
@@ -66,9 +66,16 @@ class Main
 			return File.getContent(Path.join([classPath, path]));
 		}
 
-		var compilationOutput = new Compiler(fileLoader, mainClass, defines).compile();
+		var stdout:Output = stdout != null ? stdout : Sys.stdout();
+		var stderr:Output = stderr != null ? stderr : Sys.stderr();
 
-		var output:Output = output != null ? output : Sys.stdout();
-		new VM(compilationOutput, mainClass, output).run();
+		var compilationOutput = new Compiler(fileLoader, mainClass, defines).compile();
+		new VM(compilationOutput, mainClass, stdout).run();
+
+		for (warning in compilationOutput.warnings)
+		{
+			stderr.writeString(warning);
+			stderr.writeString("\n");
+		}
 	}
 }

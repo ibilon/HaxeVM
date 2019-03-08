@@ -27,6 +27,11 @@ class For
 			trace(i);
 		}
 
+		$type(for (i in 5...5)
+		{
+			trace(i);
+		});
+
 		trace(i);
 	}
 }

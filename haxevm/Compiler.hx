@@ -12,21 +12,26 @@ using haxe.io.Path;
 typedef CompilationOutput =
 {
 	symbolTable:SymbolTable,
-	modules:Array<Module>
+	modules:Array<Module>,
+	warnings:Array<String>
 }
 
 class Compiler
 {
-	var symbolTable:SymbolTable;
+	public var symbolTable:SymbolTable;
+	public var fileReader:String->String;
+	public var defines:Map<String, String>;
+	public var warnings:Array<String>;
+
 	var modules:Array<Module>;
-	var fileReader:String->String;
 	var mainClass:String;
-	var defines:Map<String, String>;
 
 	public function new(fileReader:String->String, mainClass:String, defines:Map<String, String>)
 	{
 		symbolTable = new SymbolTable();
 		modules = [];
+		warnings = [];
+
 		this.fileReader = fileReader;
 		this.mainClass = mainClass;
 		this.defines = defines;
@@ -38,7 +43,8 @@ class Compiler
 
 		return {
 			symbolTable: symbolTable,
-			modules: modules
+			modules: modules,
+			warnings: warnings
 		}
 	}
 
@@ -106,7 +112,7 @@ class Compiler
 			switch (decl.decl)
 			{
 				case EClass(d):
-					var cls = new ClassTyper(symbolTable, module, d).type();
+					var cls = new ClassTyper(this, module, d).type();
 					var type = ModuleType.TClassDecl(RefImpl.make(cls));
 					var id = switch (ids[d.name])
 					{

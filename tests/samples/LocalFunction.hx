@@ -7,6 +7,9 @@ class LocalFunction
 			trace(a);
 		}
 
+		$type(t);
+		$type(t(0));
+
 		t(1);
 		t(7);
 
@@ -21,6 +24,9 @@ class LocalFunction
 				trace("not a");
 			}
 		}
+
+		$type(u);
+		$type(u(true));
 
 		u(true);
 		u(false);

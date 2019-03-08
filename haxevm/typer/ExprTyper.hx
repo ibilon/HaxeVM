@@ -9,14 +9,14 @@ import haxevm.typer.RefImpl;
 
 class ExprTyper
 {
-	var symbolTable:SymbolTable;
+	var compiler:Compiler;
 	var module:Module;
 	var cls:ClassType;
 	var expr:Null<Expr>;
 
-	public function new(symbolTable:SymbolTable, module:Module, cls:ClassType, expr:Null<Expr>)
+	public function new(compiler:Compiler, module:Module, cls:ClassType, expr:Null<Expr>)
 	{
-		this.symbolTable = symbolTable;
+		this.compiler = compiler;
 		this.module = module;
 		this.cls = cls;
 		this.expr = expr;
@@ -51,6 +51,76 @@ class ExprTyper
 			pos: PositionImpl.makeEmpty(),
 			t: BaseType.tVoid
 		};
+	}
+
+	function typePrettyPrint(t:Type):String
+	{
+		function name(name:String, p:Array<Type>):String
+		{
+			return if (p.length == 0)
+			{
+				name;
+			}
+			else
+			{
+				'${name}<${p.map(typePrettyPrint).join(",")}>';
+			}
+		}
+
+		return switch (t)
+		{
+			case TInst(_.get() => t, p):
+				name(t.name, p);
+
+			case TAbstract(_.get() => t, p):
+				name(t.name, p);
+
+			case TAnonymous(_.get() => a):
+				var fields = [];
+
+				for (f in a.fields)
+				{
+					fields.push('${f.name} : ${typePrettyPrint(f.type)}');
+				}
+
+				var buf = new StringBuf();
+				buf.add('{ ');
+				buf.add(fields.join(", "));
+				buf.add(' }');
+				buf.toString();
+
+			case TFun(args, ret):
+				var pargs = [];
+
+				for (a in args)
+				{
+					if (a.name != "")
+					{
+						pargs.push('(${a.name} : ${typePrettyPrint(a.t)})');
+					}
+					else
+					{
+						pargs.push(typePrettyPrint(a.t));
+					}
+				}
+
+				if (args.length == 0)
+				{
+					pargs.push("Void");
+				}
+
+				var buf = new StringBuf();
+				buf.add(pargs.join(" -> "));
+				buf.add(" -> ");
+				buf.add(typePrettyPrint(ret));
+				buf.toString();
+
+			case TMono(t):
+				return 'Unknown<0>';
+
+			default:
+				throw "not supported";
+		}
 	}
 
 	function typeExpr(expr:Expr):TypedExpr
@@ -91,8 +161,8 @@ class ExprTyper
 						return makeTyped(expr, TConst(TSuper), makeMonomorph());
 
 					case CIdent(s):
-						var sid = symbolTable.getSymbol(s);
-						var type = switch (symbolTable.getVar(sid)) // TODO ident could be a package or module or type or field
+						var sid = compiler.symbolTable.getSymbol(s);
+						var type = switch (compiler.symbolTable.getVar(sid)) // TODO ident could be a package or module or type or field
 						{
 							case null:
 								throw "unknown symbol";
@@ -170,9 +240,9 @@ class ExprTyper
 				}
 
 			case EParenthesis(e):
-				symbolTable.enter();
+				compiler.symbolTable.enter();
 				var t = typeExpr(e);
-				symbolTable.leave();
+				compiler.symbolTable.leave();
 
 				return makeTyped(expr, TParenthesis(t), t.t);
 
@@ -238,6 +308,11 @@ class ExprTyper
 
 				return makeTyped(expr, TArrayDecl(elems), BaseType.tArray(t != null ? t : makeMonomorph()));
 
+			case ECall(_ => { expr: EConst(CIdent("$type")) }, params) if (params.length == 1):
+				var t = typeExpr(params[0]);
+				compiler.warnings.push('${positionString(params[0].pos, true)} Warning : ${typePrettyPrint(t.t)}');
+				return t;
+
 			case ECall(e, params):
 				var t = typeExpr(e);
 				var elems = [];
@@ -261,7 +336,7 @@ class ExprTyper
 
 				if (isTrace(e))
 				{
-					elems.unshift(tracePosition(e));
+					elems.unshift(makeTyped(e, TConst(TString(positionString(e.pos))), BaseType.tString));
 				}
 
 				return makeTyped(expr, TCall(t, elems), r); // TODO check function sign and param
@@ -288,14 +363,14 @@ class ExprTyper
 				var at:Array<{ name:String, opt:Bool, t:Type }> = [];
 				var args = [];
 
-				var fid = name != null ? symbolTable.addVar(name) : -1;
+				var fid = name != null ? compiler.symbolTable.addVar(name) : -1;
 
-				symbolTable.enter();
+				compiler.symbolTable.enter();
 				for (a in f.args)
 				{
-					var sid = symbolTable.addVar(a.name);
-					symbolTable[sid] = SVar(convertComplexType(a.type));
-					var t:Type = switch (symbolTable.getVar(sid))
+					var sid = compiler.symbolTable.addVar(a.name);
+					compiler.symbolTable[sid] = SVar(convertComplexType(a.type));
+					var t:Type = switch (compiler.symbolTable.getVar(sid))
 					{
 						case null:
 							throw "symbol doesn't exist";
@@ -326,12 +401,12 @@ class ExprTyper
 
 				if (fid != -1 && f.ret != null)
 				{
-					symbolTable[fid] = SVar(TFun(at, convertComplexType(f.ret)));
+					compiler.symbolTable[fid] = SVar(TFun(at, convertComplexType(f.ret)));
 				}
 
 				var fe = f.expr;
 				var t = fe != null ? typeExpr(fe) : emptyTypedExpr();
-				symbolTable.leave();
+				compiler.symbolTable.leave();
 
 				var ft = TFun(at, t.t); // TODO doing double work? see previous if
 				var te = makeTyped(expr, TFunction({
@@ -342,7 +417,7 @@ class ExprTyper
 
 				if (name != null)
 				{
-					symbolTable[fid] = SVar(ft);
+					compiler.symbolTable[fid] = SVar(ft);
 					var v:TVar = {
 						t: ft,
 						name: name != null ? name : "", // null safety is weird here
@@ -361,11 +436,11 @@ class ExprTyper
 
 			case EVars(vars):
 				var v = vars[0]; // TODO how to make multiple nodes from this?
-				var sid = symbolTable.addVar(v.name);
+				var sid = compiler.symbolTable.addVar(v.name);
 				var e = v.expr;
 				var t = e != null ? typeExpr(e) : null;
 				var tt = t != null ? t.t : makeMonomorph();
-				symbolTable[sid] = SVar(tt);
+				compiler.symbolTable[sid] = SVar(tt);
 
 				return makeTyped(expr, TVar({
 					capture: false,
@@ -379,12 +454,12 @@ class ExprTyper
 			case EBlock(exprs):
 				var elems = [];
 
-				symbolTable.enter();
+				compiler.symbolTable.enter();
 				for (e in exprs)
 				{
 					elems.push(typeExpr(e));
 				}
-				symbolTable.leave();
+				compiler.symbolTable.leave();
 
 				var t = elems.length > 0 ? elems[elems.length - 1].t : BaseType.tVoid;
 
@@ -459,7 +534,7 @@ class ExprTyper
 
 				if (min < max)
 				{
-					symbolTable.enter();
+					compiler.symbolTable.enter();
 					var min = {
 						expr: EConst(CInt('${min - 1}')),
 						pos: null
@@ -498,13 +573,13 @@ class ExprTyper
 					});
 
 					block = [v, w];
-					symbolTable.leave();
+					compiler.symbolTable.leave();
 				}
 
 				return makeTyped(expr, TBlock(block), BaseType.tVoid); // TODO check
 
 			case EIf(econd, eif, eelse):
-				symbolTable.enter();
+				compiler.symbolTable.enter();
 				var c = typeExpr(econd);
 
 				if (!BaseType.isBool(c.t))
@@ -512,18 +587,18 @@ class ExprTyper
 					throw "if condition must be bool is " + c.t;
 				}
 
-				symbolTable.enter();
+				compiler.symbolTable.enter();
 				var i = typeExpr(eif);
-				symbolTable.leave();
-				symbolTable.enter();
+				compiler.symbolTable.leave();
+				compiler.symbolTable.enter();
 				var e = eelse != null ? typeExpr(eelse) : null;
-				symbolTable.leave();
-				symbolTable.leave();
+				compiler.symbolTable.leave();
+				compiler.symbolTable.leave();
 
 				return makeTyped(expr, TIf(c, i, e), BaseType.tVoid); // TODO check
 
 			case EWhile(econd, e, normalWhile):
-				symbolTable.enter();
+				compiler.symbolTable.enter();
 				var c = typeExpr(econd);
 
 				if (!BaseType.isBool(c.t))
@@ -531,10 +606,10 @@ class ExprTyper
 					throw "while condition must be bool is " + c.t;
 				}
 
-				symbolTable.enter();
+				compiler.symbolTable.enter();
 				var t = typeExpr(e);
-				symbolTable.leave();
-				symbolTable.leave();
+				compiler.symbolTable.leave();
+				compiler.symbolTable.leave();
 
 				return makeTyped(expr, TWhile(c, t, normalWhile), BaseType.tVoid); // TODO check
 
@@ -584,17 +659,17 @@ class ExprTyper
 				return typeExpr(eif);
 
 			case ETry(e, catches):
-				symbolTable.enter();
+				compiler.symbolTable.enter();
 				var t = typeExpr(e);
 				var elems:Array<{ v:TVar, expr:TypedExpr }> = [];
 
 				for (c in catches)
 				{
-					symbolTable.enter();
-					var sid = symbolTable.addVar(c.name);
-					symbolTable[sid] = SVar(convertComplexType(c.type));
+					compiler.symbolTable.enter();
+					var sid = compiler.symbolTable.addVar(c.name);
+					compiler.symbolTable[sid] = SVar(convertComplexType(c.type));
 					var t = typeExpr(c.expr);
-					var vt:Type = switch (symbolTable.getVar(sid))
+					var vt:Type = switch (compiler.symbolTable.getVar(sid))
 					{
 						case null:
 							throw 'unknown symbol $sid';
@@ -614,9 +689,9 @@ class ExprTyper
 						},
 						expr: t
 					});
-					symbolTable.leave();
+					compiler.symbolTable.leave();
 				}
-				symbolTable.leave();
+				compiler.symbolTable.leave();
 
 				return makeTyped(expr, TTry(t, elems), BaseType.tVoid); // TODO check
 
@@ -652,7 +727,7 @@ class ExprTyper
 				return makeTyped(expr, TParenthesis(te), convertComplexType(t));
 
 			case ETernary(econd, eif, eelse):
-				symbolTable.enter();
+				compiler.symbolTable.enter();
 				var c = typeExpr(econd);
 
 				if (!BaseType.isBool(c.t))
@@ -660,13 +735,13 @@ class ExprTyper
 					throw "ternary condition must be bool is " + c.t;
 				}
 
-				symbolTable.enter();
+				compiler.symbolTable.enter();
 				var i = typeExpr(eif);
-				symbolTable.leave();
-				symbolTable.enter();
+				compiler.symbolTable.leave();
+				compiler.symbolTable.enter();
 				var e = typeExpr(eelse); // TODO needs to unify with t
-				symbolTable.leave();
-				symbolTable.leave();
+				compiler.symbolTable.leave();
+				compiler.symbolTable.leave();
 
 				return makeTyped(expr, TIf(c, i, e), i.t); // TODO type
 
@@ -742,30 +817,51 @@ class ExprTyper
 		}
 	}
 
-	function tracePosition(expr:Expr):TypedExpr
+	function positionString(pos:Position, characters:Bool = false):String
 	{
-		var bounds = {
-			min: 0,
-			max: module.linesData.length - 1
-		};
+		var min = 0;
+		var max = module.linesData.length - 1;
 
-		while (bounds.max - bounds.min > 1)
+		while (max - min > 1)
 		{
-			var i = Std.int((bounds.min + bounds.max) / 2);
+			var i = Math.ceil((min + max) / 2);
 			var end = module.linesData[i];
 
-			if (expr.pos.min <= end)
+			if (pos.min <= end)
 			{
-				bounds.max = i;
+				max = i;
 			}
 
-			if (expr.pos.min >= end)
+			if (pos.min >= end)
 			{
-				bounds.min = i;
+				min = i;
 			}
 		}
 
-		var line = bounds.max + 1;
-		return makeTyped(expr, TConst(TString(module.file + ":" + line + ":")), BaseType.tString);
+		var line = max + 1;
+		var spos = '${module.file}:$line:';
+
+		if (!characters)
+		{
+			return spos;
+		}
+
+		var endmax = max;
+
+		while (pos.max > module.linesData[endmax])
+		{
+			++endmax;
+		}
+
+		if (endmax == max)
+		{
+			var cstart = pos.min - module.linesData[max - 1] + 1;
+			var cend = cstart + pos.max - pos.min;
+			return '${spos} characters ${cstart}-${cend} :';
+		}
+		else
+		{
+			return '${spos} lines ${line}-${endmax + 1} :';
+		}
 	}
 }

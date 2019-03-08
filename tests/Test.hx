@@ -9,10 +9,10 @@ import utest.ui.Report;
 
 using haxe.io.Path;
 
-enum RunResult
+typedef RunResult =
 {
-	Success(output:String);
-	Error(output:String);
+	stdout:String,
+	stderr:String,
 }
 
 class StringBufferOutput extends Output
@@ -68,32 +68,35 @@ class Test extends utest.Test
 		// There's some issue with escaping when using arg array
 		var process = new Process(args.join(" "));
 
-		var output = process.stdout.readAll().toString();
-		var error = process.stderr.readAll().toString();
+		var stdout = process.stdout.readAll().toString();
+		var stderr = process.stderr.readAll().toString();
 
 		process.close();
 		Sys.setCwd(cwd);
 
-		if (error != "")
-		{
-			return Error(error);
+		return {
+			stdout: stdout,
+			stderr: stderr
 		}
-
-		return Success(output);
 	}
 
 	function runFile(file:String, defines:Map<String, String>):RunResult
 	{
-		var output = new StringBufferOutput();
+		var stdout = new StringBufferOutput();
+		var stderr = new StringBufferOutput();
 
 		try
 		{
-			haxevm.Main.runFile(file, defines, output);
-			return Success(output.toString());
+			haxevm.Main.runFile(file, defines, stdout, stderr);
 		}
 		catch (a:Any)
 		{
-			return Error(CallStack.toString(CallStack.exceptionStack()));
+			stderr.writeString(CallStack.toString(CallStack.exceptionStack()));
+		}
+
+		return {
+			stdout: stdout.toString(),
+			stderr: stderr.toString()
 		}
 	}
 
@@ -103,19 +106,7 @@ class Test extends utest.Test
 		var real = runHaxe(file, defines);
 		var haxevm = runFile(file, defines);
 
-		switch ([real, haxevm])
-		{
-			case [Success(oreal), Success(ovm)]:
-				Assert.equals(oreal, ovm);
-
-			case [Error(oreal), Error(ovm)]:
-				Assert.equals(oreal, ovm);
-
-			case [Success(oreal), Error(ovm)]:
-				Assert.fail('Should have compiled but failed with "$ovm"');
-
-			case [Error(oreal), Success(ovm)]:
-				Assert.fail('Should have errored with "$oreal" but compiled');
-		}
+		Assert.equals(real.stdout, haxevm.stdout);
+		Assert.equals(real.stderr, haxevm.stderr);
 	}
 }

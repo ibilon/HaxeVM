@@ -101,6 +101,7 @@ class Operators
 			throw "shouldn't";
 			return false; // Return type hint doesn't work yet
 		}
+		$type(no);
 
 		trace(true || no());
 		trace(false && no());

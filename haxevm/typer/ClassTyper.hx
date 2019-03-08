@@ -7,20 +7,20 @@ import haxevm.SymbolTable.Symbol;
 
 class ClassTyper
 {
-	var symbolTable:SymbolTable;
+	var compiler:Compiler;
 	var module:Module;
 	var def:Definition<ClassFlag, Array<Field>>;
 
-	public function new(symbolTable:SymbolTable, module:Module, def:Definition<ClassFlag, Array<Field>>)
+	public function new(compiler:Compiler, module:Module, def:Definition<ClassFlag, Array<Field>>)
 	{
-		this.symbolTable = symbolTable;
+		this.compiler = compiler;
 		this.module = module;
 		this.def = def;
 	}
 
 	public function type():ClassType
 	{
-		symbolTable.enter();
+		compiler.symbolTable.enter();
 
 		var fields:Array<ClassField> = [];
 		var statics:Array<ClassField> = [];
@@ -77,7 +77,7 @@ class ClassTyper
 
 		for (field in def.data)
 		{
-			ids[field.name] = symbolTable.addField(field.name);
+			ids[field.name] = compiler.symbolTable.addField(field.name);
 		}
 
 		// Second pass: type class symbols
@@ -104,12 +104,12 @@ class ClassTyper
 			{
 				case FFun(f):
 					// TODO f args?
-					typed = new ExprTyper(symbolTable, module, cls, f.expr).type();
+					typed = new ExprTyper(compiler, module, cls, f.expr).type();
 
 					field.type = typed.t;
 
 				case FProp(get, set, t, e):
-					typed = new ExprTyper(symbolTable, module, cls, e).type();
+					typed = new ExprTyper(compiler, module, cls, e).type();
 
 					function resolveAccess(a)
 					{
@@ -139,7 +139,7 @@ class ClassTyper
 					field.kind = FVar(resolveAccess(get), resolveAccess(set));
 
 				case FVar(t, e):
-					typed = new haxevm.typer.ExprTyper(symbolTable, module, cls, e).type();
+					typed = new haxevm.typer.ExprTyper(compiler, module, cls, e).type();
 
 					field.type = typed.t; // TODO unify typed.t and t
 					field.kind = FVar(AccNormal, AccNormal);
@@ -203,10 +203,10 @@ class ClassTyper
 				case value:
 					value;
 			}
-			symbolTable[id] = SField(field);
+			compiler.symbolTable[id] = SField(field);
 		}
 
-		symbolTable.leave();
+		compiler.symbolTable.leave();
 
 		return cls;
 	}

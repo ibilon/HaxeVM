@@ -29,6 +29,7 @@ class RecursiveFunction
 
 			return i;
 		}
+		$type(a);
 
 		b = function(i:Float):Float
 		{
@@ -41,6 +42,7 @@ class RecursiveFunction
 
 			return i;
 		}
+		// $type(b); // TODO propagate type to monomorphs
 
 		a(12);
 	}
