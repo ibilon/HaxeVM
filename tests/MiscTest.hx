@@ -1,6 +1,5 @@
 class MiscTest extends Test
 {
-	@Ignored
 	public function testConditionalCompilationSample()
 	{
 		compareFile("tests/samples/ConditionalCompilation.hx");

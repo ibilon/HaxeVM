@@ -48,7 +48,7 @@ class Test extends utest.Test
 		MCoverage.getLogger().addClient(new LcovPrintClient("Coverage report"));
 		r.onComplete.add(_ -> { MCoverage.getLogger().report(); });
 
-		//Report.create(r, NeverShowSuccessResults, AlwaysShowHeader);
+		Report.create(r, NeverShowSuccessResults, AlwaysShowHeader);
 		r.run();
 	}
 
@@ -57,15 +57,16 @@ class Test extends utest.Test
 		var cwd = Sys.getCwd();
 		Sys.setCwd(file.directory());
 
-		var args = ["-main", file.withoutDirectory().withoutExtension(), "--interp"];
+		var args = ["haxe", "-main", file.withoutDirectory().withoutExtension(), "--interp"];
 
-		for (k in defines.keys())
+		for (k => v in defines)
 		{
 			args.push("-D");
-			args.push('$k=${defines[k]}');
+			args.push('$k=$v');
 		}
 
-		var process = new Process("haxe", args);
+		// There's some issue with escaping when using arg array
+		var process = new Process(args.join(" "));
 
 		var output = process.stdout.readAll().toString();
 		var error = process.stderr.readAll().toString();
