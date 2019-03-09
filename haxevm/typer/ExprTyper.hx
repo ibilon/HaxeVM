@@ -162,16 +162,30 @@ class ExprTyper
 
 					case CIdent(s):
 						var sid = compiler.symbolTable.getSymbol(s);
-						var type = switch (compiler.symbolTable.getVar(sid)) // TODO ident could be a package or module or type or field
+						var symbol = compiler.symbolTable[sid];
+
+						return switch (symbol)
 						{
-							case null:
-								throw "unknown symbol";
+							case SModule(_):
+								throw "not implemented";
 
-							case value:
-								value;
+							case SType(m):
+								if (module.name == s)
+								{
+									// Main type of module
+									makeTyped(expr, TTypeExpr(m), moduleTypeType(symbol));
+								}
+								else
+								{
+									typeExpr({ expr: EField({ expr: EConst(CIdent(module.name)), pos: PositionImpl.makeEmpty() }, s), pos: PositionImpl.makeEmpty() });
+								}
+
+							case SField(_):
+								typeExpr({ expr: EField({ expr: EConst(CIdent(cls.name)), pos: PositionImpl.makeEmpty() }, s), pos: PositionImpl.makeEmpty() });
+
+							case SVar(t):
+								makeTyped(expr, makeTypedVar(s, sid, t), t);
 						}
-
-						return makeTyped(expr, makeTypedVar(s, sid, type), type);
 
 					case CRegexp(r, opt):
 						// return makeTyped(expr, TConst(TCRegexp(r, opt)), TRegexp);
@@ -211,8 +225,6 @@ class ExprTyper
 				var t = typeExpr(e);
 
 				// TODO class
-				var sub:Null<ClassField> = null;
-
 				switch (t.t)
 				{
 					case TAnonymous(_.get() => a):
@@ -220,23 +232,25 @@ class ExprTyper
 						{
 							if (f.name == field)
 							{
-								sub = f;
-								break;
+								return makeTyped(expr, TField(t, FAnon(RefImpl.make(f))), f.type);
 							}
 						}
 
-					default:
-						throw "field access on non object " + t.t;
-				}
+						throw "object has no field " + field;
 
-				if (sub == null)
-				{
-					throw "object has no field " + field;
-				}
-				else
-				{
-					var sub:ClassField = sub;
-					return makeTyped(expr, TField(t, FAnon(RefImpl.make(sub))), sub.type);
+					case TInst(c, params):
+						for (s in c.get().statics.get())
+						{
+							if (s.name == field)
+							{
+								return makeTyped(expr, TField(t, FStatic(c, RefImpl.make(s))), s.type);
+							}
+						}
+
+						throw "class has no field " + field;
+
+					default:
+						throw "field access not implemented " + t.t;
 				}
 
 			case EParenthesis(e):
@@ -326,7 +340,7 @@ class ExprTyper
 						makeMonomorph();
 
 					default:
-						throw "Can only call functions";
+						throw "Can only call functions " + t.t;
 				}
 
 				for (e in params)
@@ -363,13 +377,12 @@ class ExprTyper
 				var at:Array<{ name:String, opt:Bool, t:Type }> = [];
 				var args = [];
 
-				var fid = name != null ? compiler.symbolTable.addVar(name) : -1;
+				var fid = name != null ? compiler.symbolTable.addVar(name, TLazy(() -> throw "not typed yet")) : -1;
 
 				compiler.symbolTable.enter();
 				for (a in f.args)
 				{
-					var sid = compiler.symbolTable.addVar(a.name);
-					compiler.symbolTable[sid] = SVar(convertComplexType(a.type));
+					var sid = compiler.symbolTable.addVar(a.name, ComplexTypeUtils.convertComplexType(a.type));
 					var t:Type = switch (compiler.symbolTable.getVar(sid))
 					{
 						case null:
@@ -401,7 +414,7 @@ class ExprTyper
 
 				if (fid != -1 && f.ret != null)
 				{
-					compiler.symbolTable[fid] = SVar(TFun(at, convertComplexType(f.ret)));
+					compiler.symbolTable[fid] = SVar(TFun(at, ComplexTypeUtils.convertComplexType(f.ret)));
 				}
 
 				var fe = f.expr;
@@ -436,7 +449,7 @@ class ExprTyper
 
 			case EVars(vars):
 				var v = vars[0]; // TODO how to make multiple nodes from this?
-				var sid = compiler.symbolTable.addVar(v.name);
+				var sid = compiler.symbolTable.addVar(v.name, ComplexTypeUtils.convertComplexType(v.type));
 				var e = v.expr;
 				var t = e != null ? typeExpr(e) : null;
 				var tt = t != null ? t.t : makeMonomorph();
@@ -666,8 +679,7 @@ class ExprTyper
 				for (c in catches)
 				{
 					compiler.symbolTable.enter();
-					var sid = compiler.symbolTable.addVar(c.name);
-					compiler.symbolTable[sid] = SVar(convertComplexType(c.type));
+					var sid = compiler.symbolTable.addVar(c.name, ComplexTypeUtils.convertComplexType(c.type));
 					var t = typeExpr(c.expr);
 					var vt:Type = switch (compiler.symbolTable.getVar(sid))
 					{
@@ -724,7 +736,7 @@ class ExprTyper
 			case ECheckType(e, t):
 				var te = typeExpr(e);
 
-				return makeTyped(expr, TParenthesis(te), convertComplexType(t));
+				return makeTyped(expr, TParenthesis(te), ComplexTypeUtils.convertComplexType(t));
 
 			case ETernary(econd, eif, eelse):
 				compiler.symbolTable.enter();
@@ -750,6 +762,25 @@ class ExprTyper
 
 			case EDisplay(_, _), EDisplayNew(_):
 				throw "cannot get display info";
+		}
+	}
+
+	function moduleTypeType(symbol:Symbol):Type
+	{
+		switch (symbol)
+		{
+			case SType(m):
+				return switch (m)
+				{
+					case TClassDecl(c):
+						TInst(c, []);
+
+					default:
+						throw "not implemented";
+				}
+
+			default:
+				throw "not module";
 		}
 	}
 
@@ -783,38 +814,6 @@ class ExprTyper
 	{
 		// TODO allow this to be changed after unification
 		return TMono(RefImpl.make(null));
-	}
-
-	function convertComplexType(t:Null<ComplexType>):Type
-	{
-		if (t == null)
-		{
-			return makeMonomorph();
-		}
-
-		return switch (t)
-		{
-			case TPath(p): // TODO convert TPath to Type
-				switch (p.name)
-				{
-					case "Int":
-						BaseType.tInt;
-
-					case "Bool":
-						BaseType.tBool;
-
-					case "Float":
-						BaseType.tFloat;
-
-					case "String":
-						BaseType.tString;
-
-					default: throw "unknown type";
-				}
-
-			default: // TODO TAnonymous | TExtend | TFunction | TIntersection | TNamed | TOptional | TParent
-				makeMonomorph();
-		}
 	}
 
 	function positionString(pos:Position, characters:Bool = false):String

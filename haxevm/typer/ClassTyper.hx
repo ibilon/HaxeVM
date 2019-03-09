@@ -3,30 +3,34 @@ package haxevm.typer;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxeparser.Data;
-import haxevm.SymbolTable.Symbol;
 
-class ClassTyper
+class ClassTyper implements ModuleTypeTyper
 {
 	var compiler:Compiler;
 	var module:Module;
 	var def:Definition<ClassFlag, Array<Field>>;
+	var cls:Null<ClassType>;
+	var data:Array<ClassField>;
+	var typed:Array<TypedExpr>;
 
 	public function new(compiler:Compiler, module:Module, def:Definition<ClassFlag, Array<Field>>)
 	{
 		this.compiler = compiler;
 		this.module = module;
 		this.def = def;
+
+		cls = null;
+		data = [];
+		typed = [];
 	}
 
-	public function type():ClassType
+	public function preType():ModuleType
 	{
-		compiler.symbolTable.enter();
-
 		var fields:Array<ClassField> = [];
 		var statics:Array<ClassField> = [];
 		var overrides:Array<Ref<ClassField>> = [];
 
-		var cls:ClassType = {
+		cls = {
 			constructor: null,
 			doc: def.doc,
 			fields: RefImpl.make(fields),
@@ -73,17 +77,9 @@ class ClassTyper
 		}
 
 		// First pass: add class symbols
-		var ids = new Map<String, Int>();
-
-		for (field in def.data)
+		for (i in 0...def.data.length)
 		{
-			ids[field.name] = compiler.symbolTable.addField(field.name);
-		}
-
-		// Second pass: type class symbols
-		for (d in def.data)
-		{
-			var typed = null;
+			var d = def.data[i];
 
 			var field:ClassField = {
 				doc: d.doc,
@@ -95,22 +91,18 @@ class ClassTyper
 				name: d.name,
 				overloads: RefImpl.make([]),
 				params: [],
-				pos: null,
+				pos: d.pos,
 				type: null,
-				expr: () -> typed
+				expr: () -> typed[i]
 			};
 
 			switch (d.kind)
 			{
 				case FFun(f):
-					// TODO f args?
-					typed = new ExprTyper(compiler, module, cls, f.expr).type();
+					field.kind = FMethod(MethNormal);
+					field.type = TFun(f.args.map(a -> { name: a.name, opt: a.opt, t: ComplexTypeUtils.convertComplexType(a.type) }), ComplexTypeUtils.convertComplexType(f.ret));
 
-					field.type = typed.t;
-
-				case FProp(get, set, t, e):
-					typed = new ExprTyper(compiler, module, cls, e).type();
-
+				case FProp(get, set, t, _):
 					function resolveAccess(a)
 					{
 						return switch (a)
@@ -135,14 +127,12 @@ class ClassTyper
 						}
 					}
 
-					field.type = typed.t; // TODO unify typed.t and t
 					field.kind = FVar(resolveAccess(get), resolveAccess(set));
+					field.type = ComplexTypeUtils.convertComplexType(t);
 
-				case FVar(t, e):
-					typed = new haxevm.typer.ExprTyper(compiler, module, cls, e).type();
-
-					field.type = typed.t; // TODO unify typed.t and t
+				case FVar(t, _):
 					field.kind = FVar(AccNormal, AccNormal);
+					field.type = ComplexTypeUtils.convertComplexType(t);
 			}
 
 			var isStatic = false;
@@ -195,19 +185,53 @@ class ClassTyper
 				fields.push(field);
 			}
 
-			var id = switch (ids[field.name])
-			{
-				case null:
-					throw 'field "${field.name}" didn\'t get registered during prepass';
+			data.push(field);
+		}
 
-				case value:
-					value;
+		return ModuleType.TClassDecl(RefImpl.make(cls));
+	}
+
+	public function fullType()
+	{
+		compiler.symbolTable.enter();
+
+		for (d in data)
+		{
+			compiler.symbolTable.addField(d.name, d);
+		}
+
+		// Second pass: type class symbols' expr
+		for (i in 0...def.data.length)
+		{
+			var d = def.data[i];
+
+			switch (d.kind)
+			{
+				case FFun(f):
+					compiler.symbolTable.enter();
+
+					var argsid = [];
+
+					for (a in f.args)
+					{
+						var sid = compiler.symbolTable.addVar(a.name, ComplexTypeUtils.convertComplexType(a.type));
+						argsid.push(sid);
+					}
+
+					compiler.symbolTable.addFunctionArgSymbols(data[i], argsid);
+
+					typed[i] = new ExprTyper(compiler, module, cls, f.expr).type();
+
+					compiler.symbolTable.leave();
+
+				case FProp(get, set, t, e):
+					typed[i] = new ExprTyper(compiler, module, cls, e).type();
+
+				case FVar(t, e):
+					typed[i] = new haxevm.typer.ExprTyper(compiler, module, cls, e).type();
 			}
-			compiler.symbolTable[id] = SField(field);
 		}
 
 		compiler.symbolTable.leave();
-
-		return cls;
 	}
 }

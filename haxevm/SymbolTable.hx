@@ -9,9 +9,9 @@ import haxevm.typer.RefImpl;
 enum Symbol
 {
 	SModule(m:Module);
-	SType(t:Null<ModuleType>);
-	SField(f:Null<ClassField>);
-	SVar(t:Null<Type>);
+	SType(t:ModuleType);
+	SField(f:ClassField);
+	SVar(t:Type);
 }
 
 @:forward(enter, leave, getSymbol)
@@ -21,13 +21,12 @@ abstract SymbolTable(SymbolTableData)
 	{
 		this = new SymbolTableData();
 
-		var sid = addVar("trace");
 		var arg = {
 			t: TMono(RefImpl.make(null)),
 			opt: false,
 			name: "value"
 		};
-		this.data[sid] = SVar(TFun([arg], BaseType.tVoid));
+		addVar("trace", TFun([arg], BaseType.tVoid));
 	}
 
 	@:arrayAccess
@@ -54,19 +53,19 @@ abstract SymbolTable(SymbolTableData)
 		return this.addSymbol(module.name, SModule(module));
 	}
 
-	public inline function addType(name:String):Int
+	public inline function addType(name:String, type:ModuleType):Int
 	{
-		return this.addSymbol(name, SType(null));
+		return this.addSymbol(name, SType(type));
 	}
 
-	public inline function addField(name:String):Int
+	public inline function addField(name:String, field:ClassField):Int
 	{
-		return this.addSymbol(name, SField(null));
+		return this.addSymbol(name, SField(field));
 	}
 
-	public inline function addVar(name:String):Int
+	public inline function addVar(name:String, type:Type):Int
 	{
-		return this.addSymbol(name, SVar(null));
+		return this.addSymbol(name, SVar(type));
 	}
 
 	public inline function getModule(id:Int):Module
@@ -116,6 +115,23 @@ abstract SymbolTable(SymbolTableData)
 				throw "symbol isn't of type SVar";
 		}
 	}
+
+	public inline function addFunctionArgSymbols(cf:ClassField, ids:Array<Int>)
+	{
+		this.statics[cf] = ids;
+	}
+
+	public inline function getFunctionArgSymbols(cf:ClassField):Array<Int>
+	{
+		return switch (this.statics[cf])
+		{
+			case null:
+				throw "unknown classfield";
+
+			case value:
+				value;
+		}
+	}
 }
 
 private class SymbolTableData
@@ -123,6 +139,7 @@ private class SymbolTableData
 	var nextId:Int;
 	var current:Map<String, Int>;
 	var levels:Array<Map<String, Int>>;
+	public var statics:Map<ClassField, Array<Int>>;
 	public var data:Map<Int, Symbol>;
 
 	public inline function new()
@@ -130,6 +147,7 @@ private class SymbolTableData
 		nextId = 0;
 		current = new Map<String, Int>();
 		levels = [current];
+		statics = [];
 		data = new Map<Int, Symbol>();
 	}
 
@@ -145,7 +163,7 @@ private class SymbolTableData
 		return switch (current[name])
 		{
 			case null:
-				throw "symbol doesn't exist";
+				throw 'symbol "$name" doesn\'t exist';
 
 			case value:
 				value;

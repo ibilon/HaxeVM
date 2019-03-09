@@ -21,7 +21,6 @@ class VM
 		this.compilationOutput = compilationOutput;
 		this.mainClass = mainClass;
 		this.output = output;
-		// TODO populate context with top level symbol table
 	}
 
 	public function run():Void
@@ -167,6 +166,34 @@ class VM
 
 						throw 'Field ${name} not found';
 
+					case EType(m):
+						// TODO FInstance vs FStatic
+						var name = FieldAccessUtils.nameOf(fa);
+
+						switch (m)
+						{
+							case TClassDecl(_.get() => c):
+								for (s in c.statics.get())
+								{
+									if (s.name == name)
+									{
+										switch (s.type)
+										{
+											case TFun(args, _):
+												return makeEFun(compilationOutput.symbolTable.getFunctionArgSymbols(s), s.expr(), context);
+
+											default:
+												throw "not implemented";
+										}
+									}
+								}
+
+								throw 'Field ${name} not found';
+
+							default:
+								throw "not implemented";
+						}
+
 					default:
 						throw 'Field access on non object "${e.t}"';
 				}
@@ -219,35 +246,7 @@ class VM
 				return Operator.unop(op, postFix, e, context, eval);
 
 			case TFunction(tfunc):
-				return EFn(function(a:Array<EVal>)
-				{
-					context.stack();
-
-					for (i in 0...tfunc.args.length)
-					{
-						context[tfunc.args[i].v.id] = a[i];
-					}
-
-					var ret = try
-					{
-						eval(tfunc.expr, context);
-					}
-					catch (fc:FlowControl)
-					{
-						switch (fc)
-						{
-							case FCReturn(v):
-								v;
-
-							default:
-								throw fc;
-						}
-					}
-
-					context.unstack();
-
-					return ret;
-				});
+				return makeEFun(tfunc.args.map(a -> a.v.id), tfunc.expr, context);
 
 			case TVar(v, expr):
 				if (expr != null)
@@ -402,7 +401,7 @@ class VM
 				throw "unexpected TEnumParameter";
 
 			case TTypeExpr(m):
-				throw "TTypeExpr unimplemented";
+				return EType(m);
 
 			case TIdent(s): // TODO "unknown identifier" is that possible?
 				throw "TIdent unimplemented";
@@ -415,6 +414,39 @@ class VM
 
 				return context[v.id];
 		}
+	}
+
+	function makeEFun(args:Array<Int>, expr:TypedExpr, context:Context):EVal
+	{
+		return EFn(function(a:Array<EVal>)
+		{
+			context.stack();
+
+			for (i in 0...args.length)
+			{
+				context[args[i]] = a[i];
+			}
+
+			var ret = try
+			{
+				eval(expr, context);
+			}
+			catch (fc:FlowControl)
+			{
+				switch (fc)
+				{
+					case FCReturn(v):
+						v;
+
+					default:
+						throw fc;
+				}
+			}
+
+			context.unstack();
+
+			return ret;
+		});
 	}
 
 	function EVal2str(e:EVal, context:Context):String
@@ -470,6 +502,22 @@ class VM
 
 					case value:
 						EVal2str(value, context);
+				}
+
+			case EType(m):
+				switch (m)
+				{
+					case TClassDecl(_.get() => c):
+						c.name;
+
+					case TEnumDecl(_.get() => e):
+						e.name;
+
+					case TTypeDecl(_.get() => t):
+						t.name;
+
+					case TAbstract(_.get() => a):
+						a.name;
 				}
 		}
 	}

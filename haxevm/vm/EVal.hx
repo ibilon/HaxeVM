@@ -15,4 +15,5 @@ enum EVal
 	EFn(fn:Array<EVal>->EVal);
 	EIdent(id:Int);
 	ENull;
+	EType(m:ModuleType);
 }

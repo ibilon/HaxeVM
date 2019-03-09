@@ -1,11 +1,9 @@
 package haxevm;
 
 import byte.ByteData;
-import haxe.macro.Type.ModuleType;
 import haxeparser.HaxeParser;
-import haxevm.SymbolTable.Symbol;
 import haxevm.typer.ClassTyper;
-import haxevm.typer.RefImpl;
+import haxevm.typer.ModuleTypeTyper;
 
 using haxe.io.Path;
 
@@ -78,68 +76,31 @@ class Compiler
 		var file = parser.parse();
 
 		// First pass: add types symbols
-		var ids = new Map<String, Int>();
+		var decls:Array<ModuleTypeTyper> = [];
 
-		for (decl in file.decls)
+		for (i in 0...file.decls.length)
 		{
+			var decl = file.decls[i];
+
 			switch (decl.decl)
 			{
 				case EClass(d):
-					ids[d.name] = symbolTable.addType(d.name);
+					var clst = new ClassTyper(this, module, d);
+					decls.push(clst);
 
-				case EEnum(d):
-					ids[d.name] = symbolTable.addType(d.name);
+					var type = clst.preType();
+					symbolTable.addType(d.name, type);
+					types.push(type);
 
-				case EAbstract(a):
-					ids[a.name] = symbolTable.addType(a.name);
-
-				case EImport(sl, mode):
-					// TODO add imported types into symbol table
-					throw "not supported";
-
-				case ETypedef(d):
-					ids[d.name] = symbolTable.addType(d.name);
-
-				case EUsing(path):
-					// TODO
+				default:
 					throw "not supported";
 			}
 		}
 
 		// Second pass: type type symbols
-		for (decl in file.decls)
+		for (decl in decls)
 		{
-			switch (decl.decl)
-			{
-				case EClass(d):
-					var cls = new ClassTyper(this, module, d).type();
-					var type = ModuleType.TClassDecl(RefImpl.make(cls));
-					var id = switch (ids[d.name])
-					{
-						case null:
-							throw 'type "${d.name}" wasn\'t included in symbol registering prepass';
-
-						case value:
-							value;
-					}
-					symbolTable[id] = Symbol.SType(type);
-					types.push(type);
-
-				case EEnum(d):
-					throw "not supported";
-
-				case EAbstract(a):
-					throw "not supported";
-
-				case EImport(sl, mode):
-					throw "not supported";
-
-				case ETypedef(d):
-					throw "not supported";
-
-				case EUsing(path):
-					throw "not supported";
-			}
+			decl.fullType();
 		}
 
 		symbolTable.leave();
