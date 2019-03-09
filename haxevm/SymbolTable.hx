@@ -1,5 +1,6 @@
 package haxevm;
 
+import haxe.macro.Expr.Position;
 import haxe.macro.Type.ClassField;
 import haxe.macro.Type.ModuleType;
 import haxe.macro.Type.Type;
@@ -118,12 +119,12 @@ abstract SymbolTable(SymbolTableData)
 
 	public inline function addFunctionArgSymbols(cf:ClassField, ids:Array<Int>)
 	{
-		this.statics[cf] = ids;
+		this.statics[cf.pos] = ids;
 	}
 
 	public inline function getFunctionArgSymbols(cf:ClassField):Array<Int>
 	{
-		return switch (this.statics[cf])
+		return switch (this.statics[cf.pos])
 		{
 			case null:
 				throw "unknown classfield";
@@ -139,7 +140,7 @@ private class SymbolTableData
 	var nextId:Int;
 	var current:Map<String, Int>;
 	var levels:Array<Map<String, Int>>;
-	public var statics:Map<ClassField, Array<Int>>;
+	public var statics:Map<Position, Array<Int>>;
 	public var data:Map<Int, Symbol>;
 
 	public inline function new()
