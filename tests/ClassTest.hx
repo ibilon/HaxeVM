@@ -1,7 +1,7 @@
 class ClassTest extends Test
 {
-	public function testStaticFunctionSample()
+	public function testStaticSample()
 	{
-		compareFile("tests/samples/StaticFunction.hx");
+		compareFile("tests/samples/Static.hx");
 	}
 }

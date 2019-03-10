@@ -3,10 +3,11 @@ package haxevm;
 import haxe.io.Output;
 import haxe.macro.Type;
 import haxevm.Compiler.CompilationOutput;
+import haxevm.vm.BaseType;
 import haxevm.vm.Context;
 import haxevm.vm.EVal;
 import haxevm.vm.EValTools;
-import haxevm.vm.FieldAccessUtils;
+import haxevm.vm.FieldsUtils;
 import haxevm.vm.FlowControl;
 import haxevm.vm.Operator;
 
@@ -15,12 +16,15 @@ class VM
 	var compilationOutput:CompilationOutput;
 	var mainClass:String;
 	var output:Output;
+	var moduleTypeCache:Map<String, EVal>;
 
 	public function new(compilationOutput:CompilationOutput, mainClass:String, output:Output)
 	{
 		this.compilationOutput = compilationOutput;
 		this.mainClass = mainClass;
 		this.output = output;
+
+		moduleTypeCache = new Map<String, EVal>();
 	}
 
 	public function run():Void
@@ -149,54 +153,7 @@ class VM
 				return Operator.binop(op, e1, e2, context, eval);
 
 			case TField(e, fa):
-				var parent = eval(e, context);
-
-				switch (parent)
-				{
-					case EObject(fields):
-						var name = FieldAccessUtils.nameOf(fa);
-
-						for (f in fields)
-						{
-							if (f.name == name)
-							{
-								return f.val;
-							}
-						}
-
-						throw 'Field ${name} not found';
-
-					case EType(m):
-						// TODO FInstance vs FStatic
-						var name = FieldAccessUtils.nameOf(fa);
-
-						switch (m)
-						{
-							case TClassDecl(_.get() => c):
-								for (s in c.statics.get())
-								{
-									if (s.name == name)
-									{
-										switch (s.type)
-										{
-											case TFun(args, _):
-												return makeEFun(compilationOutput.symbolTable.getFunctionArgSymbols(s), s.expr(), context);
-
-											default:
-												throw "not implemented";
-										}
-									}
-								}
-
-								throw 'Field ${name} not found';
-
-							default:
-								throw "not implemented";
-						}
-
-					default:
-						throw 'Field access on non object "${e.t}"';
-				}
+				return FieldsUtils.findField(e, fa, eval, context).val;
 
 			case TParenthesis(e):
 				return eval(e, context);
@@ -401,7 +358,63 @@ class VM
 				throw "unexpected TEnumParameter";
 
 			case TTypeExpr(m):
-				return EType(m);
+				var hash = switch (m)
+				{
+					case TClassDecl(_.get() => c):
+						'${c.pack.join(".")}#${c.module}#${c.name}';
+
+					default:
+						throw "not supported";
+				}
+
+				if (moduleTypeCache.exists(hash))
+				{
+					return moduleTypeCache[hash];
+				}
+
+				var staticFields = [];
+
+				switch (m)
+				{
+					case TClassDecl(_.get() => c):
+						for (s in c.statics.get())
+						{
+							switch (s.kind)
+							{
+								case FVar(_, _):
+									var expr = s.expr();
+
+									var val = if (expr != null)
+									{
+										eval(expr, context);
+									}
+									else
+									{
+										BaseType.defaultValue(s.type);
+									}
+
+									staticFields.push({ name: s.name, val: val });
+
+								case FMethod(_):
+									switch (s.type)
+									{
+										case TFun(args, _):
+											var val = makeEFun(compilationOutput.symbolTable.getFunctionArgSymbols(s), s.expr(), context);
+											staticFields.push({ name: s.name, val: val });
+
+										default:
+											throw "invalid method type";
+									}
+							}
+						}
+
+					default:
+						throw "not supported";
+				}
+
+				var val = EType(m, staticFields);
+				moduleTypeCache[hash] = val;
+				return val;
 
 			case TIdent(s): // TODO "unknown identifier" is that possible?
 				throw "TIdent unimplemented";
@@ -504,7 +517,7 @@ class VM
 						EVal2str(value, context);
 				}
 
-			case EType(m):
+			case EType(m, _):
 				switch (m)
 				{
 					case TClassDecl(_.get() => c):

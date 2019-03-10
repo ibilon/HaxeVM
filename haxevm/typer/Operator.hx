@@ -31,6 +31,18 @@ class Operator
 
 	public static function binopArithmetic(op:Binop, a:Type, b:Type):Type
 	{
+		if (BaseType.isString(a) && BaseType.isString(b))
+		{
+			return switch (op)
+			{
+				case OpAdd:
+					BaseType.tString;
+
+				default:
+					throw "cannot apply operator $op to strings";
+			}
+		}
+
 		if (!BaseType.isNumeric(a) || !BaseType.isNumeric(b))
 		{
 			throw 'cannot apply operator $op to type $a and $b';

@@ -229,6 +229,15 @@ class ClassTyper implements ModuleTypeTyper
 
 				case FVar(t, e):
 					typed[i] = new haxevm.typer.ExprTyper(compiler, module, cls, e).type();
+
+					switch (data[i].type)
+					{
+						case TMono(_):
+							data[i].type = typed[i].t;
+
+						default:
+							// pass
+					}
 			}
 		}
 

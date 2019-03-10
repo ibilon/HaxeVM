@@ -91,7 +91,10 @@ class Test extends utest.Test
 		}
 		catch (a:Any)
 		{
-			stderr.writeString(CallStack.toString(CallStack.exceptionStack()));
+			stderr.writeString(Std.string(a));
+			var es = CallStack.exceptionStack();
+			es.reverse();
+			stderr.writeString(CallStack.toString(es));
 		}
 
 		return {

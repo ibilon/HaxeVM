@@ -4,7 +4,5 @@ extraParams.hxml
 libs/utest/extraParams.hxml
 -cp libs/mcover/src
 --macro mcover.MCover.coverage(["haxevm"], ["."], null)
-# TODO put the nullSafety macro back in extraParams.hxml when haxe issue 7954 is fixed
---macro nullSafety("haxevm", Strict)
 -main Test
 --interp

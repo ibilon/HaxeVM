@@ -166,8 +166,24 @@ class ExprTyper
 
 						return switch (symbol)
 						{
-							case SModule(_):
-								throw "not implemented";
+							case SModule(m):
+								for (t in m.types)
+								{
+									switch (t)
+									{
+										case TClassDecl(_.get() => c):
+											if (c.name == s)
+											{
+												return makeTyped(expr, TTypeExpr(t), moduleTypeType(symbol));
+											}
+
+										default:
+											throw "not implemented";
+									}
+								}
+
+								throw 'module ${m.name} doesn\'t have a main type';
+
 
 							case SType(m):
 								if (module.name == s)

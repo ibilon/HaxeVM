@@ -3,7 +3,7 @@ package haxevm.vm;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 
-typedef EvalFn = TypedExpr->Context->EVal;
+private typedef EvalFn = TypedExpr->Context->EVal;
 
 typedef ValRet =
 {
@@ -57,7 +57,7 @@ class Operator
 						context[v.id] = v2;
 
 					case TField(e, fa):
-						var fieldEVal = findField(e, fa, eval, context);
+						var fieldEVal = FieldsUtils.findField(e, fa, eval, context);
 						fieldEVal.val = v2;
 
 					case TArray(data, key):
@@ -104,7 +104,7 @@ class Operator
 						}
 
 					case TField(e, fa):
-						var fieldEVal = findField(e, fa, eval, context);
+						var fieldEVal = FieldsUtils.findField(e, fa, eval, context);
 						fieldEVal.val = doBinop(fieldEVal.val, subOp, v2);
 
 					case TArray(data, key):
@@ -243,7 +243,7 @@ class Operator
 						result.ret;
 
 					case TField(e, fa):
-						var fieldEVal = findField(e, fa, eval, context);
+						var fieldEVal = FieldsUtils.findField(e, fa, eval, context);
 						var result = update(fieldEVal.val);
 						fieldEVal.val = result.val;
 						result.ret;
@@ -278,7 +278,7 @@ class Operator
 						update(val);
 
 					case TField(e, fa):
-						var fieldEVal = findField(e, fa, eval, context);
+						var fieldEVal = FieldsUtils.findField(e, fa, eval, context);
 						update(fieldEVal.val);
 
 					default:
@@ -308,7 +308,7 @@ class Operator
 						update(val);
 
 					case TField(e, fa):
-						var fieldEVal = findField(e, fa, eval, context);
+						var fieldEVal = FieldsUtils.findField(e, fa, eval, context);
 						update(fieldEVal.val);
 
 					default:
@@ -338,7 +338,7 @@ class Operator
 						update(val);
 
 					case TField(e, fa):
-						var fieldEVal = findField(e, fa, eval, context);
+						var fieldEVal = FieldsUtils.findField(e, fa, eval, context);
 						update(fieldEVal.val);
 
 					default:
@@ -352,6 +352,15 @@ class Operator
 		return switch (typeOf(op))
 		{
 			case Arithmetic:
+				switch ([a, op, b])
+				{
+					case [EString(sa), OpAdd, EString(sb)]:
+						return EString(sa + sb);
+
+					default:
+						// pass
+				}
+
 				var i = intOrFloat(a, op);
 				var j = intOrFloat(b, op);
 
@@ -517,26 +526,5 @@ class Operator
 			default:
 				throw 'Operator ${op} expect EInt or EFloat, got ${val}';
 		}
-	}
-
-	static function findField(parent:TypedExpr, fa:FieldAccess, eval:EvalFn, context:Context):{ name:String, val:EVal }
-	{
-		switch (eval(parent, context))
-		{
-			case EObject(fields):
-				var name = FieldAccessUtils.nameOf(fa);
-
-				for (f in fields)
-				{
-					if (f.name == name)
-					{
-						return f;
-					}
-				}
-
-			default:
-		}
-
-		throw 'Field access on non object "${parent.t}"';
 	}
 }
