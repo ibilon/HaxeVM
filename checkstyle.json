@@ -27,12 +27,6 @@
 		},
 		{
 			"props": {
-				"format": "^(e|t|ex|[a-z][a-z][a-zA-Z]+)$"
-			},
-			"type": "CatchParameterName"
-		},
-		{
-			"props": {
 				"policy": "aligned",
 				"allowSingleline": true
 			},
@@ -99,7 +93,9 @@
 				"defaultPolicy": "upto",
 				"exact": [],
 				"max": 1,
-				"ignore": [],
+				"ignore": [
+					"beforePackage"
+				],
 				"atleast": [],
 				"skipSingleLineTypes": true
 			},
@@ -169,13 +165,6 @@
 				"option": "nl"
 			},
 			"type": "LeftCurly"
-		},
-		{
-			"props": {
-				"max": 160,
-				"ignorePattern": "^$"
-			},
-			"type": "LineLength"
 		},
 		{
 			"props": {
@@ -403,7 +392,7 @@
 			"props": {
 				"enforceReturnTypeForAnonymous": false,
 				"allowEmptyReturn": true,
-				"enforceReturnType": false
+				"enforceReturnType": true
 			},
 			"type": "Return"
 		},
@@ -504,16 +493,6 @@
 		{
 			"props": {},
 			"type": "UnnecessaryConstructor"
-		},
-		{
-			"props": {
-				"moduleTypeMap": {},
-				"ignoreModules": [
-					"haxe.macro.Expr",
-					"haxe.macro.Type"
-				]
-			},
-			"type": "UnusedImport"
 		},
 		{
 			"props": {},

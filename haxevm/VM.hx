@@ -1,32 +1,110 @@
+/**
+Copyright (c) 2019 Valentin Lemière, Guillaume Desquesnes
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+**/
+
 package haxevm;
 
 import haxe.io.Output;
 import haxe.macro.Type;
 import haxevm.Compiler.CompilationOutput;
-import haxevm.vm.BaseType;
 import haxevm.vm.Context;
 import haxevm.vm.EVal;
-import haxevm.vm.EValTools;
-import haxevm.vm.FieldsUtils;
 import haxevm.vm.FlowControl;
-import haxevm.vm.Operator;
+import haxevm.vm.expr.ArrayExpr;
+import haxevm.vm.expr.CallExpr;
+import haxevm.vm.expr.ConstExpr;
+import haxevm.vm.expr.IfExpr;
+import haxevm.vm.expr.LoopExpr;
+import haxevm.vm.expr.ModuleExpr;
+import haxevm.vm.expr.OperatorExpr;
+import haxevm.vm.expr.SwitchExpr;
+import haxevm.vm.expr.TryExpr;
 
+using haxevm.utils.ArrayUtils;
+using haxevm.utils.EValUtils;
+using haxevm.utils.FieldUtils;
+
+/**
+Virtual machine evaluating the typed AST.
+**/
 class VM
 {
+	/**
+	The context for this run.
+	**/
+	var context:Context;
+
+	/**
+	The result of the compilation.
+	**/
 	var compilationOutput:CompilationOutput;
+
+	/**
+	The main class' path, to find the main function.
+	**/
 	var mainClass:String;
-	var output:Output;
+
+	/**
+	Cache holding the result of a Type loading to keep the value of the static variables.
+	**/
 	var moduleTypeCache:Map<String, EVal>;
 
+	/**
+	The output to send the prints to.
+	**/
+	var output:Output;
+
+	/**
+	Construct a new VM.
+
+	@param compilationOutput The result of the compilation.
+	@param mainClass The main class' path, to find the main function.
+	@param output The output to send the prints to.
+	**/
 	public function new(compilationOutput:CompilationOutput, mainClass:String, output:Output)
 	{
+		this.context = new Context();
 		this.compilationOutput = compilationOutput;
 		this.mainClass = mainClass;
+		this.moduleTypeCache = new Map<String, EVal>();
 		this.output = output;
 
-		moduleTypeCache = new Map<String, EVal>();
+		// insert builtin trace
+		context[0] = EFunction(function(args:Array<EVal>) {
+			var buf = [];
+
+			for (arg in args)
+			{
+				buf.push(arg.toString(context));
+			}
+
+			output.writeString(buf.join(" "));
+			output.writeString("\n");
+			return EVoid;
+		});
 	}
 
+	/**
+	Run the main function.
+	**/
 	public function run():Void
 	{
 		for (module in compilationOutput.modules)
@@ -37,18 +115,18 @@ class VM
 				{
 					switch (type)
 					{
-						case TClassDecl(_.get() => c) if (c.name == mainClass):
-							for (f in c.statics.get())
+						case TClassDecl(_.get() => classType) if (classType.name == mainClass):
+							for (staticField in classType.statics.get())
 							{
-								if (f.name == "main")
+								if (staticField.name == "main")
 								{
-									switch (f.expr())
+									switch (staticField.expr())
 									{
 										case null:
 											throw "main function doesn't have expr";
 
 										case value:
-											evalExpr(value);
+											eval(value);
 									}
 									return;
 								}
@@ -66,472 +144,101 @@ class VM
 		}
 	}
 
-	function evalExpr(texpr:TypedExpr):EVal
+	/**
+	Evaluate an expression.
+
+	@param expr The expression to evaluate.
+	**/
+	function eval(expr:TypedExpr):EVal
 	{
-		var context = new Context();
-
-		// insert builtin trace
-		context[0] = EFn(function(a) {
-			var buf = [];
-
-			for (e in a)
-			{
-				buf.push(EVal2str(e, context));
-			}
-
-			output.writeString(buf.join(" "));
-			output.writeString("\n");
-			return EVoid;
-		});
-
-		return eval(texpr, context);
-	}
-
-	function eval(texpr:TypedExpr, context:Context):EVal
-	{
-		switch (texpr.expr)
+		return switch (expr.expr)
 		{
-			case TConst(c):
-				return switch (c)
-				{
-					case TInt(v):
-						EInt(v);
-
-					case TFloat(f):
-						EFloat(Std.parseFloat(f));
-
-					case TString(s):
-						EString(s);
-
-					case TBool(b):
-						EBool(b);
-
-					case TNull:
-						ENull;
-
-					case TSuper:
-						throw "no super";
-
-					case TThis:
-						throw "no this";
-				}
-
-			case TArray(e1, e2):
-				var val = eval(e1, context);
-
-				return switch (val)
-				{
-					case EArray(of, a):
-						var idx = eval(e2, context);
-
-						switch (idx)
-						{
-							case EInt(i):
-								if (i < 0)
-								{
-									throw 'Negative array index: $i';
-								}
-
-								if (i < a.length)
-								{
-									a[i];
-								}
-								else
-								{
-									ENull;
-								}
-
-							default:
-								throw "unexpected value, expected EInt, got " + idx;
-						}
-
-					default:
-						throw "unexpected value, expected EArray, got " + val;
-				}
-
-			case TBinop(op, e1, e2):
-				return Operator.binop(op, e1, e2, context, eval);
-
-			case TField(e, fa):
-				return FieldsUtils.findField(e, fa, eval, context).val;
-
-			case TParenthesis(e):
-				return eval(e, context);
-
-			case TObjectDecl(fields):
-				return EObject(fields.map(f -> {
-					name: f.name,
-					val: eval(f.expr, context)
-				}));
+			case TArray(array, key):
+				ArrayExpr.eval(array, key, eval);
 
 			case TArrayDecl(values):
-				var value:Array<EVal> = [];
+				EArray(expr.t, values.map(eval));
 
-				for (v in values)
-				{
-					value.push(eval(v, context));
-				}
-
-				return EArray(texpr.t, value);
-
-			case TCall(e, el):
-				var v = eval(e, context);
-
-				return switch (v)
-				{
-					case EIdent(id):
-						return EVoid;
-
-					case EFn(fn):
-						var eargs = [];
-
-						for (a in el)
-						{
-							eargs.push(eval(a, context));
-						}
-
-						fn(eargs);
-
-					default:
-						throw "unexpected value, expected EFunction, got " + v;
-				}
-
-			case TNew(c, params, el):
-				throw "TNew unimplemented";
-
-			case TUnop(op, postFix, e):
-				return Operator.unop(op, postFix, e, context, eval);
-
-			case TFunction(tfunc):
-				return makeEFun(tfunc.args.map(a -> a.v.id), tfunc.expr, context);
-
-			case TVar(v, expr):
-				if (expr != null)
-				{
-					return context[v.id] = eval(expr, context);
-				}
-
-				return context[v.id] = EVoid;
+			case TBinop(op, lhs, rhs):
+				OperatorExpr.binop(op, lhs, rhs, context, eval);
 
 			case TBlock(exprs):
-				var v = EVoid;
-
-				for (e in exprs)
-				{
-					v = eval(e, context);
-				}
-
-				return v;
-
-			case TFor(v, e1, e2):
-				throw "TFor unimplemented";
-
-			case TIf(econd, eif, eelse):
-				return switch (eval(econd, context))
-				{
-					case EBool(b):
-						if (b)
-						{
-							eval(eif, context);
-						}
-						else if (eelse != null)
-						{
-							eval(eelse, context);
-						}
-						else
-						{
-							EVoid;
-						}
-
-					default:
-						throw "if condition is not bool";
-				}
-
-			case TWhile(econd, e, normalWhile):
-				var stop = false;
-
-				while (!stop && eval(econd, context).match(EBool(true)))
-				{
-					try
-					{
-						eval(e, context);
-					}
-					catch (fc:FlowControl)
-					{
-						switch (fc)
-						{
-							case FCBreak:
-								stop = true;
-
-							case FCContinue:
-								// nothing to do
-
-							default:
-								throw fc;
-						}
-					}
-				}
-
-				return EVoid;
-
-			case TSwitch(e, cases, edef):
-				var val = eval(e, context);
-
-				for (c in cases)
-				{
-					var match = false;
-
-					for (v in c.values)
-					{
-						if (val.equals(eval(v, context)))
-						{
-							match = true;
-							break;
-						}
-					}
-
-					if (match)
-					{
-						return eval(c.expr, context);
-					}
-				}
-
-				if (edef != null)
-				{
-					return eval(edef, context);
-				}
-
-				return EVoid;
-
-			case TTry(e, catches):
-				try
-				{
-					eval(e, context);
-				}
-				catch (fc:FlowControl)
-				{
-					switch (fc)
-					{
-						case FCThrow(v):
-							for (c in catches)
-							{
-								if (EValTools.isSameType(v, EValTools.extractType(c.v.t)))
-								{
-									context[c.v.id] = v;
-									eval(c.expr, context);
-									return EVoid;
-								}
-							}
-
-							throw fc;
-
-						default:
-							throw fc;
-					}
-				}
-
-				return EVoid;
-
-			case TReturn(e):
-				throw FCReturn(e != null ? eval(e, context) : EVoid);
+				exprs.map(eval).last();
 
 			case TBreak:
 				throw FCBreak;
 
+			case TCall(expr, arguments):
+				CallExpr.eval(expr, arguments, eval);
+
+			case TCast(_, _):
+				throw "TCast unimplemented";
+
+			case TConst(constant):
+				ConstExpr.eval(constant);
+
 			case TContinue:
 				throw FCContinue;
 
-			case TThrow(e):
-				throw FCThrow(eval(e, context));
-
-			case TCast(e, m):
-				throw "TCast unimplemented";
-
-			case TMeta(s, e):
-				// TODO is there actually something to do at runtime?
-				return eval(e, context);
-
-			case TEnumIndex(e1): // generated by the pattern matcher
+			case TEnumIndex(_): // generated by the pattern matcher
 				throw "unexpected TEnumIndex";
 
-			case TEnumParameter(e1, ef, index): // generated by the pattern matcher
+			case TEnumParameter(_, _, _): // generated by the pattern matcher
 				throw "unexpected TEnumParameter";
 
-			case TTypeExpr(m):
-				var hash = switch (m)
-				{
-					case TClassDecl(_.get() => c):
-						'${c.pack.join(".")}#${c.module}#${c.name}';
+			case TField(expr, fieldAccess):
+				expr.findField(fieldAccess, eval).val;
 
-					default:
-						throw "not supported";
-				}
+			case TFor(_, _, _):
+				throw "TFor unimplemented";
 
-				if (moduleTypeCache.exists(hash))
-				{
-					return moduleTypeCache[hash];
-				}
+			case TFunction(fn):
+				EValUtils.makeEFunction(fn.args.map(arg -> arg.v.id), fn.expr, context, eval);
 
-				var staticFields = [];
-
-				switch (m)
-				{
-					case TClassDecl(_.get() => c):
-						for (s in c.statics.get())
-						{
-							switch (s.kind)
-							{
-								case FVar(_, _):
-									var expr = s.expr();
-
-									var val = if (expr != null)
-									{
-										eval(expr, context);
-									}
-									else
-									{
-										BaseType.defaultValue(s.type);
-									}
-
-									staticFields.push({ name: s.name, val: val });
-
-								case FMethod(_):
-									switch (s.type)
-									{
-										case TFun(args, _):
-											var val = makeEFun(compilationOutput.symbolTable.getFunctionArgSymbols(s), s.expr(), context);
-											staticFields.push({ name: s.name, val: val });
-
-										default:
-											throw "invalid method type";
-									}
-							}
-						}
-
-					default:
-						throw "not supported";
-				}
-
-				var val = EType(m, staticFields);
-				moduleTypeCache[hash] = val;
-				return val;
-
-			case TIdent(s): // TODO "unknown identifier" is that possible?
+			case TIdent(_): // TODO "unknown identifier" is that possible?
 				throw "TIdent unimplemented";
 
+			case TIf(conditionExpr, ifExpr, elseExpr):
+				IfExpr.eval(conditionExpr, ifExpr, elseExpr, eval);
+
 			case TLocal(v):
-				if (!context.exists(v.id))
-				{
-					throw 'using unbound variable ${v.id}';
-				}
+				context.exists(v.id) ? context[v.id] : throw 'using unbound variable ${v.id}';
 
-				return context[v.id];
-		}
-	}
+			case TMeta(_, expr): // TODO is there actually something to do at runtime?
+				eval(expr);
 
-	function makeEFun(args:Array<Int>, expr:TypedExpr, context:Context):EVal
-	{
-		return EFn(function(a:Array<EVal>)
-		{
-			context.stack();
+			case TNew(_, _, _):
+				throw "TNew unimplemented";
 
-			for (i in 0...args.length)
-			{
-				context[args[i]] = a[i];
-			}
+			case TObjectDecl(fields):
+				EObject(fields.map(f -> { name: f.name, val: eval(f.expr) }));
 
-			var ret = try
-			{
-				eval(expr, context);
-			}
-			catch (fc:FlowControl)
-			{
-				switch (fc)
-				{
-					case FCReturn(v):
-						v;
+			case TParenthesis(expr):
+				eval(expr);
 
-					default:
-						throw fc;
-				}
-			}
+			case TReturn(expr):
+				throw FCReturn(expr != null ? eval(expr) : EVoid);
 
-			context.unstack();
+			case TSwitch(expr, cases, defaultExpr):
+				SwitchExpr.eval(expr, cases, defaultExpr, eval);
 
-			return ret;
-		});
-	}
+			case TThrow(expr):
+				throw FCThrow(eval(expr));
 
-	function EVal2str(e:EVal, context:Context):String
-	{
-		return switch (e)
-		{
-			case EBool(b):
-				b ? "true" : "false";
+			case TTry(expr, catches):
+				TryExpr.eval(expr, catches, context, eval);
 
-			case ENull:
-				"null";
+			case TUnop(op, postFix, expr):
+				OperatorExpr.unop(op, postFix, expr, context, eval);
 
-			case EArray(_, a):
-				"[" + a.map(f -> EVal2str(f, context)).join(",") + "]";
+			case TVar(v, expr):
+				context[v.id] = expr != null ? eval(expr) : EVoid;
 
-			case EFloat(f):
-				'$f';
+			case TWhile(conditionExpr, expr, _):
+				LoopExpr.whileLoop(conditionExpr, expr, eval);
 
-			case EFn(_):
-				'function';
-
-			case EInt(i):
-				'$i';
-
-			case EObject(fields):
-				var buf = new StringBuf();
-				buf.add("{");
-				var fs = [];
-
-				for (f in fields)
-				{
-					fs.push('${f.name}: ${EVal2str(f.val, context)}');
-				}
-
-				buf.add(fs.join(", "));
-				buf.add("}");
-				buf.toString();
-
-			case ERegexp(r):
-				throw "todo print ereg";
-
-			case EString(s):
-				s;
-
-			case EVoid:
-				"Void";
-
-			case EIdent(id):
-				switch (context[id])
-				{
-					case null:
-						throw 'using unbound variable $id';
-
-					case value:
-						EVal2str(value, context);
-				}
-
-			case EType(m, _):
-				switch (m)
-				{
-					case TClassDecl(_.get() => c):
-						c.name;
-
-					case TEnumDecl(_.get() => e):
-						e.name;
-
-					case TTypeDecl(_.get() => t):
-						t.name;
-
-					case TAbstract(_.get() => a):
-						a.name;
-				}
+			case TTypeExpr(module):
+				ModuleExpr.load(module, compilationOutput, moduleTypeCache, context, eval);
 		}
 	}
 }

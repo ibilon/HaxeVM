@@ -4,7 +4,7 @@ import haxe.macro.Type;
 
 class Display
 {
-	public static function displayTExpr(expr:TypedExpr)
+	public static function displayTExpr(expr:TypedExpr):Void
 	{
 		// print(expr.t);
 		// TODO proper/less verbose print of type
@@ -225,7 +225,7 @@ class Display
 
 	static var indent:Int = 0;
 
-	static function print(value:Dynamic, ?value2:Dynamic)
+	static function print(value:Dynamic, ?value2:Dynamic):Void
 	{
 		for (_ in 0...indent)
 		{

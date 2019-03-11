@@ -3,7 +3,7 @@
 		{
 			"label": "completion",
 			"args": [
-				"test.hxml",
+				"extraParams.hxml",
 				"-D",
 				"doc_gen"
 			]

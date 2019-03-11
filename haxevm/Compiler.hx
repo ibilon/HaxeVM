@@ -1,40 +1,119 @@
+/**
+Copyright (c) 2019 Valentin Lemière, Guillaume Desquesnes
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+**/
+
 package haxevm;
 
 import byte.ByteData;
 import haxeparser.HaxeParser;
 import haxevm.typer.ClassTyper;
 import haxevm.typer.ModuleTypeTyper;
+import haxevm.utils.PositionUtils;
 
 using haxe.io.Path;
 
+/**
+The output of the compilation process.
+**/
 typedef CompilationOutput =
 {
-	symbolTable:SymbolTable,
-	modules:Array<Module>,
-	warnings:Array<String>
+	/**
+	The symbole table.
+	**/
+	var symbolTable:SymbolTable;
+
+	/**
+	The modules compiled.
+	**/
+	var modules:Array<Module>;
+
+	/**
+	The warnings generated during the compilation.
+	**/
+	var warnings:Array<String>;
+
 }
 
+/**
+The type of the file reader function.
+**/
+typedef FileReader = (filename:String)->String;
+
+/**
+Execute a compilation.
+**/
 class Compiler
 {
-	public var symbolTable:SymbolTable;
-	public var fileReader:String->String;
-	public var defines:Map<String, String>;
-	public var warnings:Array<String>;
+	/**
+	The defines.
+	**/
+	var defines:Map<String, String>;
 
-	var modules:Array<Module>;
+	/**
+	The function returning a file's content.
+	**/
+	var fileReader:FileReader;
+
+	/**
+	The path of the main class.
+	**/
 	var mainClass:String;
 
-	public function new(fileReader:String->String, mainClass:String, defines:Map<String, String>)
-	{
-		symbolTable = new SymbolTable();
-		modules = [];
-		warnings = [];
+	/**
+	The modules compiled.
+	**/
+	var modules:Array<Module>;
 
+	/**
+	The symbol of table for this compilation.
+	**/
+	@:allow(haxevm.typer)
+	var symbolTable:SymbolTable;
+
+	/**
+	The generated warnings.
+	**/
+	@:allow(haxevm.typer)
+	var warnings:Array<String>;
+
+	/**
+	Construct a compilation process.
+
+	@param fileReader The function returning a file's content.
+	@param mainClass The path of the main class.
+	@param defines The defines.
+	**/
+	public function new(fileReader:FileReader, mainClass:String, defines:Map<String, String>)
+	{
+		this.defines = defines;
 		this.fileReader = fileReader;
 		this.mainClass = mainClass;
-		this.defines = defines;
+		this.modules = [];
+		this.symbolTable = new SymbolTable();
+		this.warnings = [];
 	}
 
+	/**
+	Launch the compilation.
+	**/
 	public function compile():CompilationOutput
 	{
 		compileFile('${mainClass}.hx');
@@ -46,90 +125,65 @@ class Compiler
 		}
 	}
 
-	function compileFile(filename:String)
+	/**
+	Compile a file.
+
+	@param filename The file to compile.
+	**/
+	function compileFile(filename:String):Void
 	{
-		symbolTable.enter();
-
-		var name = filename.withoutExtension();
-		var types = [];
-		var module = {
-			file: filename,
-			name: name,
-			types: types,
-			linesData: []
-		};
-
-		// Add module to top level symbols
-		symbolTable.addModule(module);
-		modules.push(module);
-
-		var content = fileReader(filename);
-		module.linesData = preparseLinesData(content);
-
-		var parser = new HaxeParser(ByteData.ofString(content), filename);
-
-		for (k => v in defines)
+		symbolTable.stack(() ->
 		{
-			parser.define(k, v);
-		}
+			var name = filename.withoutExtension();
+			var types = [];
+			var module = {
+				file: filename,
+				name: name,
+				types: types,
+				newLinesPositions: []
+			};
 
-		var file = parser.parse();
+			// Add module to top level symbols
+			symbolTable.addModule(module);
+			modules.push(module);
 
-		// First pass: add types symbols
-		var decls:Array<ModuleTypeTyper> = [];
+			var content = fileReader(filename);
+			module.newLinesPositions = PositionUtils.preparseLinesData(content);
 
-		for (i in 0...file.decls.length)
-		{
-			var decl = file.decls[i];
+			var parser = new HaxeParser(ByteData.ofString(content), filename);
 
-			switch (decl.decl)
+			for (key => value in defines)
 			{
-				case EClass(d):
-					var clst = new ClassTyper(this, module, d);
-					decls.push(clst);
-
-					var type = clst.preType();
-					symbolTable.addType(d.name, type);
-					types.push(type);
-
-				default:
-					throw "not supported";
+				parser.define(key, value);
 			}
-		}
 
-		// Second pass: type type symbols
-		for (decl in decls)
-		{
-			decl.fullType();
-		}
+			var file = parser.parse();
 
-		symbolTable.leave();
-	}
+			// First pass: add types symbols
+			var declarationsTyper:Array<ModuleTypeTyper> = [];
 
-	function preparseLinesData(content:String):Array<Int>
-	{
-		var data = [];
-		var i = 0;
-
-		while (i < content.length)
-		{
-			switch (content.charAt(i++))
+			for (i in 0...file.decls.length)
 			{
-				case "\r":
-					if (content.charAt(i + 1) == "\n")
-					{
-						i++;
-					}
-					data.push(i);
+				switch (file.decls[i].decl)
+				{
+					case EClass(classDeclaration):
+						var classTyper = new ClassTyper(this, module, classDeclaration);
+						declarationsTyper.push(classTyper);
 
-				case "\n":
-					data.push(i);
+						var type = classTyper.firstPass();
+						symbolTable.addType(classDeclaration.name, type);
+						types.push(type);
 
-				default:
+					default:
+						throw "not supported";
+				}
 			}
-		}
 
-		data.push(i);
-		return data;
+			// Second pass: type type symbols
+			for (typer in declarationsTyper)
+			{
+				typer.secondPass();
+			}
+		});
 	}
 }
