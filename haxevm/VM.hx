@@ -234,8 +234,8 @@ class VM
 			case TVar(v, expr):
 				context[v.id] = expr != null ? eval(expr) : EVoid;
 
-			case TWhile(conditionExpr, expr, _):
-				LoopExpr.whileLoop(conditionExpr, expr, eval);
+			case TWhile(conditionExpr, expr, normalWhile):
+				LoopExpr.whileLoop(conditionExpr, expr, normalWhile, eval);
 
 			case TTypeExpr(module):
 				ModuleExpr.load(module, compilationOutput, moduleTypeCache, context, eval);

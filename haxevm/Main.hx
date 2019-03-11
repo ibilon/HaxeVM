@@ -106,6 +106,18 @@ class Main
 		var err:Output = err != null ? err : Sys.stderr();
 
 		var compilationOutput = new Compiler(fileLoader, mainClass, defines).compile();
+
+		if (compilationOutput.errors.length != 0)
+		{
+			for (error in compilationOutput.errors)
+			{
+				err.writeString(error);
+				err.writeString("\n");
+			}
+
+			return;
+		}
+
 		new VM(compilationOutput, mainClass, out).run();
 
 		for (warning in compilationOutput.warnings)

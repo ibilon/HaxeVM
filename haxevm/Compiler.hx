@@ -26,9 +26,9 @@ import byte.ByteData;
 import haxeparser.HaxeParser;
 import haxevm.typer.ClassTyper;
 import haxevm.typer.ModuleTypeTyper;
-import haxevm.utils.PositionUtils;
 
 using haxe.io.Path;
+using haxevm.utils.PositionUtils;
 
 /**
 The output of the compilation process.
@@ -36,9 +36,9 @@ The output of the compilation process.
 typedef CompilationOutput =
 {
 	/**
-	The symbole table.
+	The errors generated during the compilation.
 	**/
-	var symbolTable:SymbolTable;
+	var errors:Array<String>;
 
 	/**
 	The modules compiled.
@@ -46,10 +46,14 @@ typedef CompilationOutput =
 	var modules:Array<Module>;
 
 	/**
+	The symbole table.
+	**/
+	var symbolTable:SymbolTable;
+
+	/**
 	The warnings generated during the compilation.
 	**/
 	var warnings:Array<String>;
-
 }
 
 /**
@@ -66,6 +70,11 @@ class Compiler
 	The defines.
 	**/
 	var defines:Map<String, String>;
+
+	/**
+	The generated errors.
+	**/
+	var errors:Array<String>;
 
 	/**
 	The function returning a file's content.
@@ -104,6 +113,7 @@ class Compiler
 	public function new(fileReader:FileReader, mainClass:String, defines:Map<String, String>)
 	{
 		this.defines = defines;
+		this.errors = [];
 		this.fileReader = fileReader;
 		this.mainClass = mainClass;
 		this.modules = [];
@@ -119,8 +129,9 @@ class Compiler
 		compileFile('${mainClass}.hx');
 
 		return {
-			symbolTable: symbolTable,
+			errors: errors,
 			modules: modules,
+			symbolTable: symbolTable,
 			warnings: warnings
 		}
 	}
@@ -157,7 +168,36 @@ class Compiler
 				parser.define(key, value);
 			}
 
-			var file = parser.parse();
+			var file = try
+			{
+				parser.parse();
+			}
+			catch (pe:haxeparser.ParserError)
+			{
+				var msg = switch (pe.msg)
+				{
+					case MissingSemicolon:
+						"missing semicolon";
+
+					case MissingType:
+						"missing type";
+
+					case DuplicateDefault:
+						"duplicate default";
+
+					case UnclosedMacro:
+						"unclosed macro";
+
+					case Unimplemented:
+						"unimplemented";
+
+					case Custom(s), SharpError(s):
+						s;
+				}
+
+				errors.push('${pe.pos.toString(module, true)} $msg');
+				return;
+			}
 
 			// First pass: add types symbols
 			var declarationsTyper:Array<ModuleTypeTyper> = [];

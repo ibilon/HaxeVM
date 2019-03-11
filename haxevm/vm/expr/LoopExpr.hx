@@ -37,11 +37,11 @@ class LoopExpr
 	@param expr The body of the loop.
 	@param eval The expression evaluation function, should be `VM.eval`.
 	**/
-	public static function whileLoop(conditionExpr:TypedExpr, expr:TypedExpr, eval:EvalFn):EVal
+	public static function whileLoop(conditionExpr:TypedExpr, expr:TypedExpr, normalWhile:Bool, eval:EvalFn):EVal
 	{
 		var stop = false;
 
-		while (!stop && eval(conditionExpr).match(EBool(true)))
+		function evalBody()
 		{
 			try
 			{
@@ -61,6 +61,17 @@ class LoopExpr
 						throw fc;
 				}
 			}
+		}
+
+		if (!normalWhile)
+		{
+			// Do the guaranteed first body run.
+			evalBody();
+		}
+
+		while (!stop && eval(conditionExpr).match(EBool(true)))
+		{
+			evalBody();
 		}
 
 		return EVoid;

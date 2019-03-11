@@ -24,6 +24,19 @@ class While
 {
 	public static function main()
 	{
+		var i = 0;
+		var z = 3;
+
+		while ((i += 2) < z * 2)
+		{
+			trace(i);
+		}
+
+		while (false)
+		{
+			throw "no";
+		}
+
 		var i = 10;
 
 		while (--i >= 0)
@@ -42,5 +55,34 @@ class While
 		}
 
 		trace(i);
+
+		do
+		{
+			trace("a");
+		}
+		while (false);
+
+		var i = 2;
+
+		do
+		{
+			trace(-i);
+		}
+		while (--i > 0);
+
+		do
+		{
+			trace(i);
+
+			if (i == 4)
+			{
+				continue;
+			}
+			else if (i == 6)
+			{
+				break;
+			}
+		}
+		while (i++ < 10);
 	}
 }
