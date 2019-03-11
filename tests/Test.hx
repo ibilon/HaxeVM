@@ -40,14 +40,14 @@ The output produced by a test (compilation + run).
 typedef RunResult =
 {
 	/**
-	The stdout output.
+	The normal output.
 	**/
-	var stdout:String;
+	var out:String;
 
 	/**
-	The stderr output.
+	The error output.
 	**/
-	var stderr:String;
+	var err:String;
 }
 
 /**
@@ -140,15 +140,15 @@ class Test extends utest.Test
 		// There's some issue with escaping when using arg array.
 		var process = new Process(args.join(" "));
 
-		var stdout = process.stdout.readAll().toString();
-		var stderr = process.stderr.readAll().toString();
+		var out = process.stdout.readAll().toString();
+		var err = process.stderr.readAll().toString();
 
 		process.close();
 		Sys.setCwd(cwd);
 
 		return {
-			stdout: stdout,
-			stderr: stderr
+			out: out,
+			err: err
 		}
 	}
 
@@ -160,24 +160,24 @@ class Test extends utest.Test
 	**/
 	function runFile(file:String, defines:Map<String, String>):RunResult
 	{
-		var stdout = new StringBufferOutput();
-		var stderr = new StringBufferOutput();
+		var out = new StringBufferOutput();
+		var err = new StringBufferOutput();
 
 		try
 		{
-			haxevm.Main.runFile(file, defines, stdout, stderr);
+			haxevm.Main.runFile(file, defines, out, err);
 		}
 		catch (a:Any)
 		{
-			stderr.writeString(Std.string(a));
+			err.writeString(Std.string(a));
 			var es = CallStack.exceptionStack();
 			es.reverse();
-			stderr.writeString(CallStack.toString(es));
+			err.writeString(CallStack.toString(es));
 		}
 
 		return {
-			stdout: stdout.toString(),
-			stderr: stderr.toString()
+			out: out.toString(),
+			err: err.toString()
 		}
 	}
 
@@ -193,7 +193,7 @@ class Test extends utest.Test
 		var real = runHaxe(file, defines);
 		var haxevm = runFile(file, defines);
 
-		Assert.equals(real.stdout, haxevm.stdout);
-		Assert.equals(real.stderr, haxevm.stderr);
+		Assert.equals(real.out, haxevm.out);
+		Assert.equals(real.err, haxevm.err);
 	}
 }

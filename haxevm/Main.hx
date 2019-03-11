@@ -89,10 +89,10 @@ class Main
 
 	@param fname The file to run.
 	@param defines The defines.
-	@param stdout Optional, the stdout output. If absent stdout is used.
-	@param stderr Optional, the stderr output. If absent stderr is used.
+	@param out Optional, the normal output. If absent the process' stdout is used.
+	@param err Optional, the error output. If absent the process' stderr is used.
 	**/
-	public static function runFile(fname:String, defines:Map<String, String>, ?stdout:Output, ?stderr:Output):Void
+	public static function runFile(fname:String, defines:Map<String, String>, ?out:Output, ?err:Output):Void
 	{
 		var mainClass = fname.withoutDirectory().withoutExtension();
 		var classPath = fname.directory();
@@ -102,16 +102,16 @@ class Main
 			return File.getContent(Path.join([classPath, path]));
 		}
 
-		var stdout:Output = stdout != null ? stdout : Sys.stdout();
-		var stderr:Output = stderr != null ? stderr : Sys.stderr();
+		var out:Output = out != null ? out : Sys.stdout();
+		var err:Output = err != null ? err : Sys.stderr();
 
 		var compilationOutput = new Compiler(fileLoader, mainClass, defines).compile();
-		new VM(compilationOutput, mainClass, stdout).run();
+		new VM(compilationOutput, mainClass, out).run();
 
 		for (warning in compilationOutput.warnings)
 		{
-			stderr.writeString(warning);
-			stderr.writeString("\n");
+			err.writeString(warning);
+			err.writeString("\n");
 		}
 	}
 }
