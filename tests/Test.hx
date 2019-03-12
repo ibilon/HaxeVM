@@ -108,6 +108,7 @@ class Test extends utest.Test
 		r.addCase(new ClassTest());
 		r.addCase(new ExprTest());
 		r.addCase(new MiscTest());
+		r.addCase(new TypedefTest());
 
 		// Generate coverage information.
 		MCoverage.getLogger().addClient(new LcovPrintClient("Coverage report"));

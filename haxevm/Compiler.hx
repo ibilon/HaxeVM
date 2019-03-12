@@ -26,6 +26,7 @@ import byte.ByteData;
 import haxeparser.HaxeParser;
 import haxevm.typer.ClassTyper;
 import haxevm.typer.ModuleTypeTyper;
+import haxevm.typer.TypedefTyper;
 
 using haxe.io.Path;
 using haxevm.utils.PositionUtils;
@@ -214,6 +215,13 @@ class Compiler
 						symbolTable.addType(classDeclaration.name, type);
 						types.push(type);
 
+					case ETypedef(typedefDeclaration):
+						var typedefTyper = new TypedefTyper(this, module, typedefDeclaration);
+						declarationsTyper.push(typedefTyper);
+
+						var type = typedefTyper.firstPass();
+						symbolTable.addType(typedefDeclaration.name, type);
+						types.push(type);
 					default:
 						throw "not supported";
 				}
