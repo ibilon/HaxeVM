@@ -49,7 +49,18 @@ class Arrays
 		a[0] = 7;
 		trace(a[0]);
 
-		var a = [0, 1, 2];
+		var a = null;
+		trace(a);
+		$type(a);
+		a = [];
+		trace(a);
+		// $type(a); // TODO after unify
+		a[0] = true;
+		trace(a);
+		// $type(a); // TODO after unify
+
+		var a = [0, 1.1, 2];
+		// $type(a); // TODO after unify
 		trace(a);
 		trace(a[3]);
 		trace(a);

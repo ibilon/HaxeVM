@@ -52,8 +52,11 @@ class ArrayExpr
 			case TInst(_, params) if (BaseType.isArray(array.t)):
 				params[0];
 
+			case TMono(_):
+				Monomorph.make();
+
 			default:
-				throw "Array access only allowed on arrays";
+				throw "Array access only allowed on arrays " + array.t;
 		}
 
 		if (!BaseType.isInt(key.t))
@@ -89,7 +92,7 @@ class ArrayExpr
 			{
 				if (type != value.t) // TODO monomorph/unify
 				{
-					throw "array must be of single type";
+					//throw "array must be of single type";
 				}
 			}
 		}

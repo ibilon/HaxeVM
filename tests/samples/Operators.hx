@@ -30,6 +30,9 @@ class Operators
 		trace(i);
 		trace(-i);
 
+		trace(-7);
+		trace(-(7));
+
 		trace(i--);
 		trace(i);
 		trace(--i);
@@ -108,6 +111,9 @@ class Operators
 		trace(a == b);
 		trace(a != a);
 		trace(a != b);
+
+		trace(!a);
+		trace(!b);
 
 		trace(a && true);
 		trace(a || true);

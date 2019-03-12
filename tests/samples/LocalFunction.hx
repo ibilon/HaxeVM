@@ -32,14 +32,22 @@ class LocalFunction
 		$type(t);
 		$type(t(0));
 
+		trace(t);
+
 		t(1);
 		t(7);
+
+		function empty()
+		{
+		}
+		empty();
 
 		var u = function(a:Bool)
 		{
 			if (a)
 			{
 				trace("a");
+				return;
 			}
 			else
 			{

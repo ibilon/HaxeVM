@@ -524,6 +524,9 @@ class OperatorExpr
 					case TField(expr, fieldAccess):
 						update(expr.findField(fieldAccess, eval).val);
 
+					case TParenthesis(subExpr):
+						unop(op, postFix, subExpr, context, eval);
+
 					default:
 						throw "not implemented";
 				}
@@ -552,6 +555,9 @@ class OperatorExpr
 					case TLocal(v):
 						update(context[v.id]);
 
+					case TParenthesis(subExpr):
+						unop(op, postFix, subExpr, context, eval);
+
 					default:
 						throw "not implemented";
 				}
@@ -579,6 +585,9 @@ class OperatorExpr
 
 					case TLocal(v):
 						update(context[v.id]);
+
+					case TParenthesis(subExpr):
+						unop(op, postFix, subExpr, context, eval);
 
 					default:
 						throw "not implemented";

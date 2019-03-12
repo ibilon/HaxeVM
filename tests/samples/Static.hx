@@ -62,10 +62,7 @@ class Static
 		trace(i);
 		e++;
 
-		if (i > 0)
-		{
-			i = a(i / 2);
-		}
+		i = i > 0 ? a(i / 2) : 0;
 
 		return i;
 	}

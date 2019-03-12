@@ -28,10 +28,10 @@ class Switch
 		{
 			switch (a)
 			{
-				case 0:
+				case 0, 3:
 					if (b)
 					{
-						throw "zero";
+						throw "zero or three";
 					}
 					else
 					{
@@ -76,9 +76,27 @@ class Switch
 		test(1, false);
 		test(2, false);
 		test(3, false);
+		test(4, false);
 		test(0, true);
 		test(1, true);
 		test(2, true);
 		test(3, true);
+		test(4, true);
+
+		switch (0)
+		{
+			case 0:
+				trace("zero");
+		}
+
+		switch (0)
+		{
+			case 1:
+				trace("one");
+		}
+
+		switch (0)
+		{
+		}
 	}
 }

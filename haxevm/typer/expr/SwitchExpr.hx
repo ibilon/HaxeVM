@@ -46,7 +46,7 @@ class SwitchExpr
 	public static function type(expr:Expr, cases:Array<Case>, defaultExpr:Null<Expr>, position:BasePosition, typeExpr:ExprTyperFn):TypedExpr
 	{
 		// TODO cases exprs must be from the switch expr
-		var eif = defaultExpr;
+		var eif = defaultExpr != null ? defaultExpr : ExprUtils.makeEmpty();
 		var i = cases.length - 1;
 
 		while (i >= 0)
