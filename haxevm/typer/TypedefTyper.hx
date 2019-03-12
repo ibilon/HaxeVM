@@ -30,8 +30,11 @@ import haxevm.impl.Ref;
 
 using haxevm.utils.ComplexTypeUtils;
 
-class TypedefTyper implements ModuleTypeTyper {
-
+/**
+Do typedef typing.
+**/
+class TypedefTyper implements ModuleTypeTyper
+{
 	/**
 	Link to the compiler doing the compilation.
 	**/
@@ -48,6 +51,11 @@ class TypedefTyper implements ModuleTypeTyper {
 	var module:Module;
 
 	/**
+	The typedef' position.
+	**/
+	var position:Position;
+
+	/**
 	The typed typedef.
 	**/
 	var typedTypedef:Null<DefType>;
@@ -58,17 +66,19 @@ class TypedefTyper implements ModuleTypeTyper {
 	@param compiler The compiler doing the compilation.
 	@param module The module this class is part of.
 	@param definition The definition of the typedef.
+	@param position The typedef' position.
 	**/
-	public function new(compiler:Compiler, module:Module, definition:Definition<EnumFlag, ComplexType>)
+	public function new(compiler:Compiler, module:Module, definition:Definition<EnumFlag, ComplexType>, position:Position)
 	{
 		this.compiler = compiler;
 		this.definition = definition;
 		this.module = module;
+		this.position = position;
 		this.typedTypedef = null;
 	}
 
 	/**
-	Construct the module type's typed data, but don't type its fields' expression.
+	Construct the typedef's typed data.
 	**/
 	public function firstPass():ModuleType
 	{
@@ -81,7 +91,7 @@ class TypedefTyper implements ModuleTypeTyper {
 			name: definition.name,
 			pack: [],
 			params: [], // def.params,
-			pos: null,
+			pos: position,
 			type: definition.data.toType(),
 			exclude: () -> {}
 		};
@@ -92,6 +102,7 @@ class TypedefTyper implements ModuleTypeTyper {
 			{
 				case EExtern:
 					typedTypedef.isExtern = true;
+
 				case EPrivate:
 					typedTypedef.isPrivate = true;
 			}
@@ -101,7 +112,7 @@ class TypedefTyper implements ModuleTypeTyper {
 	}
 
 	/**
-	Type the module type's fields' expression.
+	Nothing to do in the second pass for a typedef.
 	**/
 	public function secondPass():Void
 	{

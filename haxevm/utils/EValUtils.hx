@@ -37,6 +37,74 @@ To be used with `using EValUtils;`.
 class EValUtils
 {
 	/**
+	Extract an array from the value, or error.
+
+	@param value The value.
+	**/
+	public static function asArray(value:EVal):Array<EVal>
+	{
+		return switch (value)
+		{
+			case EArray(_, data):
+				data;
+
+			default:
+				throw "expected EArray got " + value.getName();
+		}
+	}
+
+	/**
+	Extract a bool from the value, or error.
+
+	@param value The value.
+	**/
+	public static function asBool(value:EVal):Bool
+	{
+		return switch (value)
+		{
+			case EBool(b):
+				b;
+
+			default:
+				throw "expected EBool got " + value.getName();
+		}
+	}
+
+	/**
+	Extract an int from the value, or error.
+
+	@param value The value.
+	**/
+	public static function asInt(value:EVal):Int
+	{
+		return switch (value)
+		{
+			case EInt(i):
+				i;
+
+			default:
+				throw "expected EInt got " + value.getName();
+		}
+	}
+
+	/**
+	Extract a function from the value, or error.
+
+	@param value The value.
+	**/
+	public static function asFunction(value:EVal):EFunctionFn
+	{
+		return switch (value)
+		{
+			case EFunction(fn):
+				fn;
+
+			default:
+				throw "expected EFunction got " + value.getName();
+		}
+	}
+
+	/**
 	Check if two EVal values are of the same type.
 
 	@param a The first value.
@@ -88,7 +156,7 @@ class EValUtils
 	**/
 	public static function makeEFunction(argumentsId:Array<Int>, expression:TypedExpr, context:Context, eval:EvalFn):EVal
 	{
-		return EFunction(function(a:Array<EVal>)
+		return EFunction(function(arguments:Array<EVal>)
 		{
 			var ret;
 
@@ -96,7 +164,7 @@ class EValUtils
 			{
 				for (i in 0...argumentsId.length)
 				{
-					context[argumentsId[i]] = a[i];
+					context[argumentsId[i]] = arguments[i];
 				}
 
 				ret = try
@@ -107,8 +175,8 @@ class EValUtils
 				{
 					switch (fc)
 					{
-						case FCReturn(v):
-							v;
+						case FCReturn(value):
+							value;
 
 						default:
 							throw fc;

@@ -205,10 +205,12 @@ class Compiler
 
 			for (i in 0...file.decls.length)
 			{
-				switch (file.decls[i].decl)
+				var declaration = file.decls[i];
+
+				switch (declaration.decl)
 				{
 					case EClass(classDeclaration):
-						var classTyper = new ClassTyper(this, module, classDeclaration);
+						var classTyper = new ClassTyper(this, module, classDeclaration, declaration.pos);
 						declarationsTyper.push(classTyper);
 
 						var type = classTyper.firstPass();
@@ -216,12 +218,13 @@ class Compiler
 						types.push(type);
 
 					case ETypedef(typedefDeclaration):
-						var typedefTyper = new TypedefTyper(this, module, typedefDeclaration);
+						var typedefTyper = new TypedefTyper(this, module, typedefDeclaration, declaration.pos);
 						declarationsTyper.push(typedefTyper);
 
 						var type = typedefTyper.firstPass();
 						symbolTable.addType(typedefDeclaration.name, type);
 						types.push(type);
+
 					default:
 						throw "not supported";
 				}

@@ -25,6 +25,8 @@ package haxevm.vm.expr;
 import haxe.macro.Type.TypedExpr;
 import haxevm.vm.EVal;
 
+using haxevm.utils.EValUtils;
+
 /**
 Evaluate an if.
 **/
@@ -40,24 +42,17 @@ class IfExpr
 	**/
 	public static function eval(conditionExpr:TypedExpr, ifExpr:TypedExpr, elseExpr:TypedExpr, eval:EvalFn):EVal
 	{
-		return switch (eval(conditionExpr))
+		return if (eval(conditionExpr).asBool())
 		{
-			case EBool(b):
-				if (b)
-				{
-					eval(ifExpr);
-				}
-				else if (elseExpr != null)
-				{
-					eval(elseExpr);
-				}
-				else
-				{
-					EVoid;
-				}
-
-			default:
-				throw "if condition is not bool";
+			eval(ifExpr);
+		}
+		else if (elseExpr != null)
+		{
+			eval(elseExpr);
+		}
+		else
+		{
+			EVoid;
 		}
 	}
 }

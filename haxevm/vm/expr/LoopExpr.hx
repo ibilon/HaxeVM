@@ -25,6 +25,8 @@ package haxevm.vm.expr;
 import haxe.macro.Type.TypedExpr;
 import haxevm.vm.EVal;
 
+using haxevm.utils.EValUtils;
+
 /**
 Evaluate a loop.
 **/
@@ -69,7 +71,7 @@ class LoopExpr
 			evalBody();
 		}
 
-		while (!stop && eval(conditionExpr).match(EBool(true)))
+		while (!stop && eval(conditionExpr).asBool())
 		{
 			evalBody();
 		}

@@ -312,16 +312,7 @@ class OperatorExpr
 	{
 		function getBool(v:TypedExpr):Bool
 		{
-			var val = eval(v);
-
-			return switch (val)
-			{
-				case EBool(b):
-					b;
-
-				default:
-					throw 'expected EBool but got $val';
-			}
+			return eval(v).asBool();
 		}
 
 		return switch (op)
@@ -465,14 +456,8 @@ class OperatorExpr
 			case OpDecrement, OpIncrement:
 				function update(before:EVal):EVal
 				{
-					return switch (before)
-					{
-						case EInt(i):
-							op.match(OpDecrement) ? EVal.EInt(i - 1) : EVal.EInt(i + 1);
-
-						default:
-							throw "unexpected type, want EInt, got " + before;
-					}
+					var i = before.asInt();
+					return op.match(OpDecrement) ? EVal.EInt(i - 1) : EVal.EInt(i + 1);
 				}
 
 				switch (expr.expr)
@@ -534,14 +519,7 @@ class OperatorExpr
 			case OpNegBits:
 				function update (before:EVal):EVal
 				{
-					return switch (before)
-					{
-						case EInt(i):
-							EInt(~i);
-
-						default:
-							throw "unexpected type, want EInt, got " + before;
-					}
+					return EInt(~before.asInt());
 				}
 
 				switch (expr.expr)
@@ -565,14 +543,7 @@ class OperatorExpr
 			case OpNot:
 				function update(before:EVal):EVal
 				{
-					return switch (before)
-					{
-						case EBool(b):
-							EBool(!b);
-
-						default:
-							throw "unexpected type, want EBool, got " + before;
-					}
+					return EBool(!before.asBool());
 				}
 
 				switch (expr.expr)

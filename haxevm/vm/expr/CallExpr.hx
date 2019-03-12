@@ -25,6 +25,8 @@ package haxevm.vm.expr;
 import haxe.macro.Type.TypedExpr;
 import haxevm.vm.EVal;
 
+using haxevm.utils.EValUtils;
+
 /**
 Evaluate a call.
 **/
@@ -39,15 +41,6 @@ class CallExpr
 	**/
 	public static function eval(expr:TypedExpr, arguments:Array<TypedExpr>, eval:EvalFn):EVal
 	{
-		var exprValue = eval(expr);
-
-		return switch (exprValue)
-		{
-			case EFunction(fn):
-				fn(arguments.map(a -> eval(a)));
-
-			default:
-				throw "unexpected value, expected EFunction, got " + exprValue;
-		}
+		return eval(expr).asFunction()(arguments.map(arg -> eval(arg)));
 	}
 }

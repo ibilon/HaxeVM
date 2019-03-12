@@ -30,6 +30,11 @@ The type of an expression evaluation function.
 typedef EvalFn = (expr:TypedExpr)->EVal;
 
 /**
+The type of a function.
+**/
+typedef EFunctionFn = (arguments:Array<EVal>)->EVal;
+
+/**
 A field.
 **/
 typedef EField =
@@ -65,7 +70,7 @@ enum EVal
 	/**
 	A function.
 	**/
-	EFunction(fn:(arguments:Array<EVal>)->EVal);
+	EFunction(fn:EFunctionFn);
 
 	/**
 	An Int.

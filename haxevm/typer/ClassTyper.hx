@@ -61,6 +61,11 @@ class ClassTyper implements ModuleTypeTyper
 	var module:Module;
 
 	/**
+	The class' position.
+	**/
+	var position:Position;
+
+	/**
 	The typed class.
 	**/
 	var typedClass:Null<ClassType>;
@@ -71,14 +76,16 @@ class ClassTyper implements ModuleTypeTyper
 	@param compiler The compiler doing the compilation.
 	@param module The module this class is part of.
 	@param definition The definition of the class.
+	@param position The class' position.
 	**/
-	public function new(compiler:Compiler, module:Module, definition:Definition<ClassFlag, Array<Field>>)
+	public function new(compiler:Compiler, module:Module, definition:Definition<ClassFlag, Array<Field>>, position:Position)
 	{
 		this.compiler = compiler;
 		this.definition = definition;
 		this.fields = [];
 		this.fieldsExpr = [];
 		this.module = module;
+		this.position = position;
 		this.typedClass = null;
 	}
 
@@ -108,7 +115,7 @@ class ClassTyper implements ModuleTypeTyper
 			overrides: overrideFields,
 			pack: [],
 			params: [], // def.params,
-			pos: null,
+			pos: position,
 			statics: Ref.make(staticFields),
 			superClass: null,
 			exclude: () -> {}

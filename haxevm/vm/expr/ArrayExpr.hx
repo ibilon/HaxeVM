@@ -25,6 +25,8 @@ package haxevm.vm.expr;
 import haxe.macro.Type.TypedExpr;
 import haxevm.vm.EVal;
 
+using haxevm.utils.EValUtils;
+
 /**
 Evaluate an array access.
 **/
@@ -39,36 +41,14 @@ class ArrayExpr
 	**/
 	public static function eval(array:TypedExpr, key:TypedExpr, eval:EvalFn):EVal
 	{
-		var arrayValue = eval(array);
+		var array = eval(array).asArray();
+		var key = eval(key).asInt();
 
-		return switch (arrayValue)
+		if (key < 0)
 		{
-			case EArray(_, a):
-				var keyValue = eval(key);
-
-				switch (keyValue)
-				{
-					case EInt(i):
-						if (i < 0)
-						{
-							throw 'Negative array index: $i';
-						}
-
-						if (i < a.length)
-						{
-							a[i];
-						}
-						else
-						{
-							ENull;
-						}
-
-					default:
-						throw "unexpected value, expected EInt, got " + keyValue;
-				}
-
-			default:
-				throw "unexpected value, expected EArray, got " + arrayValue;
+			throw 'Negative array index: $key';
 		}
+
+		return key < array.length ? array[key] : ENull;
 	}
 }
