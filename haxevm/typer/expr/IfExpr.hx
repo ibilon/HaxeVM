@@ -53,11 +53,7 @@ class IfExpr
 		symbolTable.stack(() ->
 		{
 			conditionTyped = typeExpr(conditionExpr);
-
-			if (!BaseType.isBool(conditionTyped.t))
-			{
-				throw "if condition must be bool is " + conditionTyped.t;
-			}
+			Unification.unify(BaseType.tBool, conditionTyped.t, true);
 
 			symbolTable.stack(() ->
 			{
@@ -66,10 +62,10 @@ class IfExpr
 
 			symbolTable.stack(() ->
 			{
-				elseTyped = elseExpr != null ? typeExpr(elseExpr) : null;
+				elseTyped = elseExpr != null ? typeExpr(elseExpr) : TypedExprUtils.makeEmpty();
 			});
 		});
 
-		return TIf(conditionTyped, ifTyped, elseTyped).makeTyped(position, BaseType.tVoid); // TODO check
+		return TIf(conditionTyped, ifTyped, elseTyped).makeTyped(position, Unification.unify(ifTyped.t, elseTyped.t).type);
 	}
 }

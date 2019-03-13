@@ -76,7 +76,7 @@ class ArrayExpr
 	**/
 	public static function typeDeclaration(values:Array<Expr>, position:Position, typeExpr:ExprTyperFn):TypedExpr
 	{
-		var type:Null<Type> = null;
+		var type = Monomorph.make();
 		var elems = [];
 
 		for (value in values)
@@ -84,19 +84,16 @@ class ArrayExpr
 			var value = typeExpr(value);
 			elems.push(value);
 
-			if (type == null)
+			var unificationResult = Unification.unify(type, value.t);
+
+			if (!unificationResult.success)
 			{
-				type = value.t;
+				throw "array must be of single type";
 			}
-			else
-			{
-				if (type != value.t) // TODO monomorph/unify
-				{
-					//throw "array must be of single type";
-				}
-			}
+
+			type = unificationResult.type;
 		}
 
-		return TArrayDecl(elems).makeTyped(position, BaseType.tArray(type != null ? type : Monomorph.make()));
+		return TArrayDecl(elems).makeTyped(position, BaseType.tArray(type));
 	}
 }

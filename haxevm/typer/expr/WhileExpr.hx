@@ -52,11 +52,7 @@ class WhileExpr
 		symbolTable.stack(() ->
 		{
 			conditionTyped = typeExpr(conditionExpr);
-
-			if (!BaseType.isBool(conditionTyped.t))
-			{
-				throw "while condition must be bool is " + conditionTyped.t;
-			}
+			Unification.unify(BaseType.tBool, conditionTyped.t, true);
 
 			symbolTable.stack(() ->
 			{

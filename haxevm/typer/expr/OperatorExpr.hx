@@ -53,7 +53,8 @@ class OperatorExpr
 				binopBoolean(op, lhs, rhs);
 
 			case OpAssign:
-				lhs; // TODO check b unify with a
+				Unification.unify(lhs, rhs, true);
+				lhs;
 
 			case OpAssignOp(op):
 				binop(op, lhs, rhs);
@@ -94,14 +95,7 @@ class OperatorExpr
 		return switch (op)
 		{
 			case OpMod, OpMult, OpAdd, OpSub:
-				if (BaseType.isFloat(lhs) || BaseType.isFloat(rhs))
-				{
-					BaseType.tFloat;
-				}
-				else
-				{
-					BaseType.tInt;
-				}
+				Unification.unify(lhs, rhs).type;
 
 			case OpDiv:
 				BaseType.tFloat;
@@ -120,19 +114,12 @@ class OperatorExpr
 	**/
 	static function binopBitwise(op:Binop, lhs:Type, rhs:Type):Type
 	{
+		Unification.unify(BaseType.tInt, lhs, true);
+		Unification.unify(BaseType.tInt, rhs, true);
+
 		return switch (op)
 		{
 			case OpShl, OpShr, OpUShr, OpAnd, OpOr, OpXor:
-				if (!BaseType.isInt(lhs))
-				{
-					throw '$lhs should be Int';
-				}
-
-				if (!BaseType.isInt(rhs))
-				{
-					throw '$rhs should be Int';
-				}
-
 				BaseType.tInt;
 
 			default:
@@ -152,7 +139,7 @@ class OperatorExpr
 		return switch (op)
 		{
 			case OpEq, OpNotEq:
-				if (lhs == rhs || (BaseType.isNumeric(lhs) && BaseType.isNumeric(rhs)))
+				if (Unification.unify(lhs, rhs).success)
 				{
 					BaseType.tBool;
 				}
@@ -172,15 +159,8 @@ class OperatorExpr
 				}
 
 			case OpBoolAnd, OpBoolOr:
-				if (!BaseType.isBool(lhs))
-				{
-					throw '$lhs should be Bool';
-				}
-
-				if (!BaseType.isBool(rhs))
-				{
-					throw '$rhs should be Bool';
-				}
+				Unification.unify(BaseType.tBool, lhs, true);
+				Unification.unify(BaseType.tBool, rhs, true);
 
 				BaseType.tBool;
 
@@ -206,16 +186,10 @@ class OperatorExpr
 				}
 
 			case OpNegBits:
-				if (!BaseType.isInt(expr))
-				{
-					throw '$expr should be Int';
-				}
+				Unification.unify(BaseType.tInt, expr, true);
 
 			case OpNot:
-				if (!BaseType.isBool(expr))
-				{
-					throw '$expr should be Bool';
-				}
+				Unification.unify(BaseType.tBool, expr, true);
 		}
 
 		return expr;
