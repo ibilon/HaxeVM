@@ -25,6 +25,7 @@ package haxevm;
 import byte.ByteData;
 import haxeparser.HaxeParser;
 import haxevm.typer.ClassTyper;
+import haxevm.typer.EnumTyper;
 import haxevm.typer.Error;
 import haxevm.typer.ModuleTypeTyper;
 import haxevm.typer.TypedefTyper;
@@ -218,6 +219,14 @@ class Compiler
 
 							var type = classTyper.firstPass();
 							symbolTable.addType(classDeclaration.name, type);
+							types.push(type);
+
+						case EEnum(enumDeclaration):
+							var enumTyper = new EnumTyper(this, module, enumDeclaration, declaration.pos);
+							declarationsTyper.push(enumTyper);
+
+							var type = enumTyper.firstPass();
+							symbolTable.addType(enumDeclaration.name, type);
 							types.push(type);
 
 						case ETypedef(typedefDeclaration):

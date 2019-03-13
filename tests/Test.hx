@@ -106,6 +106,7 @@ class Test extends utest.Test
 		var r = new Runner();
 
 		r.addCase(new ClassTest());
+		r.addCase(new EnumTest());
 		r.addCase(new ExprTest());
 		r.addCase(new MiscTest());
 		r.addCase(new TypedefTest());

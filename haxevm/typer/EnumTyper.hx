@@ -31,9 +31,9 @@ import haxevm.impl.Ref;
 using haxevm.utils.ComplexTypeUtils;
 
 /**
-Do typedef typing.
+Do enum typing.
 **/
-class TypedefTyper implements ModuleTypeTyper
+class EnumTyper implements ModuleTypeTyper
 {
 	/**
 	Link to the compiler doing the compilation.
@@ -41,58 +41,59 @@ class TypedefTyper implements ModuleTypeTyper
 	var compiler:Compiler;
 
 	/**
-	The definition of the typedef.
+	The definition of the enum.
 	**/
-	var definition:Definition<EnumFlag, ComplexType>;
+	var definition:Definition<EnumFlag, Array<EnumConstructor>>;
 
 	/**
-	The module this typedef is part of.
+	The module this enum is part of.
 	**/
 	var module:Module;
 
 	/**
-	The typedef' position.
+	The enum' position.
 	**/
 	var position:Position;
 
 	/**
-	The typed typedef.
+	The typed enum.
 	**/
-	var typedTypedef:Null<DefType>;
+	var typedEnum:Null<EnumType>;
 
 	/**
-	Construct a typedef typer.
+	Construct an enum typer.
 
 	@param compiler The compiler doing the compilation.
-	@param module The module this typedef is part of.
-	@param definition The definition of the typedef.
-	@param position The typedef' position.
+	@param module The module this enum is part of.
+	@param definition The definition of the enum.
+	@param position The enum' position.
 	**/
-	public function new(compiler:Compiler, module:Module, definition:Definition<EnumFlag, ComplexType>, position:Position)
+	public function new(compiler:Compiler, module:Module, definition:Definition<EnumFlag, Array<EnumConstructor>>, position:Position)
 	{
 		this.compiler = compiler;
 		this.definition = definition;
 		this.module = module;
 		this.position = position;
-		this.typedTypedef = null;
+		this.typedEnum = null;
 	}
 
 	/**
-	Construct the typedef's typed data.
+	Construct the enum's typed data.
 	**/
 	public function firstPass():ModuleType
 	{
-		typedTypedef = {
+		typedEnum = {
+			constructs: [],
 			doc: definition.doc,
 			isExtern: false,
 			isPrivate: false,
 			meta: MetaAccess.make(definition.meta),
 			module: module.name,
 			name: definition.name,
+			names: [],
 			pack: [],
 			params: [], // def.params,
 			pos: position,
-			type: definition.data.toType(),
 			exclude: () -> {}
 		};
 
@@ -101,18 +102,34 @@ class TypedefTyper implements ModuleTypeTyper
 			switch (flag)
 			{
 				case EExtern:
-					typedTypedef.isExtern = true;
+					typedEnum.isExtern = true;
 
 				case EPrivate:
-					typedTypedef.isPrivate = true;
+					typedEnum.isPrivate = true;
 			}
 		}
 
-		return ModuleType.TTypeDecl(Ref.make(typedTypedef));
+		for (i in 0...definition.data.length)
+		{
+			var field = definition.data[i];
+			typedEnum.names.push(field.name);
+			var enumField = {
+				doc: field.doc,
+				index: i,
+				meta: MetaAccess.make(field.meta),
+				name: field.name,
+				params: [], // fields.params,
+				pos: field.pos,
+				type: field.type.toType()
+			};
+			typedEnum.constructs.set(field.name, enumField);
+		}
+
+		return ModuleType.TEnumDecl(Ref.make(typedEnum));
 	}
 
 	/**
-	Nothing to do in the second pass for a typedef.
+	Nothing to do in the second pass for a enum.
 	**/
 	public function secondPass():Void
 	{
