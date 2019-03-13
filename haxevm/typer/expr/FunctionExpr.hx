@@ -60,7 +60,7 @@ class FunctionExpr
 
 			case TMono(ref):
 				var mono = Monomorph.make();
-				(cast ref : Ref<Type>).set(TFun(elems.map(arg -> { name: "", opt: null, t: arg.t }), mono));
+				(cast ref : Ref<Type>).set(TFun(elems.map(arg -> { name: "", opt: false, t: arg.t }), mono));
 				mono;
 
 			default:
