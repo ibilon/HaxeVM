@@ -58,16 +58,9 @@ class TryExpr
 			{
 				symbolTable.stack(() ->
 				{
-					var sid = symbolTable.addVar(c.name, c.type.toType());
+					var varType = c.type.toType();
+					var sid = symbolTable.addVar(c.name, varType);
 					var type = typeExpr(c.expr);
-					var varType:Type = switch (symbolTable.getVar(sid))
-					{
-						case null:
-							throw 'unknown symbol $sid';
-
-						case value:
-							value;
-					}
 
 					typedCatches.push({
 						v: TVarUtils.make(sid, c.name, varType),

@@ -111,7 +111,7 @@ class Main
 		{
 			for (error in compilationOutput.errors)
 			{
-				err.writeString(error);
+				err.writeString(error.toString());
 				err.writeString("\n");
 			}
 

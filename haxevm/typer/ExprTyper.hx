@@ -25,6 +25,7 @@ package haxevm.typer;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxevm.typer.BaseType;
+import haxevm.typer.Error;
 import haxevm.typer.expr.ArrayExpr;
 import haxevm.typer.expr.ConstExpr;
 import haxevm.typer.expr.FieldExpr;
@@ -112,119 +113,126 @@ class ExprTyper
 	**/
 	function typeExpr(parentExpr:Expr):TypedExpr
 	{
-		return switch (parentExpr.expr)
+		try
 		{
-			case EArray(array, key):
-				ArrayExpr.typeAccess(array, key, parentExpr.pos, typeExpr);
+			return switch (parentExpr.expr)
+			{
+				case EArray(array, key):
+					ArrayExpr.typeAccess(array, key, parentExpr.pos, typeExpr);
 
-			case EArrayDecl(values):
-				ArrayExpr.typeDeclaration(values, parentExpr.pos, typeExpr);
+				case EArrayDecl(values):
+					ArrayExpr.typeDeclaration(values, parentExpr.pos, typeExpr);
 
-			case EBinop(op, lhs, rhs):
-				var lhs = typeExpr(lhs);
-				var rhs = typeExpr(rhs);
+				case EBinop(op, lhs, rhs):
+					var lhs = typeExpr(lhs);
+					var rhs = typeExpr(rhs);
 
-				TBinop(op, lhs, rhs).makeTyped(parentExpr.pos, OperatorExpr.binop(op, lhs.t, rhs.t));
+					TBinop(op, lhs, rhs).makeTyped(parentExpr.pos, OperatorExpr.binop(op, lhs.t, rhs.t));
 
-			case EBlock(exprs):
-				var elems:Array<TypedExpr>;
+				case EBlock(exprs):
+					var elems:Array<TypedExpr>;
 
-				compiler.symbolTable.stack(() ->
-				{
-					elems = exprs.map(e -> typeExpr(e));
-				});
+					compiler.symbolTable.stack(() ->
+					{
+						elems = exprs.map(e -> typeExpr(e));
+					});
 
-				TBlock(elems).makeTyped(expr.pos, elems.length > 0 ? elems.last().t : BaseType.tVoid);
+					TBlock(elems).makeTyped(expr.pos, elems.length > 0 ? elems.last().t : BaseType.tVoid);
 
-			case EBreak:
-				TBreak.makeTyped(parentExpr.pos, BaseType.tVoid);
+				case EBreak:
+					TBreak.makeTyped(parentExpr.pos, BaseType.tVoid);
 
-			case ECall(_ => { expr: EConst(CIdent("$type")) }, params) if (params.length == 1):
-				var typed = typeExpr(params[0]);
-				compiler.warnings.push('${params[0].pos.toString(module, true)} Warning : ${typed.t.prettyName()}');
-				typed;
+				case ECall(_ => { expr: EConst(CIdent("$type")) }, params) if (params.length == 1):
+					var typed = typeExpr(params[0]);
+					compiler.warnings.push('${params[0].pos.toString(module, true)} Warning : ${typed.t.prettyName()}');
+					typed;
 
-			case ECall(expr, params):
-				FunctionExpr.typeCall(expr, params, parentExpr.pos, module, typeExpr);
+				case ECall(expr, params):
+					FunctionExpr.typeCall(expr, params, parentExpr.pos, module, typeExpr);
 
-			case ECast(expr, _):
-				TCast(typeExpr(expr), null).makeTyped(parentExpr.pos, Monomorph.make());
+				case ECast(expr, _):
+					TCast(typeExpr(expr), null).makeTyped(parentExpr.pos, Monomorph.make());
 
-			case ECheckType(expr, type):
-				TParenthesis(typeExpr(expr)).makeTyped(parentExpr.pos, type.toType());
+				case ECheckType(expr, type):
+					TParenthesis(typeExpr(expr)).makeTyped(parentExpr.pos, type.toType());
 
-			case EConst(constant):
-				ConstExpr.type(constant, parentExpr.pos, module, typedClass, compiler.symbolTable, typeExpr);
+				case EConst(constant):
+					ConstExpr.type(constant, parentExpr.pos, module, typedClass, compiler.symbolTable, typeExpr);
 
-			case EContinue:
-				TContinue.makeTyped(parentExpr.pos, BaseType.tVoid);
+				case EContinue:
+					TContinue.makeTyped(parentExpr.pos, BaseType.tVoid);
 
-			case EDisplay(_, _), EDisplayNew(_):
-				throw "cannot get display info";
+				case EDisplay(_, _), EDisplayNew(_):
+					throw "cannot get display info";
 
-			case EField(expr, field):
-				FieldExpr.type(expr, field, parentExpr.pos, typeExpr);
+				case EField(expr, field):
+					FieldExpr.type(expr, field, parentExpr.pos, typeExpr);
 
-			case EFor(iterator, expr):
-				ForExpr.type(iterator, expr, parentExpr.pos, compiler.symbolTable, typeExpr);
+				case EFor(iterator, expr):
+					ForExpr.type(iterator, expr, parentExpr.pos, compiler.symbolTable, typeExpr);
 
-			case EFunction(name, fn):
-				FunctionExpr.typeDeclaration(name, fn, parentExpr.pos, compiler.symbolTable, typeExpr);
+				case EFunction(name, fn):
+					FunctionExpr.typeDeclaration(name, fn, parentExpr.pos, compiler.symbolTable, typeExpr);
 
-			case EIf(conditionExpr, ifExpr, elseExpr):
-				IfExpr.type(conditionExpr, ifExpr, elseExpr, parentExpr.pos, compiler.symbolTable, typeExpr);
+				case EIf(conditionExpr, ifExpr, elseExpr):
+					IfExpr.type(conditionExpr, ifExpr, elseExpr, parentExpr.pos, compiler.symbolTable, typeExpr);
 
-			case EMeta(meta, expr):
-				var typed = typeExpr(expr);
+				case EMeta(meta, expr):
+					var typed = typeExpr(expr);
 
-				TMeta(meta, typed).makeTyped(parentExpr.pos, typed.t);
+					TMeta(meta, typed).makeTyped(parentExpr.pos, typed.t);
 
-			case ENew(_, _):
-				throw "no class support";
+				case ENew(_, _):
+					throw "no class support";
 
-			case EObjectDecl(fields):
-				ObjectExpr.type(fields, parentExpr.pos, typeExpr);
+				case EObjectDecl(fields):
+					ObjectExpr.type(fields, parentExpr.pos, typeExpr);
 
-			case EParenthesis(expr):
-				var typed;
+				case EParenthesis(expr):
+					var typed;
 
-				compiler.symbolTable.stack(() ->
-				{
-					typed = typeExpr(expr);
-				});
+					compiler.symbolTable.stack(() ->
+					{
+						typed = typeExpr(expr);
+					});
 
-				TParenthesis(typed).makeTyped(parentExpr.pos, typed.t);
+					TParenthesis(typed).makeTyped(parentExpr.pos, typed.t);
 
-			case EReturn(expr):
-				var typed = expr != null ? typeExpr(expr) : null;
+				case EReturn(expr):
+					var typed = expr != null ? typeExpr(expr) : null;
 
-				TReturn(typed).makeTyped(parentExpr.pos, typed != null ? typed.t : BaseType.tVoid);
+					TReturn(typed).makeTyped(parentExpr.pos, typed != null ? typed.t : BaseType.tVoid);
 
-			case ESwitch(expr, cases, defaultExpr):
-				SwitchExpr.type(expr, cases, defaultExpr, parentExpr.pos, typeExpr);
+				case ESwitch(expr, cases, defaultExpr):
+					SwitchExpr.type(expr, cases, defaultExpr, parentExpr.pos, typeExpr);
 
-			case ETernary(conditionExpr, ifExpr, elseExpr):
-				IfExpr.type(conditionExpr, ifExpr, elseExpr, parentExpr.pos, compiler.symbolTable, typeExpr);
+				case ETernary(conditionExpr, ifExpr, elseExpr):
+					IfExpr.type(conditionExpr, ifExpr, elseExpr, parentExpr.pos, compiler.symbolTable, typeExpr);
 
-			case EThrow(expr):
-				TThrow(typeExpr(expr)).makeTyped(parentExpr.pos, BaseType.tVoid);
+				case EThrow(expr):
+					TThrow(typeExpr(expr)).makeTyped(parentExpr.pos, BaseType.tVoid);
 
-			case ETry(expr, catches):
-				TryExpr.type(expr, catches, parentExpr.pos, compiler.symbolTable, typeExpr);
+				case ETry(expr, catches):
+					TryExpr.type(expr, catches, parentExpr.pos, compiler.symbolTable, typeExpr);
 
-			case EUnop(op, postFix, expr):
-				var typed = typeExpr(expr);
+				case EUnop(op, postFix, expr):
+					var typed = typeExpr(expr);
 
-				TUnop(op, postFix, typed).makeTyped(parentExpr.pos, OperatorExpr.unop(op, typed.t));
+					TUnop(op, postFix, typed).makeTyped(parentExpr.pos, OperatorExpr.unop(op, typed.t));
 
-			case EUntyped(_):
-				throw "Untyped is not supported";
+				case EUntyped(_):
+					throw "Untyped is not supported";
 
-			case EVars(vars):
-				VarExpr.type(vars, parentExpr.pos, compiler.symbolTable, typeExpr);
+				case EVars(vars):
+					VarExpr.type(vars, parentExpr.pos, compiler.symbolTable, typeExpr);
 
-			case EWhile(conditionExpr, expr, normalWhile):
-				WhileExpr.type(conditionExpr, expr, normalWhile, parentExpr.pos, compiler.symbolTable, typeExpr);
+				case EWhile(conditionExpr, expr, normalWhile):
+					WhileExpr.type(conditionExpr, expr, normalWhile, parentExpr.pos, compiler.symbolTable, typeExpr);
+			}
+		}
+		catch (errorMessage:ErrorMessage)
+		{
+			throw new Error(errorMessage, module, parentExpr.pos);
 		}
 	}
 }

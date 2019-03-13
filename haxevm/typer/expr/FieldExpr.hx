@@ -25,6 +25,7 @@ package haxevm.typer.expr;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxevm.impl.Ref;
+import haxevm.typer.Error;
 import haxevm.typer.ExprTyper;
 
 using haxevm.utils.TypedExprUtils;
@@ -58,7 +59,7 @@ class FieldExpr
 					}
 				}
 
-				throw "object has no field " + fieldName;
+				throw ErrorMessage.FieldNotFound(typed.t, fieldName);
 
 			case TInst(_.get() => classType, _):
 				for (staticField in classType.statics.get())
@@ -69,7 +70,7 @@ class FieldExpr
 					}
 				}
 
-				throw "class has no field " + fieldName;
+				throw ErrorMessage.FieldNotFound(typed.t, fieldName);
 
 			default:
 				throw "field access not implemented " + typed.t;

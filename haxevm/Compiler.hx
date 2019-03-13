@@ -25,6 +25,7 @@ package haxevm;
 import byte.ByteData;
 import haxeparser.HaxeParser;
 import haxevm.typer.ClassTyper;
+import haxevm.typer.Error;
 import haxevm.typer.ModuleTypeTyper;
 import haxevm.typer.TypedefTyper;
 
@@ -39,7 +40,7 @@ typedef CompilationOutput =
 	/**
 	The errors generated during the compilation.
 	**/
-	var errors:Array<String>;
+	var errors:Array<Error>;
 
 	/**
 	The modules compiled.
@@ -75,7 +76,7 @@ class Compiler
 	/**
 	The generated errors.
 	**/
-	var errors:Array<String>;
+	var errors:Array<Error>;
 
 	/**
 	The function returning a file's content.
@@ -146,94 +147,102 @@ class Compiler
 	{
 		symbolTable.stack(() ->
 		{
-			var name = filename.withoutExtension();
-			var types = [];
-			var module = {
-				file: filename,
-				name: name,
-				types: types,
-				newLinesPositions: []
-			};
-
-			// Add module to top level symbols
-			symbolTable.addModule(module);
-			modules.push(module);
-
-			var content = fileReader(filename);
-			module.newLinesPositions = PositionUtils.preparseLinesData(content);
-
-			var parser = new HaxeParser(ByteData.ofString(content), filename);
-
-			for (key => value in defines)
+			try
 			{
-				parser.define(key, value);
-			}
+				var name = filename.withoutExtension();
+				var types = [];
+				var module = {
+					file: filename,
+					name: name,
+					types: types,
+					newLinesPositions: []
+				};
 
-			var file = try
-			{
-				parser.parse();
-			}
-			catch (pe:haxeparser.ParserError)
-			{
-				var msg = switch (pe.msg)
+				// Add module to top level symbols
+				symbolTable.addModule(module);
+				modules.push(module);
+
+				var content = fileReader(filename);
+				module.newLinesPositions = PositionUtils.preparseLinesData(content);
+
+				var parser = new HaxeParser(ByteData.ofString(content), filename);
+
+				for (key => value in defines)
 				{
-					case MissingSemicolon:
-						"missing semicolon";
-
-					case MissingType:
-						"missing type";
-
-					case DuplicateDefault:
-						"duplicate default";
-
-					case UnclosedMacro:
-						"unclosed macro";
-
-					case Unimplemented:
-						"unimplemented";
-
-					case Custom(s), SharpError(s):
-						s;
+					parser.define(key, value);
 				}
 
-				errors.push('${pe.pos.toString(module, true)} $msg');
+				var file = try
+				{
+					parser.parse();
+				}
+				catch (parserError:ParserError)
+				{
+					var message = switch (parserError.msg)
+					{
+						case MissingSemicolon:
+							"Missing ;";
+
+						case MissingType:
+							"Missing type";
+
+						case DuplicateDefault:
+							"Duplicate default";
+
+						case UnclosedMacro:
+							"Unclosed macro";
+
+						case Unimplemented:
+							"Unimplemented";
+
+						case Custom(s), SharpError(s):
+							s;
+					}
+
+					errors.push(new Error(ParsingError(message), module, parserError.pos));
+					return;
+				}
+
+				// First pass: add types symbols
+				var declarationsTyper:Array<ModuleTypeTyper> = [];
+
+				for (i in 0...file.decls.length)
+				{
+					var declaration = file.decls[i];
+
+					switch (declaration.decl)
+					{
+						case EClass(classDeclaration):
+							var classTyper = new ClassTyper(this, module, classDeclaration, declaration.pos);
+							declarationsTyper.push(classTyper);
+
+							var type = classTyper.firstPass();
+							symbolTable.addType(classDeclaration.name, type);
+							types.push(type);
+
+						case ETypedef(typedefDeclaration):
+							var typedefTyper = new TypedefTyper(this, module, typedefDeclaration, declaration.pos);
+							declarationsTyper.push(typedefTyper);
+
+							var type = typedefTyper.firstPass();
+							symbolTable.addType(typedefDeclaration.name, type);
+							types.push(type);
+
+						default:
+							throw "not supported";
+					}
+				}
+
+				// Second pass: type type symbols
+				for (typer in declarationsTyper)
+				{
+					typer.secondPass();
+				}
+			}
+			catch (typingError:Error)
+			{
+				errors.push(typingError);
 				return;
-			}
-
-			// First pass: add types symbols
-			var declarationsTyper:Array<ModuleTypeTyper> = [];
-
-			for (i in 0...file.decls.length)
-			{
-				var declaration = file.decls[i];
-
-				switch (declaration.decl)
-				{
-					case EClass(classDeclaration):
-						var classTyper = new ClassTyper(this, module, classDeclaration, declaration.pos);
-						declarationsTyper.push(classTyper);
-
-						var type = classTyper.firstPass();
-						symbolTable.addType(classDeclaration.name, type);
-						types.push(type);
-
-					case ETypedef(typedefDeclaration):
-						var typedefTyper = new TypedefTyper(this, module, typedefDeclaration, declaration.pos);
-						declarationsTyper.push(typedefTyper);
-
-						var type = typedefTyper.firstPass();
-						symbolTable.addType(typedefDeclaration.name, type);
-						types.push(type);
-
-					default:
-						throw "not supported";
-				}
-			}
-
-			// Second pass: type type symbols
-			for (typer in declarationsTyper)
-			{
-				typer.secondPass();
 			}
 		});
 	}

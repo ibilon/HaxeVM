@@ -27,11 +27,13 @@ import haxe.macro.Type;
 import haxevm.SymbolTable.Symbol;
 import haxevm.impl.Ref;
 import haxevm.typer.BaseType;
+import haxevm.typer.Error;
 import haxevm.typer.ExprTyper;
 import haxevm.utils.TVarUtils;
 
 using haxevm.utils.ComplexTypeUtils;
 using haxevm.utils.PositionUtils;
+using haxevm.utils.TypeUtils;
 using haxevm.utils.TypedExprUtils;
 
 /**
@@ -53,7 +55,7 @@ class FunctionExpr
 		var typed = typeExpr(expr);
 		var elems = arguments.map(typeExpr);
 
-		var returnType = switch (typed.t)
+		var returnType = switch (typed.t.follow())
 		{
 			case TFun(_, ret):
 				ret;
@@ -64,7 +66,7 @@ class FunctionExpr
 				mono;
 
 			default:
-				throw "Can only call functions " + typed.t;
+				throw ErrorMessage.TypeIsNotCallable(typed.t);
 		}
 
 		if (expr.expr.match(EConst(CIdent("trace"))))
@@ -96,15 +98,8 @@ class FunctionExpr
 		{
 			for (arg in fn.args)
 			{
-				var sid = symbolTable.addVar(arg.name, arg.type.toType());
-				var type = switch (symbolTable.getVar(sid))
-				{
-					case null:
-						throw "symbol doesn't exist";
-
-					case value:
-						value;
-				}
+				var type = arg.type.toType();
+				var sid = symbolTable.addVar(arg.name, type);
 
 				argumentsTyped.push({
 					name: arg.name,

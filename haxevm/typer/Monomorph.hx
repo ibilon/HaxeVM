@@ -35,7 +35,6 @@ class Monomorph
 	**/
 	public static function make():Type
 	{
-		// TODO allow this to be changed after unification
 		return TMono(Ref.make(null));
 	}
 }

@@ -65,6 +65,23 @@ class TypeUtils
 	}
 
 	/**
+	Follow the monomorph.
+
+	@param type The type to follow.
+	**/
+	public static function follow(type:Type):Type
+	{
+		return switch (type)
+		{
+			case TMono(_.get() => boundType) if (boundType != null):
+				boundType;
+
+			default:
+				type;
+		}
+	}
+
+	/**
 	Calculate the string representation of the type ready to be displayed.
 
 	@param type The type.
@@ -83,7 +100,7 @@ class TypeUtils
 			}
 		}
 
-		return switch (type)
+		return switch (type.follow())
 		{
 			case TAbstract(_.get() => abstractType, typeParameters):
 				name(abstractType.name, typeParameters);
@@ -114,8 +131,8 @@ class TypeUtils
 			case TInst(_.get() => classType, typeParameters):
 				name(classType.name, typeParameters);
 
-			case TMono(_.get() => t):
-				return t != null ? t.prettyName() : 'Unknown<0>';
+			case TMono(_):
+				return 'Unknown<0>';
 
 			default:
 				throw "not supported";

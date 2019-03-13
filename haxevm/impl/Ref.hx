@@ -67,6 +67,11 @@ class Ref<T>
 	**/
 	public function set(newValue:T):Void
 	{
+		if (value != null)
+		{
+			throw "not monomorph or already bound";
+		}
+
 		value = newValue;
 	}
 

@@ -27,6 +27,7 @@ import haxe.macro.Expr.Position as BasePosition;
 import haxe.macro.Type;
 import haxevm.impl.Position;
 import haxevm.typer.BaseType;
+import haxevm.typer.Error;
 import haxevm.typer.ExprTyper;
 
 using haxevm.utils.TypedExprUtils;
@@ -108,7 +109,7 @@ class ForExpr
 
 		if (from > to)
 		{
-			throw "can't iterate backwards";
+			throw ErrorMessage.BackwardIterating;
 		}
 
 		var block = [];

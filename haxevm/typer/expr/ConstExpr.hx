@@ -27,6 +27,7 @@ import haxe.macro.Expr.Position as BasePosition;
 import haxe.macro.Type;
 import haxevm.impl.Position;
 import haxevm.typer.BaseType;
+import haxevm.typer.Error;
 import haxevm.typer.ExprTyper;
 import haxevm.utils.TVarUtils;
 
@@ -95,7 +96,7 @@ class ConstExpr
 							}
 						}
 
-						throw 'module ${module.name} doesn\'t have a main type';
+						throw ErrorMessage.ModuleWithoutMainType(module);
 
 					case SType(subModule):
 						if (module.name == ident)

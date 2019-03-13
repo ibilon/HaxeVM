@@ -27,6 +27,7 @@ import haxe.macro.Type.ModuleType;
 import haxe.macro.Type.Type;
 import haxevm.impl.Ref;
 import haxevm.typer.BaseType;
+import haxevm.typer.Error;
 
 using haxevm.utils.ArrayUtils;
 using haxevm.utils.PositionUtils;
@@ -218,7 +219,7 @@ abstract SymbolTable(SymbolTableData)
 		return switch (this.current[name])
 		{
 			case null:
-				throw 'symbol "$name" doesn\'t exist';
+				throw ErrorMessage.UnresolvedIdentifier(name);
 
 			case value:
 				value;

@@ -26,8 +26,10 @@ import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxevm.impl.Ref;
 import haxevm.typer.BaseType;
+import haxevm.typer.Error;
 import haxevm.typer.ExprTyper;
 
+using haxevm.utils.TypeUtils;
 using haxevm.utils.TypedExprUtils;
 
 /**
@@ -47,10 +49,11 @@ class ArrayExpr
 	{
 		var array = typeExpr(array);
 		var key = typeExpr(key);
+		var type = array.t.follow();
 
-		var of = switch (array.t)
+		var of = switch (type)
 		{
-			case TInst(_, params) if (BaseType.isArray(array.t)):
+			case TInst(_, params) if (BaseType.isArray(type)):
 				params[0];
 
 			case TMono(ref):
@@ -59,13 +62,10 @@ class ArrayExpr
 				mono;
 
 			default:
-				throw "Array access only allowed on arrays " + array.t;
+				throw ErrorMessage.ArrayAccessNotAllowed(array.t);
 		}
 
-		if (!BaseType.isInt(key.t))
-		{
-			throw "Array index must be int " + key.t;
-		}
+		Unification.unify(BaseType.tInt, key.t, true);
 
 		return TArray(array, key).makeTyped(position, of);
 	}
@@ -91,7 +91,7 @@ class ArrayExpr
 
 			if (!unificationResult.success)
 			{
-				throw "array must be of single type";
+				throw ErrorMessage.MixedTypeArray;
 			}
 
 			type = unificationResult.type;

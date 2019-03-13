@@ -27,8 +27,10 @@ import haxe.macro.Type;
 import haxeparser.Data;
 import haxevm.impl.MetaAccess;
 import haxevm.impl.Ref;
+import haxevm.typer.Error;
 
 using haxevm.utils.ComplexTypeUtils;
+using haxevm.utils.TypeUtils;
 
 /**
 Do class typing.
@@ -171,7 +173,7 @@ class ClassTyper implements ModuleTypeTyper
 					field.type = TFun(fn.args.map(arg -> { name: arg.name, opt: arg.opt, t: arg.type.toType() }), fn.ret.toType());
 
 				case FProp(get, set, t, _):
-					function resolveAccess(a)
+					function resolveAccess(a:String, get:Bool):VarAccess
 					{
 						return switch (a)
 						{
@@ -191,11 +193,11 @@ class ClassTyper implements ModuleTypeTyper
 								AccNormal;
 
 							default:
-								throw "invalid access";
+								throw new Error(CustomPropertyAccessor(get), module, data.pos);
 						}
 					}
 
-					field.kind = FVar(resolveAccess(get), resolveAccess(set));
+					field.kind = FVar(resolveAccess(get, true), resolveAccess(set, false));
 					field.type = t.toType();
 
 				case FVar(t, _):
@@ -293,7 +295,7 @@ class ClassTyper implements ModuleTypeTyper
 					case FVar(_, expr):
 						fieldsExpr[i] = new ExprTyper(compiler, module, typedClass, expr).type();
 
-						switch (fields[i].type)
+						switch (fields[i].type.follow())
 						{
 							case TMono(ref):
 								(cast ref : Ref<Type>).set(fieldsExpr[i].t);

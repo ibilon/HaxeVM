@@ -3,6 +3,7 @@ package haxevm.typer;
 import haxe.macro.Type;
 import haxevm.impl.Ref;
 import haxevm.typer.BaseType;
+import haxevm.typer.Error;
 
 using haxevm.utils.TypeUtils;
 
@@ -40,6 +41,9 @@ class Unification
 			success: true,
 			type: BaseType.tVoid
 		};
+
+		var a = a.follow();
+		var b = b.follow();
 
 		if (a == b)
 		{
@@ -115,12 +119,13 @@ class Unification
 		}
 		else
 		{
-			throw 'not implemented for ${a.prettyName()} and ${b.prettyName()}';
+			//throw 'not implemented for ${a.prettyName()} and ${b.prettyName()}';
+			result.success = false;
 		}
 
 		if (fail && !result.success)
 		{
-			throw '${b.prettyName()} should be ${a.prettyName()}';
+			throw ErrorMessage.UnificationError(a, b);
 		}
 
 		return result;

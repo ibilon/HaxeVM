@@ -25,6 +25,9 @@ package haxevm.typer.expr;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxevm.typer.BaseType;
+import haxevm.typer.Error;
+
+using haxevm.utils.TypeUtils;
 
 /**
 Do operator expressions typing.
@@ -40,23 +43,8 @@ class OperatorExpr
 	**/
 	public static function binop(op:Binop, lhs:Type, rhs:Type):Type
 	{
-		var lhs = switch (lhs)
-		{
-			case TMono(_.get() => t) if (t != null):
-				t;
-
-			case value:
-				value;
-		}
-
-		var rhs = switch (rhs)
-		{
-			case TMono(_.get() => t) if (t != null):
-				t;
-
-			case value:
-				value;
-		}
+		var lhs = lhs.follow();
+		var rhs = rhs.follow();
 
 		// Dispatch to the specific implementation.
 		return switch (op)
@@ -74,10 +62,19 @@ class OperatorExpr
 				if (BaseType.isVoid(rhs))
 				{
 					// TODO put error on the var's expression
-					throw "can't assign a value of type Void";
+					throw ErrorMessage.UnificationError(lhs, rhs);
 				}
 
 				Unification.unify(lhs, rhs, true);
+
+				// TODO doesn't match Array<?> with Array<?>
+				/*
+				if (Unification.unify(lhs, rhs, true).type != lhs)
+				{
+					throw ErrorMessage.UnificationError(lhs, rhs);
+				}
+				*/
+
 				lhs;
 
 			case OpAssignOp(op):
@@ -169,7 +166,7 @@ class OperatorExpr
 				}
 				else
 				{
-					throw 'cannot compare $lhs and $rhs';
+					throw ErrorMessage.CantCompare(lhs, rhs);
 				}
 
 			case OpLt, OpLte, OpGt, OpGte:
@@ -179,7 +176,7 @@ class OperatorExpr
 				}
 				else
 				{
-					throw 'cannot compare $lhs and $rhs';
+					throw ErrorMessage.CantCompare(lhs, rhs);
 				}
 
 			case OpBoolAnd, OpBoolOr:
@@ -201,14 +198,7 @@ class OperatorExpr
 	**/
 	public static function unop(op:Unop, expr:Type):Type
 	{
-		var expr = switch (expr)
-		{
-			case TMono(_.get() => t) if (t != null):
-				t;
-
-			case value:
-				value;
-		}
+		var expr = expr.follow();
 
 		switch (op)
 		{
