@@ -25,6 +25,7 @@ package haxevm.typer.expr;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxevm.SymbolTable.Symbol;
+import haxevm.impl.Ref;
 import haxevm.typer.BaseType;
 import haxevm.typer.ExprTyper;
 import haxevm.utils.TVarUtils;
@@ -50,20 +51,21 @@ class FunctionExpr
 	public static function typeCall(expr:Expr, arguments:Array<Expr>, position:Position, module:Module, typeExpr:ExprTyperFn):TypedExpr
 	{
 		var typed = typeExpr(expr);
+		var elems = arguments.map(typeExpr);
 
 		var returnType = switch (typed.t)
 		{
 			case TFun(_, ret):
 				ret;
 
-			case TMono(_):
-				Monomorph.make();
+			case TMono(ref):
+				var mono = Monomorph.make();
+				(cast ref : Ref<Type>).set(TFun(elems.map(arg -> { name: "", opt: null, t: arg.t }), mono));
+				mono;
 
 			default:
 				throw "Can only call functions " + typed.t;
 		}
-
-		var elems = arguments.map(typeExpr);
 
 		if (expr.expr.match(EConst(CIdent("trace"))))
 		{

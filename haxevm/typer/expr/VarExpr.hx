@@ -25,6 +25,7 @@ package haxevm.typer.expr;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxevm.SymbolTable.Symbol;
+import haxevm.typer.BaseType;
 import haxevm.typer.ExprTyper;
 import haxevm.utils.TVarUtils;
 
@@ -53,6 +54,13 @@ class VarExpr
 
 		var typed = v.expr != null ? typeExpr(v.expr) : null;
 		var type = typed != null ? typed.t : Monomorph.make();
+
+		if (BaseType.isVoid(type))
+		{
+			// TODO put error on the var's expression
+			throw "variable can't have type Void";
+		}
+
 		symbolTable[sid] = SVar(type);
 
 		return TVar(TVarUtils.make(sid, v.name, null), typed).makeTyped(position, type);

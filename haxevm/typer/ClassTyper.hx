@@ -295,8 +295,8 @@ class ClassTyper implements ModuleTypeTyper
 
 						switch (fields[i].type)
 						{
-							case TMono(_):
-								fields[i].type = fieldsExpr[i].t;
+							case TMono(ref):
+								(cast ref : Ref<Type>).set(fieldsExpr[i].t);
 
 							default:
 								// pass

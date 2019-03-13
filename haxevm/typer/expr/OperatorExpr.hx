@@ -40,6 +40,24 @@ class OperatorExpr
 	**/
 	public static function binop(op:Binop, lhs:Type, rhs:Type):Type
 	{
+		var lhs = switch (lhs)
+		{
+			case TMono(_.get() => t) if (t != null):
+				t;
+
+			case value:
+				value;
+		}
+
+		var rhs = switch (rhs)
+		{
+			case TMono(_.get() => t) if (t != null):
+				t;
+
+			case value:
+				value;
+		}
+
 		// Dispatch to the specific implementation.
 		return switch (op)
 		{
@@ -53,6 +71,12 @@ class OperatorExpr
 				binopBoolean(op, lhs, rhs);
 
 			case OpAssign:
+				if (BaseType.isVoid(rhs))
+				{
+					// TODO put error on the var's expression
+					throw "can't assign a value of type Void";
+				}
+
 				Unification.unify(lhs, rhs, true);
 				lhs;
 
@@ -177,6 +201,15 @@ class OperatorExpr
 	**/
 	public static function unop(op:Unop, expr:Type):Type
 	{
+		var expr = switch (expr)
+		{
+			case TMono(_.get() => t) if (t != null):
+				t;
+
+			case value:
+				value;
+		}
+
 		switch (op)
 		{
 			case OpDecrement, OpIncrement, OpNeg:

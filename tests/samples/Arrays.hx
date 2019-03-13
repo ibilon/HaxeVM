@@ -54,10 +54,10 @@ class Arrays
 		$type(a);
 		a = [];
 		trace(a);
-		// $type(a); // TODO after mono unification
+		$type(a);
 		a[0] = true;
 		trace(a);
-		// $type(a); // TODO after mono unification
+		$type(a);
 
 		var a = [0, 1.1, 2];
 		$type(a);

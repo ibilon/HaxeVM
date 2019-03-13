@@ -24,6 +24,7 @@ package haxevm.typer.expr;
 
 import haxe.macro.Expr;
 import haxe.macro.Type;
+import haxevm.impl.Ref;
 import haxevm.typer.BaseType;
 import haxevm.typer.ExprTyper;
 
@@ -52,8 +53,10 @@ class ArrayExpr
 			case TInst(_, params) if (BaseType.isArray(array.t)):
 				params[0];
 
-			case TMono(_):
-				Monomorph.make();
+			case TMono(ref):
+				var mono = Monomorph.make();
+				(cast ref : Ref<Type>).set(BaseType.tArray(mono));
+				mono;
 
 			default:
 				throw "Array access only allowed on arrays " + array.t;

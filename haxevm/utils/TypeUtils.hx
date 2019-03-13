@@ -26,6 +26,8 @@ import haxe.macro.Type.Type;
 import haxevm.typer.BaseType;
 import haxevm.vm.EVal;
 
+using haxevm.utils.TypeUtils;
+
 /**
 Utilities for `Type`.
 
@@ -87,7 +89,7 @@ class TypeUtils
 				name(abstractType.name, typeParameters);
 
 			case TAnonymous(_.get() => anonType):
-				var fields = anonType.fields.map(field -> '${field.name} : ${prettyName(field.type)}');
+				var fields = anonType.fields.map(field -> '${field.name} : ${field.type.prettyName()}');
 
 				var buf = new StringBuf();
 				buf.add('{ ');
@@ -96,7 +98,7 @@ class TypeUtils
 				buf.toString();
 
 			case TFun(arguments, returnType):
-				var pargs = arguments.map(arg -> arg.name != "" ? '(${arg.name} : ${prettyName(arg.t)})' : prettyName(arg.t));
+				var pargs = arguments.map(arg -> arg.name != "" ? '(${arg.name} : ${arg.t.prettyName()})' : arg.t.prettyName());
 
 				if (arguments.length == 0)
 				{
@@ -106,14 +108,14 @@ class TypeUtils
 				var buf = new StringBuf();
 				buf.add(pargs.join(" -> "));
 				buf.add(" -> ");
-				buf.add(prettyName(returnType));
+				buf.add(returnType.prettyName());
 				buf.toString();
 
 			case TInst(_.get() => classType, typeParameters):
 				name(classType.name, typeParameters);
 
-			case TMono(_):
-				return 'Unknown<0>';
+			case TMono(_.get() => t):
+				return t != null ? t.prettyName() : 'Unknown<0>';
 
 			default:
 				throw "not supported";

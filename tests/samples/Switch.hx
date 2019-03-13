@@ -98,5 +98,17 @@ class Switch
 		switch (0)
 		{
 		}
+
+		var a = null;
+		$type(a);
+		a = switch (0)
+		{
+			case 0:
+				1;
+
+			default:
+				0;
+		}
+		$type(a);
 	}
 }

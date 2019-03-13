@@ -64,7 +64,7 @@ class RecursiveFunction
 
 			return i;
 		}
-		// $type(b); // TODO propagate type to monomorphs
+		$type(b);
 
 		a(12);
 	}

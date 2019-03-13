@@ -63,6 +63,14 @@ class Ref<T>
 	}
 
 	/**
+	Set the wrapped value.
+	**/
+	public function set(newValue:T):Void
+	{
+		value = newValue;
+	}
+
+	/**
 	String representation of the value.
 	**/
 	public function toString():String

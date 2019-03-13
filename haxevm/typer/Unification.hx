@@ -1,6 +1,7 @@
 package haxevm.typer;
 
 import haxe.macro.Type;
+import haxevm.impl.Ref;
 import haxevm.typer.BaseType;
 
 using haxevm.utils.TypeUtils;
@@ -50,11 +51,34 @@ class Unification
 		}
 		else if (a.match(TMono(_))) // TODO fix mono update
 		{
-			result.type = a = b;
+			switch (a)
+			{
+				case TMono(ref):
+					(cast ref : Ref<Type>).set(switch (b)
+					{
+						case TFun(args, ret):
+							TFun(args.map(arg -> { name: "", opt: arg.opt, t: arg.t }), ret);
+
+						default:
+							b;
+					});
+
+				default:
+			}
+
+			result.type = b;
 		}
 		else if (b.match(TMono(_)))
 		{
-			result.type = b = a;
+			switch (b)
+			{
+				case TMono(ref):
+					(cast ref : Ref<Type>).set(a);
+
+				default:
+			}
+
+			result.type = a;
 		}
 		else if (BaseType.isVoid(a) || BaseType.isVoid(b))
 		{
