@@ -80,6 +80,35 @@ class Unification
 
 			result.type = a;
 		}
+		else if (a.match(TFun(_, _)) && b.match(TFun(_, _)))
+		{
+			switch ([a, b])
+			{
+				case [TFun(argsA, retA), TFun(argsB, retB)]:
+					if (argsA.length != argsB.length)
+					{
+						fail = true;
+					}
+					else
+					{
+						for (i in 0...argsA.length)
+						{
+							if (argsA[i] != argsB[i])
+							{
+								fail = true;
+								break;
+							}
+						}
+
+						if (retA != retB)
+						{
+							fail = true;
+						}
+					}
+
+				default:
+			}
+		}
 		else if (BaseType.isVoid(a) || BaseType.isVoid(b))
 		{
 			result.success = false;
