@@ -12,7 +12,7 @@ using haxevm.utils.ComplexTypeUtils;
 using haxevm.utils.TypeUtils;
 
 /**
-Special case of ModuleTypeTyper for classes and abstracts, which have functions.
+Special case of ModuleTypeTyper for classes and abstracts, which have fields.
 **/
 class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<DefinitionFlag, Array<Field>, DataType>
 {

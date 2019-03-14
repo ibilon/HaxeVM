@@ -101,6 +101,7 @@ class AbstractTyper extends WithFieldTyper<AbstractFlag, AbstractType>
 		// Set the fields' owning class as the impl class.
 		var ref = Ref.make(typedData);
 
+		// TODO only make impl class if needed
 		classData = {
 			constructor: null,
 			doc: null,
@@ -123,6 +124,8 @@ class AbstractTyper extends WithFieldTyper<AbstractFlag, AbstractType>
 			superClass: null,
 			exclude: () -> {}
 		};
+
+		typedData.impl = Ref.make(classData);
 
 		// First pass: add abstract symbols.
 		constructFields();

@@ -35,7 +35,6 @@ import haxevm.vm.expr.IfExpr;
 import haxevm.vm.expr.LoopExpr;
 import haxevm.vm.expr.ModuleExpr;
 import haxevm.vm.expr.OperatorExpr;
-import haxevm.vm.expr.SwitchExpr;
 import haxevm.vm.expr.TryExpr;
 
 using haxevm.utils.ArrayUtils;
@@ -219,8 +218,8 @@ class VM
 			case TReturn(expr):
 				throw FCReturn(expr != null ? eval(expr) : EVoid);
 
-			case TSwitch(expr, cases, defaultExpr):
-				SwitchExpr.eval(expr, cases, defaultExpr, eval);
+			case TSwitch(_, _, _):
+				throw "not implemented";
 
 			case TThrow(expr):
 				throw FCThrow(eval(expr));
