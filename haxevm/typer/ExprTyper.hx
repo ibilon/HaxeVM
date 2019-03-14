@@ -78,10 +78,10 @@ class ExprTyper
 	/**
 	Construct an expr typer.
 
-	@param compiler
-	@param module
-	@param typedClass
-	@param expr
+	@param compiler Link to the compiler doing the compilation.
+	@param module The module this expression is part of.
+	@param typedClass The class this expression is part of.
+	@param expr The expression to type.
 	**/
 	public function new(compiler:Compiler, module:Module, typedClass:ClassType, expr:Null<Expr>)
 	{

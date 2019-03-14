@@ -195,8 +195,8 @@ class VM
 			case TFunction(fn):
 				EValUtils.makeEFunction(fn.args.map(arg -> arg.v.id), fn.expr, context, eval);
 
-			case TIdent(_): // TODO "unknown identifier" is that possible?
-				throw "TIdent unimplemented";
+			case TIdent(_):
+				throw "shouldn't happen";
 
 			case TIf(conditionExpr, ifExpr, elseExpr):
 				IfExpr.eval(conditionExpr, ifExpr, elseExpr, eval);

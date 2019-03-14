@@ -22,12 +22,14 @@ SOFTWARE.
 
 package haxevm.typer;
 
+import haxe.macro.Expr;
 import haxe.macro.Type;
+import haxeparser.Data;
 
 /**
-Common interface to all ModuleType typer.
+Interface used to store the module type typers and call their passes.
 **/
-interface ModuleTypeTyper
+interface TwoPassTyper
 {
 	/**
 	Construct the module type's typed data, but don't type its fields' expression.
@@ -38,4 +40,79 @@ interface ModuleTypeTyper
 	Type the module type's fields' expression.
 	**/
 	function secondPass():Void;
+}
+
+/**
+Common part to all ModuleType typer.
+**/
+class ModuleTypeTyper<DefinitionFlag, DefinitionData, DataType> implements TwoPassTyper
+{
+	/**
+	Link to the compiler doing the compilation.
+	**/
+	var compiler:Compiler;
+
+	/**
+	The definition of the module type.
+	**/
+	var definition:Definition<DefinitionFlag, DefinitionData>;
+
+	/**
+	The module this module type is part of.
+	**/
+	var module:Module;
+
+	/**
+	The module type' position.
+	**/
+	var position:Position;
+
+	/**
+	The typed data.
+	**/
+	var typedData:Null<DataType>;
+
+	/**
+	Construct a module type typer.
+
+	@param compiler The compiler doing the compilation.
+	@param module The module this module type is part of.
+	@param definition The definition of the module type.
+	@param position The module type's position.
+	**/
+	function new(compiler:Compiler, module:Module, definition:Definition<DefinitionFlag, DefinitionData>, position:Position)
+	{
+		this.compiler = compiler;
+		this.definition = definition;
+		this.module = module;
+		this.position = position;
+		this.typedData = null;
+	}
+
+	/**
+	Construct the module type's typed data, but don't type its fields' expression.
+	**/
+	public function firstPass():ModuleType
+	{
+		throw "abstract function";
+	}
+
+	/**
+	**/
+	public function getTypedData():DataType
+	{
+		if (typedData == null)
+		{
+			throw "typed data not constructed, first pass not called?";
+		}
+		else
+		{
+			return typedData;
+		}
+	}
+
+	/**
+	Type the module type's fields' expression.
+	**/
+	public function secondPass():Void {}
 }

@@ -21,7 +21,9 @@ SOFTWARE.
 **/
 
 enum Empty {}
+
 extern enum Extern {}
+
 private enum Private {}
 
 enum Simple

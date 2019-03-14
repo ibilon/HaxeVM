@@ -33,33 +33,8 @@ using haxevm.utils.ComplexTypeUtils;
 /**
 Do typedef typing.
 **/
-class TypedefTyper implements ModuleTypeTyper
+class TypedefTyper extends ModuleTypeTyper<EnumFlag, ComplexType, DefType>
 {
-	/**
-	Link to the compiler doing the compilation.
-	**/
-	var compiler:Compiler;
-
-	/**
-	The definition of the typedef.
-	**/
-	var definition:Definition<EnumFlag, ComplexType>;
-
-	/**
-	The module this typedef is part of.
-	**/
-	var module:Module;
-
-	/**
-	The typedef' position.
-	**/
-	var position:Position;
-
-	/**
-	The typed typedef.
-	**/
-	var typedTypedef:Null<DefType>;
-
 	/**
 	Construct a typedef typer.
 
@@ -70,19 +45,15 @@ class TypedefTyper implements ModuleTypeTyper
 	**/
 	public function new(compiler:Compiler, module:Module, definition:Definition<EnumFlag, ComplexType>, position:Position)
 	{
-		this.compiler = compiler;
-		this.definition = definition;
-		this.module = module;
-		this.position = position;
-		this.typedTypedef = null;
+		super(compiler, module, definition, position);
 	}
 
 	/**
 	Construct the typedef's typed data.
 	**/
-	public function firstPass():ModuleType
+	public override function firstPass():ModuleType
 	{
-		typedTypedef = {
+		typedData = {
 			doc: definition.doc,
 			isExtern: false,
 			isPrivate: false,
@@ -101,20 +72,13 @@ class TypedefTyper implements ModuleTypeTyper
 			switch (flag)
 			{
 				case EExtern:
-					typedTypedef.isExtern = true;
+					typedData.isExtern = true;
 
 				case EPrivate:
-					typedTypedef.isPrivate = true;
+					typedData.isPrivate = true;
 			}
 		}
 
-		return ModuleType.TTypeDecl(Ref.make(typedTypedef));
-	}
-
-	/**
-	Nothing to do in the second pass for a typedef.
-	**/
-	public function secondPass():Void
-	{
+		return ModuleType.TTypeDecl(Ref.make(typedData));
 	}
 }

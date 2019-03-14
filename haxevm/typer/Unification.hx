@@ -53,7 +53,7 @@ class Unification
 		{
 			result.type = BaseType.tFloat;
 		}
-		else if (a.match(TMono(_))) // TODO fix mono update
+		else if (a.match(TMono(_)))
 		{
 			switch (a)
 			{

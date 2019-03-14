@@ -33,56 +33,27 @@ using haxevm.utils.ComplexTypeUtils;
 /**
 Do enum typing.
 **/
-class EnumTyper implements ModuleTypeTyper
+class EnumTyper extends ModuleTypeTyper<EnumFlag, Array<EnumConstructor>, EnumType>
 {
-	/**
-	Link to the compiler doing the compilation.
-	**/
-	var compiler:Compiler;
-
-	/**
-	The definition of the enum.
-	**/
-	var definition:Definition<EnumFlag, Array<EnumConstructor>>;
-
-	/**
-	The module this enum is part of.
-	**/
-	var module:Module;
-
-	/**
-	The enum' position.
-	**/
-	var position:Position;
-
-	/**
-	The typed enum.
-	**/
-	var typedEnum:Null<EnumType>;
-
 	/**
 	Construct an enum typer.
 
 	@param compiler The compiler doing the compilation.
 	@param module The module this enum is part of.
 	@param definition The definition of the enum.
-	@param position The enum' position.
+	@param position The enum's position.
 	**/
 	public function new(compiler:Compiler, module:Module, definition:Definition<EnumFlag, Array<EnumConstructor>>, position:Position)
 	{
-		this.compiler = compiler;
-		this.definition = definition;
-		this.module = module;
-		this.position = position;
-		this.typedEnum = null;
+		super(compiler, module, definition, position);
 	}
 
 	/**
 	Construct the enum's typed data.
 	**/
-	public function firstPass():ModuleType
+	public override function firstPass():ModuleType
 	{
-		typedEnum = {
+		typedData = {
 			constructs: [],
 			doc: definition.doc,
 			isExtern: false,
@@ -102,17 +73,18 @@ class EnumTyper implements ModuleTypeTyper
 			switch (flag)
 			{
 				case EExtern:
-					typedEnum.isExtern = true;
+					typedData.isExtern = true;
 
 				case EPrivate:
-					typedEnum.isPrivate = true;
+					typedData.isPrivate = true;
 			}
 		}
 
 		for (i in 0...definition.data.length)
 		{
 			var field = definition.data[i];
-			typedEnum.names.push(field.name);
+			typedData.names.push(field.name);
+
 			var enumField = {
 				doc: field.doc,
 				index: i,
@@ -122,16 +94,10 @@ class EnumTyper implements ModuleTypeTyper
 				pos: field.pos,
 				type: field.type.toType()
 			};
-			typedEnum.constructs.set(field.name, enumField);
+
+			typedData.constructs.set(field.name, enumField);
 		}
 
-		return ModuleType.TEnumDecl(Ref.make(typedEnum));
-	}
-
-	/**
-	Nothing to do in the second pass for a enum.
-	**/
-	public function secondPass():Void
-	{
+		return ModuleType.TEnumDecl(Ref.make(typedData));
 	}
 }

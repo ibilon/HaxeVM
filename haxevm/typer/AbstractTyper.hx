@@ -23,84 +23,39 @@ SOFTWARE.
 package haxevm.typer;
 
 import haxe.macro.Expr;
+import haxe.macro.Expr.Position as BasePosition;
 import haxe.macro.Type;
 import haxeparser.Data;
 import haxevm.impl.MetaAccess;
+import haxevm.impl.Position;
 import haxevm.impl.Ref;
-import haxevm.typer.Error;
 
 using haxevm.utils.ComplexTypeUtils;
-using haxevm.utils.TypeUtils;
 
 /**
 Do abstract typing.
 **/
-class AbstractTyper implements ModuleTypeTyper
+class AbstractTyper extends WithFieldTyper<AbstractFlag, AbstractType>
 {
 	/**
-	Link to the compiler doing the compilation.
-	**/
-	var compiler:Compiler;
-
-	/**
-	The definition of the abstract.
-	**/
-	var definition:Definition<AbstractFlag, Array<Field>>;
-
-	/**
-	The typed abstract' fields.
-	**/
-	var fields:Array<ClassField>;
-
-	/**
-	The typed abstract fields' expression.
-	**/
-	var fieldsExpr:Array<TypedExpr>;
-
-	/**
-	The module this abstract is part of.
-	**/
-	var module:Module;
-
-	/**
-	The abstract' position.
-	**/
-	var position:Position;
-
-	/**
-	The typed abstract.
-	**/
-	var typedAbstract:Null<AbstractType>;
-
-	/**
-	Construct a abstract typer.
+	Construct an abstract typer.
 
 	@param compiler The compiler doing the compilation.
 	@param module The module this abstract is part of.
 	@param definition The definition of the abstract.
-	@param position The abstract' position.
+	@param position The abstract's position.
 	**/
-	public function new(compiler:Compiler, module:Module, definition:Definition<AbstractFlag, Array<Field>>, position:Position)
+	public function new(compiler:Compiler, module:Module, definition:Definition<AbstractFlag, Array<Field>>, position:BasePosition)
 	{
-		this.compiler = compiler;
-		this.definition = definition;
-		this.fields = [];
-		this.fieldsExpr = [];
-		this.module = module;
-		this.position = position;
-		this.typedAbstract = null;
+		super(compiler, module, definition, position);
 	}
 
 	/**
 	Construct the abstract' typed data, but don't type its fields' expression.
 	**/
-	public function firstPass():ModuleType
+	public override function firstPass():ModuleType
 	{
-		var memberFields = [];
-		var staticFields = [];
-		var overrideFields = [];
-
-		typedAbstract = {
+		typedData = {
 			array: [], // TODO
 			binops: [], // TODO
 			doc: definition.doc,
@@ -127,141 +82,51 @@ class AbstractTyper implements ModuleTypeTyper
 			switch (flag)
 			{
 				case AExtern:
-					typedAbstract.isExtern = true;
+					typedData.isExtern = true;
 
 				case AFromType(ct):
-					typedAbstract.from.push({t:ct.toType(), field:null});
+					typedData.from.push({ t: ct.toType(), field: null });
 
 				case AIsType(ct):
-					typedAbstract.type = ct.toType();
+					typedData.type = ct.toType();
 
 				case APrivAbstract:
-					typedAbstract.isPrivate = true;
+					typedData.isPrivate = true;
 
 				case AToType(ct):
-					typedAbstract.to.push({t:ct.toType(), field:null});
+					typedData.to.push({ t: ct.toType(), field: null });
 			}
 		}
 
-		// First pass: add abstract symbols
-		for (i in 0...definition.data.length)
-		{
-			var data = definition.data[i];
+		// Set the fields' owning class as the impl class.
+		var ref = Ref.make(typedData);
 
-			var field:ClassField = {
-				doc: data.doc,
-				isExtern: false,
-				isFinal: false,
-				isPublic: false,
-				kind: null,
-				meta: MetaAccess.make(data.meta),
-				name: data.name,
-				overloads: Ref.make([]),
-				params: [],
-				pos: data.pos,
-				type: null,
-				expr: () -> fieldsExpr[i]
-			};
+		classData = {
+			constructor: null,
+			doc: null,
+			fields: Ref.make([]),
+			init: null,
+			interfaces: [],
+			isExtern: false,
+			isFinal: false,
+			isInterface: false,
+			isPrivate: false,
+			kind: KAbstractImpl(ref),
+			meta: MetaAccess.make(null),
+			module: module.name,
+			name: definition.name + "_Impl",
+			overrides: [],
+			pack: [],
+			params: [], // def.params,
+			pos: Position.makeEmpty(),
+			statics: Ref.make([]),
+			superClass: null,
+			exclude: () -> {}
+		};
 
-			switch (data.kind)
-			{
-				case FFun(fn):
-					field.kind = FMethod(MethNormal);
-					field.type = TFun(fn.args.map(arg -> { name: arg.name, opt: arg.opt, t: arg.type.toType() }), fn.ret.toType());
+		// First pass: add abstract symbols.
+		constructFields();
 
-				case FProp(get, set, t, _):
-					function resolveAccess(a:String, get:Bool):VarAccess
-					{
-						return switch (a)
-						{
-							case "get", "set", "dynamic":
-								AccCall;
-
-							case "inline":
-								AccInline;
-
-							case "never":
-								AccNever;
-
-							case "null":
-								AccNo;
-
-							case "default":
-								AccNormal;
-
-							default:
-								throw new Error(CustomPropertyAccessor(get), module, data.pos);
-						}
-					}
-
-					field.kind = FVar(resolveAccess(get, true), resolveAccess(set, false));
-					field.type = t.toType();
-
-				case FVar(t, _):
-					field.kind = FVar(AccNormal, AccNormal);
-					field.type = t.toType();
-			}
-
-			var isStatic = false;
-			var isOverride = false;
-
-			for (access in (data.access != null ? data.access : []))
-			{
-				switch (access)
-				{
-					case ADynamic:
-						field.kind = FMethod(MethDynamic);
-
-					case AExtern:
-						field.isExtern = true;
-
-					case AFinal:
-						field.isFinal = true;
-
-					case AInline:
-						field.kind = FMethod(MethInline);
-
-					case AMacro:
-						field.kind = FMethod(MethMacro);
-
-					case AOverride:
-						isOverride = true;
-
-					case APrivate:
-						// pass
-
-					case APublic:
-						field.isPublic = true;
-
-					case AStatic:
-						isStatic = true;
-				}
-			}
-
-			if (isStatic)
-			{
-				staticFields.push(field);
-			}
-			else
-			{
-				memberFields.push(field);
-			}
-
-			if (isOverride)
-			{
-				overrideFields.push(Ref.make(field));
-			}
-
-			fields.push(field);
-		}
-
-		return ModuleType.TAbstract(Ref.make(typedAbstract));
-	}
-
-	/**
-	Type the abstract' fields' expression.
-	**/
-	public function secondPass():Void
-	{
+		return ModuleType.TAbstract(ref);
 	}
 }

@@ -205,7 +205,16 @@ class Compiler
 				}
 
 				// First pass: add types symbols
-				var declarationsTyper:Array<ModuleTypeTyper> = [];
+				var declarationsTyper:Array<TwoPassTyper> = [];
+
+				function register(name:String, typer:TwoPassTyper):Void
+				{
+					declarationsTyper.push(typer);
+
+					var type = typer.firstPass();
+					symbolTable.addType(name, type);
+					types.push(type);
+				}
 
 				for (i in 0...file.decls.length)
 				{
@@ -214,28 +223,13 @@ class Compiler
 					switch (declaration.decl)
 					{
 						case EClass(classDeclaration):
-							var classTyper = new ClassTyper(this, module, classDeclaration, declaration.pos);
-							declarationsTyper.push(classTyper);
-
-							var type = classTyper.firstPass();
-							symbolTable.addType(classDeclaration.name, type);
-							types.push(type);
+							register(classDeclaration.name, new ClassTyper(this, module, classDeclaration, declaration.pos));
 
 						case EEnum(enumDeclaration):
-							var enumTyper = new EnumTyper(this, module, enumDeclaration, declaration.pos);
-							declarationsTyper.push(enumTyper);
-
-							var type = enumTyper.firstPass();
-							symbolTable.addType(enumDeclaration.name, type);
-							types.push(type);
+							register(enumDeclaration.name, new EnumTyper(this, module, enumDeclaration, declaration.pos));
 
 						case ETypedef(typedefDeclaration):
-							var typedefTyper = new TypedefTyper(this, module, typedefDeclaration, declaration.pos);
-							declarationsTyper.push(typedefTyper);
-
-							var type = typedefTyper.firstPass();
-							symbolTable.addType(typedefDeclaration.name, type);
-							types.push(type);
+							register(typedefDeclaration.name, new TypedefTyper(this, module, typedefDeclaration, declaration.pos));
 
 						default:
 							throw "not supported";
