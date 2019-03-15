@@ -38,11 +38,26 @@ class Main
 	**/
 	static function main():Void
 	{
-		var args = Sys.args();
+		Sys.exit(run(Sys.args(), Sys.environment().exists("HAXELIB_RUN")) ? 0 : 1);
+	}
 
-		if (Sys.environment().exists("HAXELIB_RUN"))
+	/**
+	Main function, parse the arguments.
+
+	@param arguments The command line arguments.
+	@param out Optional, the normal output. If absent the process' stdout is used.
+	@param err Optional, the error output. If absent the process' stderr is used.
+	@param haxelib If run though haxelib, if true the last argument is used as cwd.
+	**/
+	public static function run(arguments:Array<String>, ?out:Output, ?err:Output, haxelib:Bool = false):Bool
+	{
+		var out:Output = out != null ? out : Sys.stdout();
+		var err:Output = err != null ? err : Sys.stderr();
+		var cwd = Sys.getCwd();
+
+		if (haxelib)
 		{
-			switch (args.pop())
+			switch (arguments.pop())
 			{
 				case null:
 					throw "missing haxelib provided cwd";
@@ -52,36 +67,45 @@ class Main
 			}
 		}
 
-		if (args.length == 0)
+		if (arguments.length == 0)
 		{
-			Sys.println("haxelib run haxevm filename.hx [-Ddefine[=val]]*");
-			Sys.exit(0);
+			out.writeString("haxelib run haxevm filename.hx [-Ddefine[=val]]*\n");
+
+			Sys.setCwd(cwd);
+			return true;
 		}
 
-		var fname = args[0];
+		var fname = arguments[0];
 
 		if (!FileSystem.exists(fname))
 		{
-			Sys.println('File "$fname" doesn\'t exist');
-			Sys.exit(0);
+			err.writeString('File "$fname" doesn\'t exist\n');
+
+			Sys.setCwd(cwd);
+			return false;
 		}
 
 		var defines = new Map<String, String>();
 
 		var i = 0;
-		while (++i < args.length)
+		while (++i < arguments.length)
 		{
-			if (args[i] != "-D" || i == args.length - 1)
+			if (arguments[i] != "-D" || i == arguments.length - 1)
 			{
-				Sys.println('Invalid argument "${args[i]}"');
-				Sys.exit(1);
+				err.writeString('Invalid argument "${arguments[i]}"\n');
+
+				Sys.setCwd(cwd);
+				return false;
 			}
 
-			var define = args[++i].split("=");
+			var define = arguments[++i].split("=");
 			defines[define[0]] = define.length == 1 ? "1" : define[1];
 		}
 
-		runFile(fname, defines);
+		runFile(fname, defines, out, err);
+
+		Sys.setCwd(cwd);
+		return true;
 	}
 
 	/**

@@ -133,16 +133,16 @@ class Test extends utest.Test
 		var cwd = Sys.getCwd();
 		Sys.setCwd(file.directory());
 
-		var args = ["haxe", "-main", file.withoutDirectory().withoutExtension(), "--interp"];
+		var arguments = ["haxe", "-main", file.withoutDirectory().withoutExtension(), "--interp"];
 
 		for (k => v in defines)
 		{
-			args.push("-D");
-			args.push('$k=$v');
+			arguments.push("-D");
+			arguments.push('$k=$v');
 		}
 
 		// There's some issue with escaping when using arg array.
-		var process = new Process(args.join(" "));
+		var process = new Process(arguments.join(" "));
 
 		var out = process.stdout.readAll().toString();
 		var err = process.stderr.readAll().toString();
@@ -167,9 +167,17 @@ class Test extends utest.Test
 		var out = new StringBufferOutput();
 		var err = new StringBufferOutput();
 
+		var arguments = [file];
+
+		for (k => v in defines)
+		{
+			arguments.push("-D");
+			arguments.push('$k=$v');
+		}
+
 		try
 		{
-			haxevm.Main.runFile(file, defines, out, err);
+			haxevm.Main.run(arguments, out, err);
 		}
 		catch (a:Any)
 		{

@@ -23,6 +23,7 @@ SOFTWARE.
 package tests;
 
 import haxe.PosInfos;
+import haxevm.Main;
 import haxevm.impl.MetaAccess;
 import haxevm.impl.Position;
 import haxevm.impl.Ref;
@@ -38,6 +39,20 @@ class MiscTest extends Test
 		compareFile("tests/samples/ConditionalCompilation.hx", pos);
 		compareFile("tests/samples/ConditionalCompilation.hx", ["test" => "1"], pos);
 		compareFile("tests/samples/ConditionalCompilation.hx", ["other" => "1"], pos);
+	}
+
+	public function testMain()
+	{
+		var out = new Test.StringBufferOutput();
+		var err = new Test.StringBufferOutput();
+
+		// Empty arguments
+		Assert.isTrue(Main.run([], out, err));
+		Assert.equals(0, err.toString().length);
+
+		// Haxelib arg
+		Assert.isTrue(Main.run(["tests"], out, err, true));
+		Assert.equals(0, err.toString().length);
 	}
 
 	public function testMetaAcess():Void
