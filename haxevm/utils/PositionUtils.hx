@@ -42,16 +42,6 @@ class PositionUtils
 	}
 
 	/**
-	Check if the position is empty.
-
-	@param position The position to check.
-	**/
-	public static function isEmpty(position:Position):Bool
-	{
-		return position.file == "" && position.min == 0 && position.max == 0;
-	}
-
-	/**
 	Preparse a file's content to find the new line positions.
 
 	@param content The file content.

@@ -22,13 +22,15 @@ SOFTWARE.
 
 package tests;
 
+import haxe.PosInfos;
+
 /**
 Test enum related features.
 **/
 class EnumTest extends Test
 {
-	public function testEnumDeclaration():Void
+	public function testEnumDeclaration(?pos:PosInfos):Void
 	{
-		compareFile("tests/samples/EnumDeclaration.hx");
+		compareFile("tests/samples/EnumDeclaration.hx", pos);
 	}
 }

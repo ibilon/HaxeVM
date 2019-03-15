@@ -25,12 +25,12 @@ package tests;
 import haxe.PosInfos;
 
 /**
-Test class related features.
+Test abstract related features.
 **/
-class ClassTest extends Test
+class AbstractTest extends Test
 {
-	public function testStaticSample(?pos:PosInfos):Void
+	public function testAbstractDeclaration(?pos:PosInfos):Void
 	{
-		compareFile("tests/samples/Static.hx", pos);
+		compareFile("tests/samples/Abstract.hx", pos);
 	}
 }

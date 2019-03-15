@@ -24,7 +24,6 @@ package haxevm.typer;
 
 import haxe.macro.Expr;
 import haxe.macro.Type;
-import haxe.macro.Type.Ref as BaseRef;
 import haxeparser.Data;
 import haxevm.impl.MetaAccess;
 import haxevm.impl.Ref;
@@ -51,7 +50,7 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 	/**
 	The class storing the fields: either the actual class or the abstract's impl class.
 	**/
-	var classData:ClassType;
+	var classData:Null<ClassType>;
 
 	/**
 	Construct a module type typer.
@@ -195,6 +194,11 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 	**/
 	public override function secondPass():Void
 	{
+		if (classData == null)
+		{
+			throw "need to assign a classtype before doing second pass";
+		}
+
 		compiler.symbolTable.stack(() ->
 		{
 			for (field in fields)

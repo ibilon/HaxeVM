@@ -24,6 +24,7 @@ package haxevm;
 
 import byte.ByteData;
 import haxeparser.HaxeParser;
+import haxevm.typer.AbstractTyper;
 import haxevm.typer.ClassTyper;
 import haxevm.typer.EnumTyper;
 import haxevm.typer.Error;
@@ -222,6 +223,9 @@ class Compiler
 
 					switch (declaration.decl)
 					{
+						case EAbstract(abstractDeclaration):
+							register(abstractDeclaration.name, new AbstractTyper(this, module, abstractDeclaration, declaration.pos));
+
 						case EClass(classDeclaration):
 							register(classDeclaration.name, new ClassTyper(this, module, classDeclaration, declaration.pos));
 

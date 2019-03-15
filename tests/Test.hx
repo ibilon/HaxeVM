@@ -23,6 +23,7 @@ SOFTWARE.
 package tests;
 
 import haxe.CallStack;
+import haxe.PosInfos;
 import haxe.io.Encoding;
 import haxe.io.Output;
 import mcover.coverage.MCoverage;
@@ -105,6 +106,7 @@ class Test extends utest.Test
 		// Add the tests.
 		var r = new Runner();
 
+		r.addCase(new AbstractTest());
 		r.addCase(new ClassTest());
 		r.addCase(new EnumTest());
 		r.addCase(new ExprTest());
@@ -189,13 +191,13 @@ class Test extends utest.Test
 	@param file The file to run.
 	@param defines The defines, optional.
 	**/
-	function compareFile(file:String, ?defines:Map<String, String>)
+	function compareFile(file:String, ?defines:Map<String, String>, pos:PosInfos)
 	{
 		var defines = defines != null ? defines : new Map<String, String>();
 		var real = runHaxe(file, defines);
 		var haxevm = runFile(file, defines);
 
-		Assert.equals(real.out, haxevm.out);
-		Assert.equals(real.err, haxevm.err);
+		Assert.equals(real.out, haxevm.out, pos);
+		Assert.equals(real.err, haxevm.err, pos);
 	}
 }

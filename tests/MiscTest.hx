@@ -22,15 +22,72 @@ SOFTWARE.
 
 package tests;
 
+import haxe.PosInfos;
+import haxevm.impl.MetaAccess;
+import haxevm.impl.Position;
+import haxevm.impl.Ref;
+import utest.Assert;
+
 /**
 Test miscellaneous features.
 **/
 class MiscTest extends Test
 {
-	public function testConditionalCompilationSample():Void
+	public function testConditionalCompilationSample(?pos:PosInfos):Void
 	{
-		compareFile("tests/samples/ConditionalCompilation.hx");
-		compareFile("tests/samples/ConditionalCompilation.hx", ["test" => "1"]);
-		compareFile("tests/samples/ConditionalCompilation.hx", ["other" => "1"]);
+		compareFile("tests/samples/ConditionalCompilation.hx", pos);
+		compareFile("tests/samples/ConditionalCompilation.hx", ["test" => "1"], pos);
+		compareFile("tests/samples/ConditionalCompilation.hx", ["other" => "1"], pos);
+	}
+
+	public function testMetaAcess():Void
+	{
+		var m = MetaAccess.make(null);
+
+		var copy = m.get();
+		Assert.equals(0, copy.length);
+
+		m.add("hello", [], Position.makeEmpty());
+		Assert.equals(0, copy.length);
+		Assert.isTrue(m.has("hello"));
+		Assert.equals(1, m.get().length);
+
+		m.add("hello", [], Position.makeEmpty());
+		Assert.equals(0, copy.length);
+		Assert.isTrue(m.has("hello"));
+		Assert.equals(2, m.get().length);
+
+		m.add("nothello", [], Position.makeEmpty());
+		Assert.equals(1, m.extract("nothello").length);
+		Assert.equals(2, m.extract("hello").length);
+
+		m.remove("hello");
+		Assert.equals(1, m.extract("nothello").length);
+		Assert.equals(0, m.extract("hello").length);
+		Assert.equals(0, copy.length);
+	}
+
+	public function testRef():Void
+	{
+		var r = Ref.make(null);
+		Assert.equals(r.get(), null);
+		Assert.equals(r.toString(), "null");
+
+		(cast r : Ref<String>).set("hello");
+		Assert.equals(r.get(), "hello");
+		Assert.equals(r.toString(), "hello");
+
+		try
+		{
+			(cast r : Ref<String>).set("hello2");
+			Assert.fail();
+		}
+		catch (e:String)
+		{
+			Assert.equals(e, "not monomorph or already bound");
+		}
+
+		Assert.equals(r.get(), "hello");
+		Assert.equals(r.toString(), "hello");
 	}
 }

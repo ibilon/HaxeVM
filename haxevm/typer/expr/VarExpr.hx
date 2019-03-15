@@ -63,6 +63,6 @@ class VarExpr
 
 		symbolTable[sid] = SVar(type);
 
-		return TVar(TVarUtils.make(sid, v.name, null), typed).makeTyped(position, type);
+		return TVar(TVarUtils.make(sid, v.name, type), typed).makeTyped(position, type);
 	}
 }

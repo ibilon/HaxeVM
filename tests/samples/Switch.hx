@@ -93,6 +93,8 @@ class Switch
 		{
 			case 1:
 				trace("one");
+
+			case 2:
 		}
 
 		switch (0)

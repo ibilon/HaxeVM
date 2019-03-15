@@ -40,7 +40,7 @@ class IfExpr
 	@param elseExpr The expression when the condition is false.
 	@param eval The expression evaluation function, should be `VM.eval`.
 	**/
-	public static function eval(conditionExpr:TypedExpr, ifExpr:TypedExpr, elseExpr:TypedExpr, eval:EvalFn):EVal
+	public static function eval(conditionExpr:TypedExpr, ifExpr:TypedExpr, elseExpr:Null<TypedExpr>, eval:EvalFn):EVal
 	{
 		return if (eval(conditionExpr).asBool())
 		{

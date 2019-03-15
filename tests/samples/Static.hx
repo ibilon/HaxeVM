@@ -20,6 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **/
 
+extern class Empty
+{
+	static function empty():Void;
+}
+
 class Static
 {
 	public static var i:Int;

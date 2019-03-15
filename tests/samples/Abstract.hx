@@ -20,17 +20,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **/
 
-package tests;
-
-import haxe.PosInfos;
-
-/**
-Test class related features.
-**/
-class ClassTest extends Test
+abstract A(Int)
 {
-	public function testStaticSample(?pos:PosInfos):Void
+	public static function version():Int
 	{
-		compareFile("tests/samples/Static.hx", pos);
+		return 0;
+	}
+}
+
+class Abstract
+{
+	public static function main()
+	{
 	}
 }

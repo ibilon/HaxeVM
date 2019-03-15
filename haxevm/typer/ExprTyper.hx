@@ -137,7 +137,7 @@ class ExprTyper
 						elems = exprs.map(e -> typeExpr(e));
 					});
 
-					TBlock(elems).makeTyped(expr.pos, elems.length > 0 ? elems.last().t : BaseType.tVoid);
+					TBlock(elems).makeTyped(parentExpr.pos, elems.length > 0 ? elems.last().t : BaseType.tVoid);
 
 				case EBreak:
 					TBreak.makeTyped(parentExpr.pos, BaseType.tVoid);

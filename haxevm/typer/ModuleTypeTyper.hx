@@ -98,20 +98,6 @@ class ModuleTypeTyper<DefinitionFlag, DefinitionData, DataType> implements TwoPa
 	}
 
 	/**
-	**/
-	public function getTypedData():DataType
-	{
-		if (typedData == null)
-		{
-			throw "typed data not constructed, first pass not called?";
-		}
-		else
-		{
-			return typedData;
-		}
-	}
-
-	/**
 	Type the module type's fields' expression.
 	**/
 	public function secondPass():Void {}
