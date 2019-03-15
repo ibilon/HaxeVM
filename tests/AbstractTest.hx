@@ -22,15 +22,13 @@ SOFTWARE.
 
 package tests;
 
-import haxe.PosInfos;
-
 /**
 Test abstract related features.
 **/
 class AbstractTest extends Test
 {
-	public function testAbstractDeclaration(?pos:PosInfos):Void
+	public function testAbstractDeclaration():Void
 	{
-		compareFile("tests/samples/Abstract.hx", pos);
+		compareFile("tests/samples/Abstract.hx");
 	}
 }

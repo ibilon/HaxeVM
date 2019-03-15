@@ -22,65 +22,63 @@ SOFTWARE.
 
 package tests;
 
-import haxe.PosInfos;
-
 /**
 Test expression related features.
 **/
 class ExprTest extends Test
 {
-	public function testAnonSample(?pos:PosInfos):Void
+	public function testAnonSample():Void
 	{
-		compareFile("tests/samples/Anon.hx", pos);
+		compareFile("tests/samples/Anon.hx");
 	}
 
-	public function testArraysSample(?pos:PosInfos):Void
+	public function testArraysSample():Void
 	{
-		compareFile("tests/samples/Arrays.hx", pos);
+		compareFile("tests/samples/Arrays.hx");
 	}
 
-	public function testForSample(?pos:PosInfos):Void
+	public function testForSample():Void
 	{
-		compareFile("tests/samples/For.hx", pos);
+		compareFile("tests/samples/For.hx");
 	}
 
-	public function testHelloWorldSample(?pos:PosInfos):Void
+	public function testHelloWorldSample():Void
 	{
-		compareFile("tests/samples/HelloWorld.hx", pos);
+		compareFile("tests/samples/HelloWorld.hx");
 	}
 
-	public function testLocalFunctionSample(?pos:PosInfos):Void
+	public function testLocalFunctionSample():Void
 	{
-		compareFile("tests/samples/LocalFunction.hx", pos);
+		compareFile("tests/samples/LocalFunction.hx");
 	}
 
-	public function testMainSample(?pos:PosInfos):Void
+	public function testMainSample():Void
 	{
-		compareFile("tests/samples/Main.hx", pos);
+		compareFile("tests/samples/Main.hx");
 	}
 
-	public function testOperatorsSample(?pos:PosInfos):Void
+	public function testOperatorsSample():Void
 	{
-		compareFile("tests/samples/Operators.hx", pos);
+		compareFile("tests/samples/Operators.hx");
 	}
 
-	public function testRecursiveFunctionSample(?pos:PosInfos):Void
+	public function testRecursiveFunctionSample():Void
 	{
-		compareFile("tests/samples/RecursiveFunction.hx", pos);
+		compareFile("tests/samples/RecursiveFunction.hx");
 	}
 
-	public function testSwitchSample(?pos:PosInfos):Void
+	public function testSwitchSample():Void
 	{
-		compareFile("tests/samples/Switch.hx", pos);
+		compareFile("tests/samples/Switch.hx");
 	}
 
-	public function testThrowSample(?pos:PosInfos):Void
+	public function testThrowSample():Void
 	{
-		compareFile("tests/samples/Throw.hx", pos);
+		compareFile("tests/samples/Throw.hx");
 	}
 
-	public function testWhileSample(?pos:PosInfos):Void
+	public function testWhileSample():Void
 	{
-		compareFile("tests/samples/While.hx", pos);
+		compareFile("tests/samples/While.hx");
 	}
 }

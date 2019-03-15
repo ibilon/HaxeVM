@@ -21,16 +21,13 @@ SOFTWARE.
 **/
 
 package tests;
-
-import haxe.PosInfos;
-
 /**
 Test class related features.
 **/
 class ClassTest extends Test
 {
-	public function testStaticSample(?pos:PosInfos):Void
+	public function testStaticSample():Void
 	{
-		compareFile("tests/samples/Static.hx", pos);
+		compareFile("tests/samples/Static.hx");
 	}
 }

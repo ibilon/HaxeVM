@@ -22,7 +22,6 @@ SOFTWARE.
 
 package tests;
 
-import haxe.PosInfos;
 import haxevm.Main;
 import haxevm.impl.MetaAccess;
 import haxevm.impl.Position;
@@ -34,11 +33,11 @@ Test miscellaneous features.
 **/
 class MiscTest extends Test
 {
-	public function testConditionalCompilationSample(?pos:PosInfos):Void
+	public function testConditionalCompilationSample():Void
 	{
-		compareFile("tests/samples/ConditionalCompilation.hx", pos);
-		compareFile("tests/samples/ConditionalCompilation.hx", ["test" => "1"], pos);
-		compareFile("tests/samples/ConditionalCompilation.hx", ["other" => "1"], pos);
+		compareFile("tests/samples/ConditionalCompilation.hx");
+		compareFile("tests/samples/ConditionalCompilation.hx", ["test" => "1"]);
+		compareFile("tests/samples/ConditionalCompilation.hx", ["other" => "1"]);
 	}
 
 	public function testMain()

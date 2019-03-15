@@ -22,15 +22,13 @@ SOFTWARE.
 
 package tests;
 
-import haxe.PosInfos;
-
 /**
 Test typedef related features.
 **/
 class TypedefTest extends Test
 {
-	public function testTypedefDeclaration(?pos:PosInfos):Void
+	public function testTypedefDeclaration():Void
 	{
-		compareFile("tests/samples/TypedefDeclaration.hx", pos);
+		compareFile("tests/samples/TypedefDeclaration.hx");
 	}
 }
