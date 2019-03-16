@@ -35,9 +35,9 @@ class MiscTest extends Test
 {
 	public function testConditionalCompilationSample():Void
 	{
-		compareFile("tests/samples/ConditionalCompilation.hx");
-		compareFile("tests/samples/ConditionalCompilation.hx", ["test" => "1"]);
-		compareFile("tests/samples/ConditionalCompilation.hx", ["other" => "1"]);
+		compareFile("tests/samples/misc/ConditionalCompilation.hx");
+		compareFile("tests/samples/misc/ConditionalCompilation.hx", ["test" => "1"]);
+		compareFile("tests/samples/misc/ConditionalCompilation.hx", ["other" => "1"]);
 	}
 
 	public function testMain()

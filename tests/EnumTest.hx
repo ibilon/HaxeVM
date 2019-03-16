@@ -29,6 +29,6 @@ class EnumTest extends Test
 {
 	public function testEnumDeclaration():Void
 	{
-		compareFile("tests/samples/EnumDeclaration.hx");
+		compareFile("tests/samples/enum/EnumDeclaration.hx");
 	}
 }

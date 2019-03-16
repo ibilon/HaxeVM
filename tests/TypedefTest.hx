@@ -29,6 +29,6 @@ class TypedefTest extends Test
 {
 	public function testTypedefDeclaration():Void
 	{
-		compareFile("tests/samples/TypedefDeclaration.hx");
+		compareFile("tests/samples/typedef/TypedefDeclaration.hx");
 	}
 }

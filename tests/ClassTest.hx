@@ -28,6 +28,6 @@ class ClassTest extends Test
 {
 	public function testStaticSample():Void
 	{
-		compareFile("tests/samples/Static.hx");
+		compareFile("tests/samples/class/Static.hx");
 	}
 }

@@ -29,56 +29,56 @@ class ExprTest extends Test
 {
 	public function testAnonSample():Void
 	{
-		compareFile("tests/samples/Anon.hx");
+		compareFile("tests/samples/expr/Anon.hx");
 	}
 
 	public function testArraysSample():Void
 	{
-		compareFile("tests/samples/Arrays.hx");
+		compareFile("tests/samples/expr/Arrays.hx");
 	}
 
 	public function testForSample():Void
 	{
-		compareFile("tests/samples/For.hx");
+		compareFile("tests/samples/expr/For.hx");
 	}
 
 	public function testHelloWorldSample():Void
 	{
-		compareFile("tests/samples/HelloWorld.hx");
+		compareFile("tests/samples/expr/HelloWorld.hx");
 	}
 
 	public function testLocalFunctionSample():Void
 	{
-		compareFile("tests/samples/LocalFunction.hx");
+		compareFile("tests/samples/expr/LocalFunction.hx");
 	}
 
 	public function testMainSample():Void
 	{
-		compareFile("tests/samples/Main.hx");
+		compareFile("tests/samples/expr/Main.hx");
 	}
 
 	public function testOperatorsSample():Void
 	{
-		compareFile("tests/samples/Operators.hx");
+		compareFile("tests/samples/expr/Operators.hx");
 	}
 
 	public function testRecursiveFunctionSample():Void
 	{
-		compareFile("tests/samples/RecursiveFunction.hx");
+		compareFile("tests/samples/expr/RecursiveFunction.hx");
 	}
 
 	public function testSwitchSample():Void
 	{
-		compareFile("tests/samples/Switch.hx");
+		compareFile("tests/samples/expr/Switch.hx");
 	}
 
 	public function testThrowSample():Void
 	{
-		compareFile("tests/samples/Throw.hx");
+		compareFile("tests/samples/expr/Throw.hx");
 	}
 
 	public function testWhileSample():Void
 	{
-		compareFile("tests/samples/While.hx");
+		compareFile("tests/samples/expr/While.hx");
 	}
 }

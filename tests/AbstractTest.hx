@@ -29,6 +29,6 @@ class AbstractTest extends Test
 {
 	public function testAbstractDeclaration():Void
 	{
-		compareFile("tests/samples/Abstract.hx");
+		compareFile("tests/samples/abstract/Abstract.hx");
 	}
 }
