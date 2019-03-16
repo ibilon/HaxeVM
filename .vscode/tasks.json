@@ -91,6 +91,43 @@
 			]
 		},
 		{
+			"label": "run tests on eval",
+			"type": "shell",
+			"command": "haxe",
+			"args": [
+				"test.hxml"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "run tests on cpp",
+			"type": "shell",
+			"command": "build/test_cpp/Test",
+			"args": [],
+			"problemMatcher": [],
+			"dependsOn": "build test cpp"
+		},
+		{
+			"label": "build test cpp",
+			"type": "shell",
+			"command": "haxe",
+			"args": [
+				"extraParams.hxml",
+				"libs/utest/extraParams.hxml",
+				"-main",
+				"tests.Test",
+				"-cpp",
+				"build/test_cpp/",
+				"-D",
+				"noCoverage"
+			],
+			"problemMatcher": [
+				"$haxe-absolute",
+				"$haxe",
+				"$haxe-error"
+			]
+		},
+		{
 			"label": "todos",
 			"type": "shell",
 			"command": "grep",

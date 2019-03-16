@@ -19,16 +19,22 @@ before_script:
 script:
   # test compilation/show errors
   - haxe extraParams.hxml --run haxevm.Main tests/samples/expr/Main.hx
-  # run the tests
+  # run the tests on eval
   - haxe test.hxml
   # check compilation status on cpp
   - haxelib install hxcpp
   - haxe extraParams.hxml --main haxevm.Main -cpp build/cpp/
   - build/cpp/Main tests/samples/expr/Main.hx
+  # run the tests on cpp
+  - haxe extraParams.hxml libs/utest/extraParams.hxml -main tests.Test -cpp build/test_cpp/ -D noCoverage
+  - build/test_cpp/Test
   # check compilation status on js
   - haxelib git hxnodejs https://github.com/HaxeFoundation/hxnodejs.git
   - haxe extraParams.hxml --main haxevm.Main -js build/haxevm.js -lib hxnodejs -D js-es=6
   - node build/haxevm.js tests/samples/expr/Main.hx
+  # run the tests on js (not working yet)
+  #- haxe extraParams.hxml libs/utest/extraParams.hxml -main tests.Test -js build/test_js/test.js -lib hxnodejs -D js-es=6 -D noCoverage
+  #- node build/test_js/test.js
 
 after_script:
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then

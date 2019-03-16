@@ -24,7 +24,7 @@ class Anon
 {
 	public static function main()
 	{
-		var obj = { sub: { hello: "well hello" }, a: 12, b: -7.2, t: true, f: false };
+		var obj = { sub: { hello: "well hello" }, a: 12, b: -7.5, t: true, f: false };
 
 		// $type(obj); // TODO figure out the ordering of eval
 		$type(obj.sub.hello);

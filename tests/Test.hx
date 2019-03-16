@@ -26,8 +26,10 @@ import haxe.CallStack;
 import haxe.PosInfos;
 import haxe.io.Encoding;
 import haxe.io.Output;
+#if !noCoverage
 import mcover.coverage.MCoverage;
 import mcover.coverage.client.LcovPrintClient;
+#end
 import sys.io.Process;
 import utest.Assert;
 import utest.Runner;
@@ -115,8 +117,10 @@ class Test extends utest.Test
 		r.addCase(new TypedefTest());
 
 		// Generate coverage information.
+		#if !noCoverage
 		MCoverage.getLogger().addClient(new LcovPrintClient("Coverage report"));
 		r.onComplete.add(_ -> { MCoverage.getLogger().report(); });
+		#end
 
 		// Run the tests and display results.
 		Report.create(r, NeverShowSuccessResults, AlwaysShowHeader);

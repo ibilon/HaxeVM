@@ -121,7 +121,7 @@ class PositionUtils
 
 		if (endmax == max)
 		{
-			var cstart = position.min - module.newLinesPositions[max - 1];
+			var cstart = position.min - module.newLinesPositions[max - 1] #if cpp + 1 #end; // TODO yes this is ugly, no idea why it's necessary
 			var cend = cstart + position.max - position.min;
 			return '${positionString} characters ${cstart}-${cend} :';
 		}

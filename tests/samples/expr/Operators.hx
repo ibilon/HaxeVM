@@ -25,7 +25,7 @@ class Operators
 	public static function main()
 	{
 		var i = 10;
-		var b = -9;
+		var b = -5;
 
 		trace(i);
 		trace(-i);

@@ -22,10 +22,12 @@ SOFTWARE.
 
 package haxevm;
 
+#if macro
 import haxe.io.Path;
 import haxe.macro.Context;
 import haxe.macro.Compiler;
 import haxe.macro.Expr;
+#end
 
 @:noCompletion
 class InitMacro
@@ -43,7 +45,11 @@ class InitMacro
 				Compiler.addClassPath(Path.join([pdir, "../libs/hxparse/src"]));
 				Compiler.addClassPath(Path.join([pdir, "../libs/haxeparser/src"]));
 				Compiler.addClassPath(Path.join([pdir, "../libs/utest/src"]));
-				Compiler.addClassPath(Path.join([pdir, "../libs/mcover/src"]));
+
+				if (!Context.defined("noCoverage"))
+				{
+					Compiler.addClassPath(Path.join([pdir, "../libs/mcover/src"]));
+				}
 
 			default:
 				throw "can't find the haxevm.InitMacro type";
