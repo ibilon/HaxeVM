@@ -77,10 +77,12 @@ class ConstExpr
 
 				switch (symbol)
 				{
-					case SField(_):
-						typeExpr({ expr: EField({ expr: EConst(CIdent(typedClass.name)), pos: Position.makeEmpty() }, ident), pos: Position.makeEmpty() });
+					case SField(_, from):
+						typeExpr({ expr: EField({ expr: EConst(CIdent(from.name)), pos: Position.makeEmpty() }, ident), pos: Position.makeEmpty() });
 
-					case SModule(module):
+					case SModule(_):
+						throw "not implemented";
+						/*
 						for (type in module.types)
 						{
 							switch (type)
@@ -97,17 +99,16 @@ class ConstExpr
 						}
 
 						throw ErrorMessage.ModuleWithoutMainType(module);
+						*/
 
-					case SType(subModule):
-						if (module.name == ident)
+					case SType(type, from):
+						if (from == module)
 						{
-							// Main type of module
-							TTypeExpr(subModule).makeTyped(position, symbol.toType());
+							// Type is in current module.
+							return TTypeExpr(type).makeTyped(position, symbol.toType());
 						}
-						else
-						{
-							typeExpr({ expr: EField({ expr: EConst(CIdent(module.name)), pos: Position.makeEmpty() }, ident), pos: Position.makeEmpty() });
-						}
+
+						typeExpr({ expr: EField({ expr: EConst(CIdent(from.name)), pos: Position.makeEmpty() }, ident), pos: Position.makeEmpty() });
 
 					case SVar(type):
 						TLocal(TVarUtils.make(sid, ident, type)).makeTyped(position, type);

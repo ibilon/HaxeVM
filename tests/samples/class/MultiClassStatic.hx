@@ -20,65 +20,85 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **/
 
-package tests;
-
-/**
-Test expression related features.
-**/
-class ExprTest extends Test
+class Other
 {
-	public function testAnon():Void
+	public static var e = 0;
+
+	public static var i = 0;
+
+	public static function a():Int
 	{
-		compareFile("tests/samples/expr/Anon.hx");
+		MultiClassStatic.e++;
+
+		return if (i > 2)
+		{
+			i;
+		}
+		else
+		{
+			i = 8;
+		}
 	}
 
-	public function testArrays():Void
+	public static function b(i:Int, a:Bool):Float
 	{
-		compareFile("tests/samples/expr/Arrays.hx");
+		return a ? i / 2 : i * 1.7;
+	}
+}
+
+class MultiClassStatic
+{
+	public static var i:Int;
+	public static var e = 0;
+	public static var h = "hi";
+
+	public static function main()
+	{
+		trace(h);
+		trace(e);
+
+		i = 77;
+		trace(i);
+
+		trace(Other.e);
+		trace(++Other.i);
+
+		a(0);
+
+		trace(e);
+		trace(Other.e);
+
+		trace(i);
+		trace(Other.i);
 	}
 
-	public function testFor():Void
+	static function a(i:Float):Float
 	{
-		compareFile("tests/samples/expr/For.hx");
+		e++;
+
+		if (i > 0)
+		{
+			i = b(i - 1);
+		}
+		else if (i == 0)
+		{
+			i = Other.a();
+		}
+
+		return i;
 	}
 
-	public function testHelloWorld():Void
+	static function b(i:Float):Float
 	{
-		compareFile("tests/samples/expr/HelloWorld.hx");
+		e++;
+
+		i = i > 0 ? a(i / 2) : 0;
+
+		return i;
 	}
 
-	public function testLocalFunction():Void
+	static function p():Float
 	{
-		compareFile("tests/samples/expr/LocalFunction.hx");
-	}
-
-	public function testMain():Void
-	{
-		compareFile("tests/samples/expr/Main.hx");
-	}
-
-	public function testOperators():Void
-	{
-		compareFile("tests/samples/expr/Operators.hx");
-	}
-
-	public function testRecursiveFunction():Void
-	{
-		compareFile("tests/samples/expr/RecursiveFunction.hx");
-	}
-
-	public function testSwitch():Void
-	{
-		compareFile("tests/samples/expr/Switch.hx");
-	}
-
-	public function testThrow():Void
-	{
-		compareFile("tests/samples/expr/Throw.hx");
-	}
-
-	public function testWhile():Void
-	{
-		compareFile("tests/samples/expr/While.hx");
+		return Other.b(i, false) * Other.b(i, true) + 4;
 	}
 }

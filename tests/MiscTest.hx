@@ -33,14 +33,14 @@ Test miscellaneous features.
 **/
 class MiscTest extends Test
 {
-	public function testConditionalCompilationSample():Void
+	public function testConditionalCompilation():Void
 	{
 		compareFile("tests/samples/misc/ConditionalCompilation.hx");
 		compareFile("tests/samples/misc/ConditionalCompilation.hx", ["test" => "1"]);
 		compareFile("tests/samples/misc/ConditionalCompilation.hx", ["other" => "1"]);
 	}
 
-	public function testMain()
+	public function testMain():Void
 	{
 		var out = new Test.StringBufferOutput();
 		var err = new Test.StringBufferOutput();

@@ -22,9 +22,7 @@ SOFTWARE.
 
 package haxevm;
 
-import haxe.macro.Type.ClassField;
-import haxe.macro.Type.ModuleType;
-import haxe.macro.Type.Type;
+import haxe.macro.Type;
 import haxevm.impl.Ref;
 import haxevm.typer.BaseType;
 import haxevm.typer.Error;
@@ -45,15 +43,15 @@ enum Symbol
 	/**
 	A symbol representing a type.
 	**/
-	SType(type:ModuleType);
+	SType(type:ModuleType, from:Module);
 
 	/**
 	A symbol representing a field.
 	**/
-	SField(field:ClassField);
+	SField(field:ClassField, from:ClassType);
 
 	/**
-	A symbol representing a variable.
+	A symbol representing a local variable.
 	**/
 	SVar(type:Type);
 }
@@ -83,9 +81,9 @@ abstract SymbolTable(SymbolTableData)
 
 	@param field The field to add.
 	**/
-	public inline function addField(field:ClassField):Int
+	public inline function addField(field:ClassField, from:ClassType):Int
 	{
-		return addSymbol(field.name, SField(field));
+		return addSymbol(field.name, SField(field, from));
 	}
 
 	/**
@@ -129,9 +127,9 @@ abstract SymbolTable(SymbolTableData)
 	@param name The name of the type.
 	@param type The type to add.
 	**/
-	public inline function addType(name:String, type:ModuleType):Int
+	public inline function addType(name:String, type:ModuleType, from:Module):Int
 	{
-		return addSymbol(name, SType(type));
+		return addSymbol(name, SType(type, from));
 	}
 
 	/**
@@ -160,23 +158,6 @@ abstract SymbolTable(SymbolTableData)
 
 			case value:
 				value;
-		}
-	}
-
-	/**
-	Get a field.
-
-	@param id The field's id.
-	**/
-	public inline function getField(id:Int):ClassField
-	{
-		return switch (get(id))
-		{
-			case SField(field):
-				field;
-
-			default:
-				throw "symbol isn't of type SField";
 		}
 	}
 
@@ -223,23 +204,6 @@ abstract SymbolTable(SymbolTableData)
 
 			case value:
 				value;
-		}
-	}
-
-	/**
-	Get a type.
-
-	@param id The type's id.
-	**/
-	public inline function getType(id:Int):ModuleType
-	{
-		return switch (get(id))
-		{
-			case SType(type):
-				type;
-
-			default:
-				throw "symbol isn't of type SType";
 		}
 	}
 

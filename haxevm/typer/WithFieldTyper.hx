@@ -30,9 +30,9 @@ import haxevm.impl.MetaAccess;
 import haxevm.impl.Position;
 import haxevm.impl.Ref;
 import haxevm.typer.Error;
+import haxevm.typer.expr.ConstExpr;
 
 using haxevm.utils.ComplexTypeUtils;
-using haxevm.utils.TypeUtils;
 
 /**
 Special case of ModuleTypeTyper for classes and abstracts, which have fields.
@@ -136,13 +136,24 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 				}
 			}
 
+			function eagerType(field:ClassField, expr:Null<Expr>) // Eagerly type constant.
+			{
+				switch (expr != null ? expr.expr : null)
+				{
+					case EConst(constant):
+						Unification.unify(field.type, ConstExpr.type(constant, expr.pos, module, classData, compiler.symbolTable, null).t);
+
+					default:
+				}
+			}
+
 			switch (data.kind)
 			{
 				case FFun(fn):
 					field.kind = FMethod(MethNormal);
 					field.type = TFun(fn.args.map(arg -> { name: arg.name, opt: arg.opt, t: arg.type.toType() }), fn.ret.toType());
 
-				case FProp(getAccessor, setAccessor, t, _):
+				case FProp(getAccessor, setAccessor, t, expr):
 					function resolveAccess(get:Bool):VarAccess
 					{
 						return switch (get ? getAccessor : setAccessor)
@@ -182,10 +193,12 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 
 					field.kind = FVar(resolveAccess(true), resolveAccess(false));
 					field.type = t.toType();
+					eagerType(field, expr);
 
-				case FVar(t, _):
+				case FVar(t, expr):
 					field.kind = FVar(AccNormal, AccNormal);
 					field.type = t.toType();
+					eagerType(field, expr);
 			}
 
 			if (isStatic)
@@ -254,7 +267,7 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 		{
 			for (field in fields)
 			{
-				compiler.symbolTable.addField(field);
+				compiler.symbolTable.addField(field, classData);
 			}
 
 			// Second pass: type class symbols' expr
@@ -285,14 +298,7 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 						fieldsExpr[i] = new ExprTyper(compiler, module, classData, expr).type();
 				}
 
-				switch (fields[i].type.follow())
-				{
-					case TMono(ref):
-						(cast ref : Ref<Type>).set(fieldsExpr[i].t);
-
-					default:
-						// pass
-				}
+				Unification.unify(fields[i].type, fieldsExpr[i].t);
 			}
 		});
 	}

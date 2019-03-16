@@ -221,7 +221,7 @@ class Compiler
 					declarationsTyper.push(typer);
 
 					var type = typer.firstPass();
-					symbolTable.addType(name, type);
+					symbolTable.addType(name, type, module);
 					types.push(type);
 				}
 

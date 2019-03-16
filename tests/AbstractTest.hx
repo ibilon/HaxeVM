@@ -27,7 +27,7 @@ Test abstract related features.
 **/
 class AbstractTest extends Test
 {
-	public function testAbstractDeclaration():Void
+	public function testAbstract():Void
 	{
 		compareFile("tests/samples/abstract/Abstract.hx");
 	}

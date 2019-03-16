@@ -41,14 +41,20 @@ class SymbolUtils
 	{
 		return switch (symbol)
 		{
-			case SType(moduleType):
+			case SType(moduleType, _):
 				switch (moduleType)
 				{
-					case TClassDecl(classType):
-						TInst(classType, []);
+					case TAbstract(abstractTypeRef):
+						TAbstract(abstractTypeRef, []);
 
-					default:
-						throw "not implemented";
+					case TClassDecl(classTypeRef):
+						TInst(classTypeRef, []);
+
+					case TEnumDecl(enumTypeRef):
+						TEnum(enumTypeRef, []);
+
+					case TTypeDecl(typedefTypeRef):
+						TType(typedefTypeRef, []);
 				}
 
 			default:
