@@ -57,6 +57,11 @@ class VM
 	var compilationOutput:CompilationOutput;
 
 	/**
+	The output to send the error prints to.
+	**/
+	var err:Output;
+
+	/**
 	The main class' path, to find the main function.
 	**/
 	var mainClass:String;
@@ -67,24 +72,26 @@ class VM
 	var moduleTypeCache:Map<String, EVal>;
 
 	/**
-	The output to send the prints to.
+	The output to send the normal prints to.
 	**/
-	var output:Output;
+	var out:Output;
 
 	/**
 	Construct a new VM.
 
 	@param compilationOutput The result of the compilation.
 	@param mainClass The main class' path, to find the main function.
-	@param output The output to send the prints to.
+	@param out The output to send the normal prints to.
+	@param err The output to send the error prints to.
 	**/
-	public function new(compilationOutput:CompilationOutput, mainClass:String, output:Output)
+	public function new(compilationOutput:CompilationOutput, mainClass:String, out:Output, err:Output)
 	{
 		this.context = new Context();
 		this.compilationOutput = compilationOutput;
+		this.err = err;
 		this.mainClass = mainClass;
 		this.moduleTypeCache = new Map<String, EVal>();
-		this.output = output;
+		this.out = out;
 
 		// insert builtin trace
 		context[0] = EFunction(function(args:Array<EVal>) {
@@ -95,8 +102,8 @@ class VM
 				buf.push(arg.toString(context));
 			}
 
-			output.writeString(buf.join(" "));
-			output.writeString("\n");
+			this.out.writeString(buf.join(" "));
+			this.out.writeString("\n");
 			return EVoid;
 		});
 	}
@@ -131,14 +138,16 @@ class VM
 								}
 							}
 
-							throw "no main function";
+							err.writeString('Invalid -main : $mainClass does not have static function main\n');
+							return;
 
 						default:
 							// pass
 					}
 				}
 
-				throw 'module "$mainClass" doesn\'t define a main type';
+				err.writeString('Module $mainClass does not define type $mainClass\n');
+				return;
 			}
 		}
 	}

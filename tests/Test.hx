@@ -109,6 +109,7 @@ class Test extends utest.Test
 		r.addCase(new AbstractTest());
 		r.addCase(new ClassTest());
 		r.addCase(new EnumTest());
+		r.addCase(new ErrorTest());
 		r.addCase(new ExprTest());
 		r.addCase(new MiscTest());
 		r.addCase(new TypedefTest());
@@ -199,13 +200,31 @@ class Test extends utest.Test
 	@param file The file to run.
 	@param defines The defines, optional.
 	**/
-	function compareFile(file:String, ?defines:Map<String, String>, ?pos:PosInfos)
+	function compareFile(file:String, ?defines:Map<String, String>, ?stripErrorPosition:Bool, ?pos:PosInfos)
 	{
 		var defines = defines != null ? defines : new Map<String, String>();
 		var real = runHaxe(file, defines);
 		var haxevm = runFile(file, defines);
 
 		Assert.equals(real.out, haxevm.out, pos);
-		Assert.equals(real.err, haxevm.err, pos);
+
+		if (stripErrorPosition == true)
+		{
+			function stripPosition(message:String):String
+			{
+				return message.substr(message.lastIndexOf(":") + 2);
+			}
+
+			function clean(err:String):String
+			{
+				return err.split("\n").map(stripPosition).join("\n");
+			}
+
+			Assert.equals(clean(real.err), clean(haxevm.err));
+		}
+		else
+		{
+			Assert.equals(real.err, haxevm.err, pos);
+		}
 	}
 }

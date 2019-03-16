@@ -18,17 +18,17 @@ before_script:
 
 script:
   # test compilation/show errors
-  - haxe extraParams.hxml --run haxevm.Main tests/samples/Main.hx
+  - haxe extraParams.hxml --run haxevm.Main tests/samples/expr/Main.hx
   # run the tests
   - haxe test.hxml
   # check compilation status on cpp
   - haxelib install hxcpp
   - haxe extraParams.hxml --main haxevm.Main -cpp build/cpp/
-  - build/cpp/Main tests/samples/Main.hx
+  - build/cpp/Main tests/samples/expr/Main.hx
   # check compilation status on js
   - haxelib git hxnodejs https://github.com/HaxeFoundation/hxnodejs.git
   - haxe extraParams.hxml --main haxevm.Main -js build/haxevm.js -lib hxnodejs -D js-es=6
-  - node build/haxevm.js tests/samples/Main.hx
+  - node build/haxevm.js tests/samples/expr/Main.hx
 
 after_script:
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then

@@ -118,7 +118,7 @@ class ExprTyper
 			return switch (parentExpr.expr)
 			{
 				case EArray(array, key):
-					ArrayExpr.typeAccess(array, key, parentExpr.pos, typeExpr);
+					ArrayExpr.typeAccess(array, key, module, parentExpr.pos, typeExpr);
 
 				case EArrayDecl(values):
 					ArrayExpr.typeDeclaration(values, parentExpr.pos, typeExpr);

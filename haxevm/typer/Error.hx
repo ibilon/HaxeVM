@@ -59,6 +59,16 @@ enum ErrorMessage
 	FieldNotFound(type:Type, fieldName:String);
 
 	/**
+	A non extern function doesn't have a body.
+	**/
+	FunctionBodyRequired;
+
+	/**
+	A property accessor is missing.
+	**/
+	MissingPropertyAccessor(name:String);
+
+	/**
 	Array of mixed type.
 	**/
 	MixedTypeArray;
@@ -158,13 +168,19 @@ class Error
 				'Custom property accessor is no longer supported, please use `${get ? "get" : "set"}`';
 
 			case FieldNotFound(type, fieldName):
-				'${type.prettyName()} has no field $fieldName';
+				'${type.prettyName(true)} has no field $fieldName';
+
+			case FunctionBodyRequired:
+				"Function body required";
+
+			case MissingPropertyAccessor(name):
+				'Method $name required by property ${name.substr(4)} is missing';
 
 			case MixedTypeArray:
 				"Arrays of mixed types are only allowed if the type is forced to Array<Dynamic>";
 
 			case ModuleWithoutMainType(module):
-				'Module ${module.name} doesn\'t define a main type';
+				'Module ${module.name} does not define type ${module.name}';
 
 			case ParsingError(message):
 				message;

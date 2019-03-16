@@ -23,9 +23,11 @@ SOFTWARE.
 package haxevm.typer;
 
 import haxe.macro.Expr;
+import haxe.macro.Expr.Position as BasePosition;
 import haxe.macro.Type;
 import haxeparser.Data;
 import haxevm.impl.MetaAccess;
+import haxevm.impl.Position;
 import haxevm.impl.Ref;
 import haxevm.typer.Error;
 
@@ -60,7 +62,7 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 	@param definition The definition of the module type.
 	@param position The module type's position.
 	**/
-	function new(compiler:Compiler, module:Module, definition:Definition<DefinitionFlag, Array<Field>>, position:Position)
+	function new(compiler:Compiler, module:Module, definition:Definition<DefinitionFlag, Array<Field>>, position:BasePosition)
 	{
 		super(compiler, module, definition, position);
 
@@ -77,15 +79,17 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 		var overrideFields = classData.overrides;
 		var staticFields = classData.statics.get();
 
+		var propertyAccessorRequired = [];
+
 		for (i in 0...definition.data.length)
 		{
 			var data = definition.data[i];
 
 			var field:ClassField = {
 				doc: data.doc,
-				isExtern: false,
+				isExtern: classData.isExtern,
 				isFinal: false,
-				isPublic: false,
+				isPublic: classData.isInterface,
 				kind: null,
 				meta: MetaAccess.make(data.meta),
 				name: data.name,
@@ -95,45 +99,6 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 				type: null,
 				expr: () -> fieldsExpr[i]
 			};
-
-			switch (data.kind)
-			{
-				case FFun(fn):
-					field.kind = FMethod(MethNormal);
-					field.type = TFun(fn.args.map(arg -> { name: arg.name, opt: arg.opt, t: arg.type.toType() }), fn.ret.toType());
-
-				case FProp(get, set, t, _):
-					function resolveAccess(a:String, get:Bool):VarAccess
-					{
-						return switch (a)
-						{
-							case "get", "set", "dynamic":
-								AccCall;
-
-							case "inline":
-								AccInline;
-
-							case "never":
-								AccNever;
-
-							case "null":
-								AccNo;
-
-							case "default":
-								AccNormal;
-
-							default:
-								throw new Error(CustomPropertyAccessor(get), module, data.pos);
-						}
-					}
-
-					field.kind = FVar(resolveAccess(get, true), resolveAccess(set, false));
-					field.type = t.toType();
-
-				case FVar(t, _):
-					field.kind = FVar(AccNormal, AccNormal);
-					field.type = t.toType();
-			}
 
 			var isStatic = false;
 			var isOverride = false;
@@ -171,6 +136,58 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 				}
 			}
 
+			switch (data.kind)
+			{
+				case FFun(fn):
+					field.kind = FMethod(MethNormal);
+					field.type = TFun(fn.args.map(arg -> { name: arg.name, opt: arg.opt, t: arg.type.toType() }), fn.ret.toType());
+
+				case FProp(getAccessor, setAccessor, t, _):
+					function resolveAccess(get:Bool):VarAccess
+					{
+						return switch (get ? getAccessor : setAccessor)
+						{
+							case "get" if (get):
+								propertyAccessorRequired.push({ name: 'get_${data.name}', isStatic: isStatic, pos: data.pos });
+								AccCall;
+
+							case "set" if (!get):
+								propertyAccessorRequired.push({ name: 'set_${data.name}', isStatic: isStatic, pos: data.pos });
+								AccCall;
+
+							case "dynamic":
+								AccCall;
+
+							case "inline":
+								AccInline;
+
+							case "never":
+								AccNever;
+
+							case "null":
+								AccNo;
+
+							case "default":
+								AccNormal;
+
+							default:
+								var delta = get ? 1 : getAccessor.length + 2;
+								var length = get ? getAccessor.length : setAccessor.length;
+								var pos = Position.make(data.pos.file, data.pos.min + delta, data.pos.min + delta + length);
+								//trace(delta, data.pos, pos);
+								// TODO figure out accessor position
+								throw new Error(CustomPropertyAccessor(get), module, pos);
+						}
+					}
+
+					field.kind = FVar(resolveAccess(true), resolveAccess(false));
+					field.type = t.toType();
+
+				case FVar(t, _):
+					field.kind = FVar(AccNormal, AccNormal);
+					field.type = t.toType();
+			}
+
 			if (isStatic)
 			{
 				staticFields.push(field);
@@ -186,6 +203,40 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 			}
 
 			fields.push(field);
+		}
+
+		// Check that all get_var and set_var exist.
+		for (accessor in propertyAccessorRequired)
+		{
+			var found = false;
+
+			if (accessor.isStatic)
+			{
+				for (field in staticFields)
+				{
+					if (field.name == accessor.name)
+					{
+						found = true;
+						break;
+					}
+				}
+			}
+			else
+			{
+				for (field in fields)
+				{
+					if (field.name == accessor.name)
+					{
+						found = true;
+						break;
+					}
+				}
+			}
+
+			if (!found)
+			{
+				throw new Error(MissingPropertyAccessor(accessor.name), module, accessor.pos);
+			}
 		}
 	}
 
@@ -214,6 +265,11 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 				switch (data.kind)
 				{
 					case FFun(fn):
+						if (fn.expr == null && fields[i].isExtern == false)
+						{
+							throw new Error(FunctionBodyRequired, module, data.pos);
+						}
+
 						compiler.symbolTable.stack(() ->
 						{
 							var argsId = fn.args.map(arg -> compiler.symbolTable.addVar(arg.name, arg.type.toType()));

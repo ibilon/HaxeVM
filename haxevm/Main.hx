@@ -142,7 +142,7 @@ class Main
 			return;
 		}
 
-		new VM(compilationOutput, mainClass, out).run();
+		new VM(compilationOutput, mainClass, out, err).run();
 
 		for (warning in compilationOutput.warnings)
 		{

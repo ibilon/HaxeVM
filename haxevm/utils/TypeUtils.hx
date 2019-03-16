@@ -85,25 +85,28 @@ class TypeUtils
 	Calculate the string representation of the type ready to be displayed.
 
 	@param type The type.
+	@param displayType If true show Class<Name> instead of Name if class, same for abstracts.
 	**/
-	public static function prettyName(type:Type):String
+	public static function prettyName(type:Type, displayType:Bool = false):String
 	{
-		function name(name:String, typeParameters:Array<Type>):String
+		function name(name:String, typeParameters:Array<Type>, type:String):String
 		{
-			return if (typeParameters.length == 0)
+			var name = if (typeParameters.length == 0)
 			{
 				name;
 			}
 			else
 			{
-				'${name}<${typeParameters.map(prettyName).join(",")}>';
+				'${name}<${typeParameters.map(prettyName.bind(_, false)).join(",")}>';
 			}
+
+			return displayType ? '$type<$name>' : name;
 		}
 
 		return switch (type.follow())
 		{
 			case TAbstract(_.get() => abstractType, typeParameters):
-				name(abstractType.name, typeParameters);
+				name(abstractType.name, typeParameters, "Abstract");
 
 			case TAnonymous(_.get() => anonType):
 				var fields = anonType.fields.map(field -> '${field.name} : ${field.type.prettyName()}');
@@ -129,7 +132,7 @@ class TypeUtils
 				buf.toString();
 
 			case TInst(_.get() => classType, typeParameters):
-				name(classType.name, typeParameters);
+				name(classType.name, typeParameters, "Class");
 
 			case TMono(_):
 				return 'Unknown<0>';

@@ -11,7 +11,7 @@
 				"extraParams.hxml",
 				"--run",
 				"haxevm.Main",
-				"tests/samples/Main.hx"
+				"tests/samples/expr/Main.hx"
 			],
 			"problemMatcher": [
 				"$haxe-absolute",
@@ -28,7 +28,7 @@
 			"type": "shell",
 			"command": "build/cpp/Main",
 			"args": [
-				"tests/samples/Main.hx"
+				"tests/samples/expr/Main.hx"
 			],
 			"problemMatcher": [
 				"$haxe-absolute",
@@ -43,7 +43,7 @@
 			"command": "node",
 			"args": [
 				"build/haxevm.js",
-				"tests/samples/Main.hx"
+				"tests/samples/expr/Main.hx"
 			],
 			"problemMatcher": [
 				"$haxe-absolute",

@@ -66,7 +66,7 @@ class FunctionExpr
 				mono;
 
 			default:
-				throw ErrorMessage.TypeIsNotCallable(typed.t);
+				throw new Error(TypeIsNotCallable(typed.t), module, expr.pos);
 		}
 
 		if (expr.expr.match(EConst(CIdent("trace"))))

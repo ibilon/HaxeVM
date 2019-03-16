@@ -24,12 +24,14 @@ package haxevm;
 
 import byte.ByteData;
 import haxeparser.HaxeParser;
+import haxevm.impl.Position;
 import haxevm.typer.AbstractTyper;
 import haxevm.typer.ClassTyper;
 import haxevm.typer.EnumTyper;
 import haxevm.typer.Error;
 import haxevm.typer.ModuleTypeTyper;
 import haxevm.typer.TypedefTyper;
+import hxparse.ParserError as HxParseParserError;
 
 using haxe.io.Path;
 using haxevm.utils.PositionUtils;
@@ -202,6 +204,12 @@ class Compiler
 					}
 
 					errors.push(new Error(ParsingError(message), module, parserError.pos));
+					return;
+				}
+				catch (parserError:HxParseParserError)
+				{
+					var pos = parserError.pos;
+					errors.push(new Error(ParsingError(parserError.toString()), module, Position.make(pos.psource, pos.pmin, pos.pmax)));
 					return;
 				}
 

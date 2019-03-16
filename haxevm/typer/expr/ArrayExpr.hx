@@ -42,10 +42,11 @@ class ArrayExpr
 
 	@param array The array expression.
 	@param key The key expression.
+	@param module The module the expression is in.
 	@param position The position of the array access.
 	@param typeExpr The expression typing function, should be `ExprTyper.typeExpr`.
 	**/
-	public static function typeAccess(array:Expr, key:Expr, position:Position, typeExpr:ExprTyperFn):TypedExpr
+	public static function typeAccess(array:Expr, key:Expr, module:Module, position:Position, typeExpr:ExprTyperFn):TypedExpr
 	{
 		var array = typeExpr(array);
 		var key = typeExpr(key);
@@ -62,7 +63,7 @@ class ArrayExpr
 				mono;
 
 			default:
-				throw ErrorMessage.ArrayAccessNotAllowed(array.t);
+				throw new Error(ArrayAccessNotAllowed(array.t), module, array.pos);
 		}
 
 		Unification.unify(BaseType.tInt, key.t, true);
