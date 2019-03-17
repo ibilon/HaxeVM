@@ -38,7 +38,7 @@
 			"dependsOn": "build cpp"
 		},
 		{
-			"label": "run js",
+			"label": "run nodejs",
 			"type": "shell",
 			"command": "node",
 			"args": [
@@ -50,7 +50,7 @@
 				"$haxe",
 				"$haxe-error"
 			],
-			"dependsOn": "build js"
+			"dependsOn": "build nodejs"
 		},
 		{
 			"label": "build cpp",
@@ -70,7 +70,7 @@
 			]
 		},
 		{
-			"label": "build js",
+			"label": "build nodejs",
 			"type": "shell",
 			"command": "haxe",
 			"args": [
@@ -79,8 +79,7 @@
 				"haxevm.Main",
 				"-js",
 				"build/haxevm.js",
-				"-lib",
-				"hxnodejs",
+				"libs/hxnodejs.hxml",
 				"-D",
 				"js-es=6"
 			],
@@ -108,6 +107,16 @@
 			"dependsOn": "build test cpp"
 		},
 		{
+			"label": "run tests on nodejs",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"build/test_js/test.js"
+			],
+			"problemMatcher": [],
+			"dependsOn": "build test nodejs"
+		},
+		{
 			"label": "build test cpp",
 			"type": "shell",
 			"command": "haxe",
@@ -118,6 +127,29 @@
 				"tests.Test",
 				"-cpp",
 				"build/test_cpp/",
+				"-D",
+				"noCoverage"
+			],
+			"problemMatcher": [
+				"$haxe-absolute",
+				"$haxe",
+				"$haxe-error"
+			]
+		},
+		{
+			"label": "build test nodejs",
+			"type": "shell",
+			"command": "haxe",
+			"args": [
+				"extraParams.hxml",
+				"libs/utest/extraParams.hxml",
+				"-main",
+				"tests.Test",
+				"-js",
+				"build/test_js/test.js",
+				"libs/hxnodejs.hxml",
+				"-D",
+				"js-es=6",
 				"-D",
 				"noCoverage"
 			],

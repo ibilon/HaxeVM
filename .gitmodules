@@ -10,3 +10,6 @@
 [submodule "libs/mcover"]
 	path = libs/mcover
 	url = https://github.com/massiveinteractive/mcover.git
+[submodule "libs/hxnodejs"]
+	path = libs/hxnodejs
+	url = https://github.com/HaxeFoundation/hxnodejs.git

@@ -26,32 +26,16 @@ import haxe.CallStack;
 import haxe.PosInfos;
 import haxe.io.Encoding;
 import haxe.io.Output;
+import haxevm.utils.ProcessUtils;
 #if !noCoverage
 import mcover.coverage.MCoverage;
 import mcover.coverage.client.LcovPrintClient;
 #end
-import sys.io.Process;
 import utest.Assert;
 import utest.Runner;
 import utest.ui.Report;
 
 using haxe.io.Path;
-
-/**
-The output produced by a test (compilation + run).
-**/
-typedef RunResult =
-{
-	/**
-	The normal output.
-	**/
-	var out:String;
-
-	/**
-	The error output.
-	**/
-	var err:String;
-}
 
 /**
 Output storing its content in a string buffer.
@@ -146,19 +130,9 @@ class Test extends utest.Test
 			arguments.push('$k=$v');
 		}
 
-		// There's some issue with escaping when using arg array.
-		var process = new Process(arguments.join(" "));
-
-		var out = process.stdout.readAll().toString();
-		var err = process.stderr.readAll().toString();
-
-		process.close();
+		var result = ProcessUtils.run(arguments);
 		Sys.setCwd(cwd);
-
-		return {
-			out: out,
-			err: err
-		}
+		return result;
 	}
 
 	/**
