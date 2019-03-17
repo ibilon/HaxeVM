@@ -65,36 +65,34 @@ class FieldUtils
 		var parent = eval(parent);
 		var name = fieldName(fieldAccess);
 
-		function findFieldImpl(fields:Array<EField>):EField
+		var field = switch (parent)
 		{
-			for (field in fields)
-			{
-				if (field.name == name)
+			case EClass(_, classData):
+				classData.staticFields[name];
+
+			case EInstance(fields, classData):
+				var field = fields[name];
+
+				if (field == null)
 				{
-					return field;
+					// Fall back on the class' statics.
+					field = classData.staticFields[name];
 				}
-			}
 
-			throw 'Field ${name} not found';
-		}
+				field;
 
-		return switch (parent)
-		{
 			case EObject(fields):
-				findFieldImpl(fields);
-
-			case EType(_, _, memberFields, staticFields):
-				try
-				{
-					findFieldImpl(staticFields);
-				}
-				catch (_:Any)
-				{
-					findFieldImpl(memberFields);
-				}
+				fields[name];
 
 			default:
 				throw 'Field access unsuported "$parent"';
 		}
+
+		if (field == null)
+		{
+			throw 'Field ${name} not found';
+		}
+
+		return field;
 	}
 }

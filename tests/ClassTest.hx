@@ -26,6 +26,11 @@ Test class related features.
 **/
 class ClassTest extends Test
 {
+	public function testMultiClassStatic():Void
+	{
+		compareFile("tests/samples/class/MultiClassStatic.hx");
+	}
+
 	public function testNew():Void
 	{
 		compareFile("tests/samples/class/New.hx");

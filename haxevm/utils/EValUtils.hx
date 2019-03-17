@@ -71,6 +71,23 @@ class EValUtils
 	}
 
 	/**
+	Extract a class from the value, or error.
+
+	@param value The value.
+	**/
+	public static function asClass(value:EVal):EClassData
+	{
+		return switch (value)
+		{
+			case EClass(_, classData):
+				classData;
+
+			default:
+				throw "expected EClass got " + value.getName();
+		}
+	}
+
+	/**
 	Extract an int from the value, or error.
 
 	@param value The value.
@@ -204,11 +221,17 @@ class EValUtils
 			case EBool(b):
 				b ? "true" : "false";
 
+			case EClass(classType, _):
+				classType.name;
+
 			case EFloat(f):
 				'$f';
 
 			case EFunction(_):
-				'#fun';
+				"#fun";
+
+			case EInstance(_, _):
+				"#inst"; // TODO
 
 			case EInt(i):
 				'$i';
@@ -221,9 +244,9 @@ class EValUtils
 				buf.add("{");
 				var fs = [];
 
-				for (f in fields)
+				for (field in fields)
 				{
-					fs.push('${f.name}: ${f.val.toString(context)}');
+					fs.push('${field.name}: ${field.value.toString(context)}');
 				}
 
 				buf.add(fs.join(", "));
@@ -232,22 +255,6 @@ class EValUtils
 
 			case EString(s):
 				s;
-
-			case EType(m, _):
-				switch (m)
-				{
-					case TAbstract(_.get() => a):
-						a.name;
-
-					case TClassDecl(_.get() => c):
-						c.name;
-
-					case TEnumDecl(_.get() => e):
-						e.name;
-
-					case TTypeDecl(_.get() => t):
-						t.name;
-				}
 
 			case EVoid:
 				"Void";

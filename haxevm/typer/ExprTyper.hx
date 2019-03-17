@@ -26,19 +26,7 @@ import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxevm.typer.BaseType;
 import haxevm.typer.Error;
-import haxevm.typer.expr.ArrayExpr;
-import haxevm.typer.expr.ConstExpr;
-import haxevm.typer.expr.FieldExpr;
-import haxevm.typer.expr.ForExpr;
-import haxevm.typer.expr.FunctionExpr;
-import haxevm.typer.expr.IfExpr;
-import haxevm.typer.expr.NewExpr;
-import haxevm.typer.expr.ObjectExpr;
-import haxevm.typer.expr.OperatorExpr;
-import haxevm.typer.expr.SwitchExpr;
-import haxevm.typer.expr.TryExpr;
-import haxevm.typer.expr.VarExpr;
-import haxevm.typer.expr.WhileExpr;
+import haxevm.typer.expr.*;
 
 using haxevm.utils.ArrayUtils;
 using haxevm.utils.ComplexTypeUtils;
@@ -183,8 +171,8 @@ class ExprTyper
 
 					TMeta(meta, typed).makeTyped(parentExpr.pos, typed.t);
 
-				case ENew(t, params):
-					NewExpr.type(t, params, parentExpr.pos, module, typeExpr);
+				case ENew(typePath, arguments):
+					NewExpr.type(typePath, arguments, parentExpr.pos, module, typeExpr);
 
 				case EObjectDecl(fields):
 					ObjectExpr.type(fields, parentExpr.pos, typeExpr);

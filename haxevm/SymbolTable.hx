@@ -75,6 +75,8 @@ abstract SymbolTable(SymbolTableData)
 			name: "value"
 		};
 		addVar("trace", TFun([arg], BaseType.tVoid));
+
+		// Reserve symbol ID 1 for `this`.
 		addVar("this", Monomorph.make());
 	}
 
@@ -99,15 +101,15 @@ abstract SymbolTable(SymbolTableData)
 	}
 
 	/**
-	Add a static function's argument symbols.
+	Add a function's argument symbols.
 	To be used by the VM to allocate the value in the context.
 
-	@param classField The static function's field.
+	@param classField The function's field.
 	@param ids The argument symbols.
 	**/
-	public inline function addStaticFunctionArgumentSymbols(classField:ClassField, ids:Array<Int>):Void
+	public inline function addFunctionArgumentSymbols(classField:ClassField, ids:Array<Int>):Void
 	{
-		this.staticFunctionsArgumentSymbols[classField.pos.hash()] = ids;
+		this.functionsArgumentSymbols[classField.pos.hash()] = ids;
 	}
 
 	/**
@@ -164,6 +166,24 @@ abstract SymbolTable(SymbolTableData)
 	}
 
 	/**
+	Get a function's argument symbols.
+	Used by the VM to allocate the value in the context.
+
+	@param classField The function's field.
+	**/
+	public inline function getFunctionArgumentSymbols(classField:ClassField):Array<Int>
+	{
+		return switch (this.functionsArgumentSymbols[classField.pos.hash()])
+		{
+			case null:
+				throw "unknown classfield";
+
+			case value:
+				value;
+		}
+	}
+
+	/**
 	Get a module.
 
 	@param id The module's id.
@@ -177,18 +197,6 @@ abstract SymbolTable(SymbolTableData)
 
 			default:
 				throw "symbol isn't of type SModule";
-		}
-	}
-
-	public inline function getStaticFunctionArgumentSymbols(cf:ClassField):Array<Int>
-	{
-		return switch (this.staticFunctionsArgumentSymbols[cf.pos.hash()])
-		{
-			case null:
-				throw "unknown classfield";
-
-			case value:
-				value;
 		}
 	}
 
@@ -276,7 +284,7 @@ private class SymbolTableData
 	/**
 	The list of symbol id for the static function's argument variables.
 	**/
-	public var staticFunctionsArgumentSymbols:Map<String, Array<Int>>;
+	public var functionsArgumentSymbols:Map<String, Array<Int>>;
 
 	/**
 	The symbol associated to the id.
@@ -291,7 +299,7 @@ private class SymbolTableData
 		current = new Map<String, Int>();
 		nextId = 0;
 		stacks = [current];
-		staticFunctionsArgumentSymbols = [];
+		functionsArgumentSymbols = [];
 		symbols = new Map<Int, Symbol>();
 	}
 }

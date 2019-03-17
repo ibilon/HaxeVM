@@ -28,19 +28,11 @@ import haxevm.Compiler.CompilationOutput;
 import haxevm.vm.Context;
 import haxevm.vm.EVal;
 import haxevm.vm.FlowControl;
-import haxevm.vm.expr.ArrayExpr;
-import haxevm.vm.expr.CallExpr;
-import haxevm.vm.expr.ConstExpr;
-import haxevm.vm.expr.IfExpr;
-import haxevm.vm.expr.LoopExpr;
-import haxevm.vm.expr.ModuleExpr;
-import haxevm.vm.expr.OperatorExpr;
-import haxevm.vm.expr.TryExpr;
+import haxevm.vm.expr.*;
 
 using haxevm.utils.ArrayUtils;
 using haxevm.utils.EValUtils;
 using haxevm.utils.FieldUtils;
-using haxevm.utils.ModuleTypeUtils;
 
 /**
 Virtual machine evaluating the typed AST.
@@ -196,7 +188,7 @@ class VM
 				throw "unexpected TEnumParameter";
 
 			case TField(expr, fieldAccess):
-				expr.findField(fieldAccess, eval).val;
+				expr.findField(fieldAccess, eval).value;
 
 			case TFor(_, _, _):
 				throw "TFor unimplemented";
@@ -216,27 +208,11 @@ class VM
 			case TMeta(_, expr): // TODO is there actually something to do at runtime?
 				eval(expr);
 
-			case TNew(classType, _, el):
-				var obj = EObject(classType.get().fields.get().map(f -> { name: f.name, val: eval(f.expr()) }));
-				var type = ModuleExpr.load(TClassDecl(classType), compilationOutput, moduleTypeCache, context, eval);
-				switch (type)
-				{
-					case EType(_, constructor, _, _):
-						if (constructor != null)
-						{
-							CallExpr.evalWithThis(constructor.val, el, obj, eval);
-						}
-						else
-						{
-							throw "No constructor";
-						}
-					default:
-						throw "Invalid new call";
-				}
-				obj;
+			case TNew(_.get() => classType, _, arguments):
+				NewExpr.eval(classType, arguments, compilationOutput.symbolTable, moduleTypeCache, context, eval);
 
 			case TObjectDecl(fields):
-				EObject(fields.map(f -> { name: f.name, val: eval(f.expr) }));
+				EObject([for (field in fields) field.name => { name: field.name, value: eval(field.expr) }]);
 
 			case TParenthesis(expr):
 				eval(expr);
@@ -263,7 +239,7 @@ class VM
 				LoopExpr.whileLoop(conditionExpr, expr, normalWhile, eval);
 
 			case TTypeExpr(module):
-				ModuleExpr.load(module, compilationOutput, moduleTypeCache, context, eval);
+				ModuleTypeExpr.load(module, compilationOutput.symbolTable, moduleTypeCache, context, eval);
 		}
 	}
 }

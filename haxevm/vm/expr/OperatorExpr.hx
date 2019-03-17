@@ -196,8 +196,8 @@ class OperatorExpr
 								throw 'Unexpected array access on ${data.t} with type ${key.t}';
 						}
 
-					case TField(e, fa):
-						e.findField(fa, eval).val = rhsValue;
+					case TField(expr, fieldAccess):
+						expr.findField(fieldAccess, eval).value = rhsValue;
 
 					case TLocal(v):
 						context[v.id] = rhsValue;
@@ -229,9 +229,9 @@ class OperatorExpr
 								throw 'Unexpected array access on ${data.t} with type ${key.t}';
 						}
 
-					case TField(e, fa):
-						var fieldEVal = e.findField(fa, eval);
-						fieldEVal.val = binopSub(subOp, fieldEVal.val, rhsValue, eval);
+					case TField(expr, fieldAccess):
+						var fieldEVal = expr.findField(fieldAccess, eval);
+						fieldEVal.value = binopSub(subOp, fieldEVal.value, rhsValue, eval);
 
 					case TLocal(v):
 						context[v.id] = switch (context[v.id])
@@ -467,9 +467,9 @@ class OperatorExpr
 
 					case TField(expr, fieldAccess):
 						var fieldEVal = expr.findField(fieldAccess, eval);
-						var before = fieldEVal.val;
-						var after = update(fieldEVal.val);
-						fieldEVal.val = after;
+						var before = fieldEVal.value;
+						var after = update(fieldEVal.value);
+						fieldEVal.value = after;
 						postFix ? before : after;
 
 					case TLocal(v):
@@ -507,7 +507,7 @@ class OperatorExpr
 						update(context[v.id]);
 
 					case TField(expr, fieldAccess):
-						update(expr.findField(fieldAccess, eval).val);
+						update(expr.findField(fieldAccess, eval).value);
 
 					case TParenthesis(subExpr):
 						unop(op, postFix, subExpr, context, eval);
@@ -528,7 +528,7 @@ class OperatorExpr
 						EInt(~i);
 
 					case TField(expr, fieldAccess):
-						update(expr.findField(fieldAccess, eval).val);
+						update(expr.findField(fieldAccess, eval).value);
 
 					case TLocal(v):
 						update(context[v.id]);
@@ -552,7 +552,7 @@ class OperatorExpr
 						EBool(!b);
 
 					case TField(expr, fieldAccess):
-						update(expr.findField(fieldAccess, eval).val);
+						update(expr.findField(fieldAccess, eval).value);
 
 					case TLocal(v):
 						update(context[v.id]);

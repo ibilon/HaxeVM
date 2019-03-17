@@ -22,38 +22,36 @@ SOFTWARE.
 
 package haxevm.vm.expr;
 
-import haxe.macro.Type.TypedExpr;
+import haxe.macro.Type;
 import haxevm.vm.EVal;
 
 using haxevm.utils.EValUtils;
 
 /**
-Evaluate a call.
+Evaluate a new.
 **/
-class CallExpr
+class NewExpr
 {
 	/**
-	Evaluate a call.
-
-	@param expr The caller's expression.
-	@param arguments The call arguments' expressions.
-	@param eval The expression evaluation function, should be `VM.eval`.
+	Evaluate a new.
 	**/
-	public static function eval(expr:TypedExpr, arguments:Array<TypedExpr>, eval:EvalFn):EVal
+	public static function eval(classType:ClassType, arguments:Array<TypedExpr>, symbolTable:SymbolTable, moduleTypeCache:Map<String, EVal>, context:Context, eval:EvalFn):EVal
 	{
-		return eval(expr).asFunction()(arguments.map(arg -> eval(arg)));
-	}
+		var eclass = ModuleTypeExpr.loadClass(classType, symbolTable, moduleTypeCache, context, eval).asClass();
+		var fields = new Map<String, EField>();
 
-	/**
-	Evaluate an instance call.
+		for (memberField in eclass.memberFields)
+		{
+			// TODO evaluate member variables, and assign member functions from cache in eclass.
+		}
 
-	@param fn The member function to call.
-	@param arguments The call arguments' expressions.
-	@param object The reference to `this` used in the call.
-	@param eval The expression evaluation function, should be `VM.eval`.
-	**/
-	public static function evalWithThis(fn:EVal, arguments:Array<TypedExpr>, object:EVal, eval:EvalFn):EVal
-	{
-		return fn.asFunction()([object].concat(arguments.map(arg -> eval(arg))));
+		var object = EInstance(fields, eclass);
+
+		if (eclass.constructor != null)
+		{
+			CallExpr.evalWithThis(eclass.constructor, arguments, object, eval);
+		}
+
+		return object;
 	}
 }

@@ -20,40 +20,34 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **/
 
-package haxevm.vm.expr;
+package haxevm.utils;
 
-import haxe.macro.Type.TypedExpr;
-import haxevm.vm.EVal;
+import haxe.macro.Expr;
+import haxe.macro.Type;
 
-using haxevm.utils.EValUtils;
+using haxevm.utils.ComplexTypeUtils;
 
 /**
-Evaluate a call.
+Utilities for `TypeParam`.
+
+To be used with `using TypeParamUtils;`.
 **/
-class CallExpr
+class TypeParamUtils
 {
 	/**
-	Evaluate a call.
+	Convert a type param to a type
 
-	@param expr The caller's expression.
-	@param arguments The call arguments' expressions.
-	@param eval The expression evaluation function, should be `VM.eval`.
+	@param typeParam The type param.
 	**/
-	public static function eval(expr:TypedExpr, arguments:Array<TypedExpr>, eval:EvalFn):EVal
+	public static function toType(typeParam:TypeParam):Type
 	{
-		return eval(expr).asFunction()(arguments.map(arg -> eval(arg)));
-	}
+		return switch (typeParam)
+		{
+			case TPType(complexType):
+				complexType.toType();
 
-	/**
-	Evaluate an instance call.
-
-	@param fn The member function to call.
-	@param arguments The call arguments' expressions.
-	@param object The reference to `this` used in the call.
-	@param eval The expression evaluation function, should be `VM.eval`.
-	**/
-	public static function evalWithThis(fn:EVal, arguments:Array<TypedExpr>, object:EVal, eval:EvalFn):EVal
-	{
-		return fn.asFunction()([object].concat(arguments.map(arg -> eval(arg))));
+			default:
+				throw "Unsupported type param";
+		}
 	}
 }

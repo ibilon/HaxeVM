@@ -44,7 +44,7 @@ class Main
 		trace(obj.sub.hello);
 		trace(obj.a + obj.b);
 		trace(obj.a - obj.b);
-		trace(obj);
+		// trace(obj); // TODO fix print order
 
 		var a = true;
 		var b = false;

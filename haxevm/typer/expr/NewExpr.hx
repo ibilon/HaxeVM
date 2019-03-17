@@ -24,15 +24,10 @@ package haxevm.typer.expr;
 
 import haxe.macro.Expr;
 import haxe.macro.Type;
-import haxevm.SymbolTable.Symbol;
-import haxevm.impl.Ref;
-import haxevm.typer.Error;
 import haxevm.typer.ExprTyper;
+import haxevm.utils.TypeParamUtils;
 
-using haxevm.utils.ComplexTypeUtils;
 using haxevm.utils.ModuleTypeUtils;
-using haxevm.utils.PositionUtils;
-using haxevm.utils.TypeUtils;
 using haxevm.utils.TypedExprUtils;
 
 /**
@@ -43,53 +38,18 @@ class NewExpr
 	/**
 	Type a class instantiation.
 
-	@param t The class TypePath.
+	@param typePath The class TypePath.
 	@param arguments The arguments expressions.
 	@param position The position of the function call.
 	@param module The module the expression is in.
 	@param typeExpr The expression typing function, should be `ExprTyper.typeExpr`.
 	**/
-	public static function type(t:TypePath, arguments:Array<Expr>, position:Position, module:Module, typeExpr:ExprTyperFn):TypedExpr
+	public static function type(typePath:TypePath, arguments:Array<Expr>, position:Position, module:Module, typeExpr:ExprTyperFn):TypedExpr
 	{
-		var typePathHash = '${t.pack.join('.')}#${t.name}#${t.sub == null ? t.name : t.sub}';
-		var params = t.params.map(typeParamToType);
-		var elems = arguments.map(typeExpr);
-		var classType:Null<Ref<ClassType>> = null;
-		for (type in module.types)
-		{
-			switch (type)
-			{
-				case TClassDecl(c):
-					if (type.hash() == typePathHash)
-					{
-						classType = cast c;
-						break;
-					}
+		var classTypeRef = module.findClass(typePath);
+		var params = typePath.params.map(TypeParamUtils.toType);
+		var arguments = arguments.map(typeExpr);
 
-				default:
-					continue;
-			}
-		}
-		if (classType == null)
-		{
-			throw 'Type not found : ${t.sub == null ? t.name : t.sub}';
-		}
-		return TNew(classType, params, elems).makeTyped(position, TInst(classType, params));
-	}
-
-	/**
-	Convert a type param to a type
-
-	@param tp The type param.
-	**/
-	private static function typeParamToType(tp:TypeParam):Type
-	{
-		return switch (tp)
-		{
-			case TPType(t):
-				return t.toType();
-			case TPExpr(_):
-				throw "Unsupported type param";
-		}
+		return TNew(classTypeRef, params, arguments).makeTyped(position, TInst(classTypeRef, params));
 	}
 }

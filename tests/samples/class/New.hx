@@ -23,7 +23,8 @@ SOFTWARE.
 class New
 {
 	static var i = 1;
-	public function new ()
+
+	public function new()
 	{
 		i++;
 		trace("Ok!");
@@ -33,6 +34,7 @@ class New
 	{
 		var a = new New();
 		trace(i);
+
 		new New();
 		trace(i);
 	}

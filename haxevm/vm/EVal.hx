@@ -25,14 +25,25 @@ package haxevm.vm;
 import haxe.macro.Type;
 
 /**
-The type of an expression evaluation function.
+A class.
 **/
-typedef EvalFn = (expr:TypedExpr)->EVal;
+typedef EClassData =
+{
+	/**
+	The constructor of the class, if it exists.
+	**/
+	var constructor:Null<EVal>;
 
-/**
-The type of a function.
-**/
-typedef EFunctionFn = (arguments:Array<EVal>)->EVal;
+	/**
+	The member fields of the class.
+	**/
+	var memberFields:Map<String, TypedExpr>;
+
+	/**
+	The static fields of the class.
+	**/
+	var staticFields:Map<String, EField>;
+}
 
 /**
 A field.
@@ -47,8 +58,18 @@ typedef EField =
 	/**
 	The value of the field.
 	**/
-	var val:EVal;
+	var value:EVal;
 }
+
+/**
+The type of a function.
+**/
+typedef EFunctionFn = (arguments:Array<EVal>)->EVal;
+
+/**
+The type of an expression evaluation function.
+**/
+typedef EvalFn = (expr:TypedExpr)->EVal;
 
 enum EVal
 {
@@ -63,6 +84,11 @@ enum EVal
 	EBool(b:Bool);
 
 	/**
+	A class.
+	**/
+	EClass(classType:ClassType, classData:EClassData);
+
+	/**
 	A Float.
 	**/
 	EFloat(f:Float);
@@ -71,6 +97,11 @@ enum EVal
 	A function.
 	**/
 	EFunction(fn:EFunctionFn);
+
+	/**
+	A class object instance.
+	**/
+	EInstance(fields:Map<String, EField>, classData:EClassData);
 
 	/**
 	An Int.
@@ -85,17 +116,12 @@ enum EVal
 	/**
 	An anon object.
 	**/
-	EObject(fields:Array<EField>);
+	EObject(fields:Map<String, EField>);
 
 	/**
 	A String.
 	**/
 	EString(s:String);
-
-	/**
-	A module.
-	**/
-	EType(m:ModuleType, constructor:Null<EField>, memberFields:Array<EField>, staticFields:Array<EField>);
 
 	/**
 	No value.

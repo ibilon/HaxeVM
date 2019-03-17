@@ -22,7 +22,10 @@ SOFTWARE.
 
 package haxevm.utils;
 
-import haxe.macro.Type.ModuleType;
+import haxe.macro.Expr;
+import haxe.macro.Type;
+
+using haxevm.utils.ModuleTypeUtils;
 
 /**
 Utilities for `ModuleType`.
@@ -32,16 +35,63 @@ To be used with `using ModuleTypeUtils;`.
 class ModuleTypeUtils
 {
 	/**
-	Calculate the module's hash.
+	Find a class in a module.
 
-	@param module The module to hash.
+	@param module The module to search in.
+	@param typePath The class to search.
 	**/
-	public static function hash(module:ModuleType):String
+	public static function findClass(module:Module, typePath:TypePath):Ref<ClassType>
 	{
-		return switch (module)
+		// TODO do proper type search with imports
+		var typePathHash = '${typePath.pack.join('.')}#${typePath.name}#${typePath.sub == null ? typePath.name : typePath.sub}';
+
+		var ref = null;
+
+		for (type in module.types)
 		{
-			case TClassDecl(_.get() => c):
-				'${c.pack.join(".")}#${c.module}#${c.name}';
+			switch (type)
+			{
+				case TClassDecl(classTypeRef):
+					if (type.hashModuleType() == typePathHash)
+					{
+						ref = classTypeRef;
+						break;
+					}
+
+				default:
+					continue;
+			}
+		}
+
+		if (ref == null)
+		{
+			throw 'Type not found : ${typePath.sub == null ? typePath.name : typePath.sub}';
+		}
+
+		return ref;
+	}
+
+	/**
+	Calculate the class type's hash.
+
+	@param classType The class type to hash.
+	**/
+	public static inline function hashClassType(classType:ClassType):String
+	{
+		return '${classType.pack.join(".")}#${classType.module}#${classType.name}';
+	}
+
+	/**
+	Calculate the module type's hash.
+
+	@param moduleType The module type to hash.
+	**/
+	public static function hashModuleType(moduleType:ModuleType):String
+	{
+		return switch (moduleType)
+		{
+			case TClassDecl(_.get() => classType):
+				classType.hashClassType();
 
 			default:
 				throw "not supported";
