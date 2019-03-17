@@ -24,108 +24,108 @@ package tests;
 
 class ErrorTest extends Test
 {
-	public function testArrayAccessNotAllowed():Void
-	{
-		compareFile("tests/samples/error/ArrayAccessNotAllowed.hx");
-	}
-
-	public function testBackwardIterating():Void
-	{
-		compareFile("tests/samples/error/BackwardIterating.hx");
-	}
-
-	public function testCantCompare():Void
-	{
-		compareFile("tests/samples/error/CantCompare.hx");
-	}
-
-	public function testCustomPropertyAccessorGet():Void
+	public function testClassCustomPropertyAccessorGet():Void
 	{
 		// TODO wrong position
-		compareFile("tests/samples/error/CustomPropertyAccessorGet.hx", true);
+		compareFile("tests/samples/error/class/CustomPropertyAccessorGet.hx", true);
 	}
 
-	public function testCustomPropertyAccessorSet():Void
+	public function testClassCustomPropertyAccessorSet():Void
 	{
 		// TODO wrong position
-		compareFile("tests/samples/error/CustomPropertyAccessorSet.hx", true);
+		compareFile("tests/samples/error/class/CustomPropertyAccessorSet.hx", true);
 	}
 
-	public function testDuplicateDefault():Void
+	public function testClassFieldNotFoundStatic():Void
+	{
+		compareFile("tests/samples/error/class/FieldNotFoundStatic.hx");
+	}
+
+	public function testClassMissingPropertyAccessorGet():Void
 	{
 		// TODO wrong position
-		compareFile("tests/samples/error/DuplicateDefault.hx", true);
+		compareFile("tests/samples/error/class/MissingPropertyAccessorGet.hx", true);
 	}
 
-	public function testFieldNotFoundAnon():Void
-	{
-		compareFile("tests/samples/error/FieldNotFoundAnon.hx");
-	}
-
-	public function testFieldNotFoundStatic():Void
-	{
-		compareFile("tests/samples/error/FieldNotFoundStatic.hx");
-	}
-
-	public function testMissingPropertyAccessorGet():Void
+	public function testClassMissingPropertyAccessorSet():Void
 	{
 		// TODO wrong position
-		compareFile("tests/samples/error/MissingPropertyAccessorGet.hx", true);
+		compareFile("tests/samples/error/class/MissingPropertyAccessorSet.hx", true);
 	}
 
-	public function testMissingPropertyAccessorSet():Void
+	public function testClassNoFunctionExpr():Void
 	{
 		// TODO wrong position
-		compareFile("tests/samples/error/MissingPropertyAccessorSet.hx", true);
+		compareFile("tests/samples/error/class/NoFunctionExpr.hx", true);
 	}
 
-	public function testMissingSemicolon():Void
+	public function testExprArrayAccessNotAllowed():Void
+	{
+		compareFile("tests/samples/error/expr/ArrayAccessNotAllowed.hx");
+	}
+
+	public function testExprBackwardIterating():Void
+	{
+		compareFile("tests/samples/error/expr/BackwardIterating.hx");
+	}
+
+	public function testExprCantCompare():Void
+	{
+		compareFile("tests/samples/error/expr/CantCompare.hx");
+	}
+
+	public function testExprDuplicateDefault():Void
 	{
 		// TODO wrong position
-		compareFile("tests/samples/error/MissingSemicolon.hx", true);
+		compareFile("tests/samples/error/expr/DuplicateDefault.hx", true);
+	}
+
+	public function testExprFieldNotFoundAnon():Void
+	{
+		compareFile("tests/samples/error/expr/FieldNotFoundAnon.hx");
 	}
 
 	@Ignored // TODO need better position + unification error message
-	public function testMixedTypeArray():Void
+	public function testExprMixedTypeArray():Void
 	{
-		compareFile("tests/samples/error/MixedTypeArray.hx");
+		compareFile("tests/samples/error/expr/MixedTypeArray.hx");
 	}
 
-	public function testModuleWithoutMainType():Void
+	public function testExprTypeIsNotCallable():Void
 	{
-		compareFile("tests/samples/error/ModuleWithoutMainType.hx");
+		compareFile("tests/samples/error/expr/TypeIsNotCallable.hx");
 	}
 
-	public function testNoFunctionExpr():Void
+	public function testExprUnificationError():Void
 	{
-		// TODO wrong position
-		compareFile("tests/samples/error/NoFunctionExpr.hx", true);
+		compareFile("tests/samples/error/expr/UnificationError.hx");
 	}
 
-	public function testNoMain():Void
+	public function testExprUnresolvedIdentifier():Void
+	{
+		compareFile("tests/samples/error/expr/UnresolvedIdentifier.hx");
+	}
+
+	public function testOtherModuleWithoutMainType():Void
+	{
+		compareFile("tests/samples/error/other/ModuleWithoutMainType.hx");
+	}
+
+	public function testOtherNoMain():Void
 	{
 		// TODO missing position
-		compareFile("tests/samples/error/NoMain.hx", true);
+		compareFile("tests/samples/error/other/NoMain.hx", true);
 	}
 
-	public function testTypeIsNotCallable():Void
+	public function testParserMissingSemicolon():Void
 	{
-		compareFile("tests/samples/error/TypeIsNotCallable.hx");
+		// TODO wrong position
+		compareFile("tests/samples/error/parser/MissingSemicolon.hx", true);
 	}
 
 	#if cpp @Ignored #end // TODO wrong position on cpp
-	public function testUnexpectedBracket():Void
+	public function testParserUnexpectedBracket():Void
 	{
-		compareFile("tests/samples/error/UnexpectedBracket.hx");
-	}
-
-	public function testUnificationError():Void
-	{
-		compareFile("tests/samples/error/UnificationError.hx");
-	}
-
-	public function testUnresolvedIdentifier():Void
-	{
-		compareFile("tests/samples/error/UnresolvedIdentifier.hx");
+		compareFile("tests/samples/error/parser/UnexpectedBracket.hx");
 	}
 }
