@@ -53,11 +53,41 @@ class ModuleExpr
 			return moduleTypeCache[hash];
 		}
 
+		var constructorField : Null<EField> = null;
+		var memberFields = [];
 		var staticFields = [];
 
 		switch (module)
 		{
 			case TClassDecl(_.get() => classType):
+				if (classType.constructor != null)
+				{
+					var constructor = classType.constructor.get();
+					var value = EValUtils.makeEFunction(compilationOutput.symbolTable.getStaticFunctionArgumentSymbols(constructor), constructor.expr(), context, eval);
+					constructorField = { name: "new", val: value };
+				}
+				for (memberField in classType.fields.get())
+				{
+					switch (memberField.kind)
+					{
+						case FMethod(_):
+							switch (memberField.type)
+							{
+								case TFun(_, _):
+									var value = EValUtils.makeEFunction(compilationOutput.symbolTable.getStaticFunctionArgumentSymbols(memberField), memberField.expr(), context, eval);
+									memberFields.push({ name: memberField.name, val: value });
+
+								default:
+									throw "invalid method type";
+							}
+
+						case FVar(_, _):
+							var expr = memberField.expr();
+							var value = expr != null ? eval(expr) : memberField.type.defaultEVal();
+
+							memberFields.push({ name: memberField.name, val: value });
+					}
+				}
 				for (staticField in classType.statics.get())
 				{
 					switch (staticField.kind)
@@ -85,7 +115,7 @@ class ModuleExpr
 				throw "not supported";
 		}
 
-		var value = EType(module, staticFields);
+		var value = EType(module, constructorField, memberFields, staticFields);
 		moduleTypeCache[hash] = value;
 		return value;
 	}

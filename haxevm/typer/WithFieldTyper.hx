@@ -29,6 +29,7 @@ import haxeparser.Data;
 import haxevm.impl.MetaAccess;
 import haxevm.impl.Position;
 import haxevm.impl.Ref;
+import haxevm.typer.BaseType;
 import haxevm.typer.Error;
 import haxevm.typer.expr.ConstExpr;
 
@@ -201,20 +202,40 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 					eagerType(field, expr);
 			}
 
-			if (isStatic)
+			if (field.name == "new")
 			{
-				staticFields.push(field);
+				if (isStatic)
+				{
+					throw "A constructor must not be static";
+				}
+				switch (field.type)
+				{
+					case TFun(_, t):
+						if (BaseType.isVoid(t))
+						{
+							throw "A class constructor can't have a return value";
+						}
+					default:
+						throw "Unexpected new";
+				}
+				classData.constructor = Ref.make(field);
 			}
 			else
 			{
-				memberFields.push(field);
-			}
+				if (isStatic)
+				{
+					staticFields.push(field);
+				}
+				else
+				{
+					memberFields.push(field);
+				}
 
-			if (isOverride)
-			{
-				overrideFields.push(Ref.make(field));
+				if (isOverride)
+				{
+					overrideFields.push(Ref.make(field));
+				}
 			}
-
 			fields.push(field);
 		}
 
@@ -274,7 +295,6 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 			for (i in 0...definition.data.length)
 			{
 				var data = definition.data[i];
-
 				switch (data.kind)
 				{
 					case FFun(fn):
@@ -283,13 +303,27 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 							throw new Error(FunctionBodyRequired, module, data.pos);
 						}
 
-						compiler.symbolTable.stack(() ->
+						if (data.name == "new" || data.access == null || data.access.indexOf(AStatic) == -1)
 						{
-							var argsId = fn.args.map(arg -> compiler.symbolTable.addVar(arg.name, arg.type.toType()));
-							compiler.symbolTable.addStaticFunctionArgumentSymbols(fields[i], argsId);
+							compiler.symbolTable.stack(() ->
+							{
+								var argsId = fn.args.map(arg -> compiler.symbolTable.addVar(arg.name, arg.type.toType()));
+								argsId.unshift(1);
+								compiler.symbolTable.addStaticFunctionArgumentSymbols(fields[i], argsId);
 
-							fieldsExpr[i] = new ExprTyper(compiler, module, classData, fn.expr).type();
-						});
+								fieldsExpr[i] = new ExprTyper(compiler, module, classData, fn.expr).type();
+							});
+						}
+						else
+						{
+							compiler.symbolTable.stack(() ->
+							{
+								var argsId = fn.args.map(arg -> compiler.symbolTable.addVar(arg.name, arg.type.toType()));
+								compiler.symbolTable.addStaticFunctionArgumentSymbols(fields[i], argsId);
+
+								fieldsExpr[i] = new ExprTyper(compiler, module, classData, fn.expr).type();
+							});
+						}
 
 					case FProp(_, _, _, expr):
 						fieldsExpr[i] = new ExprTyper(compiler, module, classData, expr).type();

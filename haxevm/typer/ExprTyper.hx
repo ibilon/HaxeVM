@@ -32,6 +32,7 @@ import haxevm.typer.expr.FieldExpr;
 import haxevm.typer.expr.ForExpr;
 import haxevm.typer.expr.FunctionExpr;
 import haxevm.typer.expr.IfExpr;
+import haxevm.typer.expr.NewExpr;
 import haxevm.typer.expr.ObjectExpr;
 import haxevm.typer.expr.OperatorExpr;
 import haxevm.typer.expr.SwitchExpr;
@@ -182,8 +183,8 @@ class ExprTyper
 
 					TMeta(meta, typed).makeTyped(parentExpr.pos, typed.t);
 
-				case ENew(_, _):
-					throw "no class support";
+				case ENew(t, params):
+					NewExpr.type(t, params, parentExpr.pos, module, typeExpr);
 
 				case EObjectDecl(fields):
 					ObjectExpr.type(fields, parentExpr.pos, typeExpr);

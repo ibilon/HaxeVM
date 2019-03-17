@@ -20,85 +20,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **/
 
-package haxevm.vm;
-
-import haxe.macro.Type;
-
-/**
-The type of an expression evaluation function.
-**/
-typedef EvalFn = (expr:TypedExpr)->EVal;
-
-/**
-The type of a function.
-**/
-typedef EFunctionFn = (arguments:Array<EVal>)->EVal;
-
-/**
-A field.
-**/
-typedef EField =
+class New
 {
-	/**
-	The name of the field.
-	**/
-	var name:String;
+	static var i = 1;
+	public function new ()
+	{
+		i++;
+		trace("Ok!");
+	}
 
-	/**
-	The value of the field.
-	**/
-	var val:EVal;
-}
-
-enum EVal
-{
-	/**
-	An array of type `of`, containing `data`.
-	**/
-	EArray(of:Type, data:Array<EVal>);
-
-	/**
-	A Bool.
-	**/
-	EBool(b:Bool);
-
-	/**
-	A Float.
-	**/
-	EFloat(f:Float);
-
-	/**
-	A function.
-	**/
-	EFunction(fn:EFunctionFn);
-
-	/**
-	An Int.
-	**/
-	EInt(i:Int);
-
-	/**
-	The null value.
-	**/
-	ENull;
-
-	/**
-	An anon object.
-	**/
-	EObject(fields:Array<EField>);
-
-	/**
-	A String.
-	**/
-	EString(s:String);
-
-	/**
-	A module.
-	**/
-	EType(m:ModuleType, constructor:Null<EField>, memberFields:Array<EField>, staticFields:Array<EField>);
-
-	/**
-	No value.
-	**/
-	EVoid;
+	public static function main()
+	{
+		var a = new New();
+		trace(i);
+		new New();
+		trace(i);
+	}
 }

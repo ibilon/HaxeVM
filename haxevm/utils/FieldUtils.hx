@@ -83,8 +83,15 @@ class FieldUtils
 			case EObject(fields):
 				findFieldImpl(fields);
 
-			case EType(_, staticFields):
-				findFieldImpl(staticFields);
+			case EType(_, _, memberFields, staticFields):
+				try
+				{
+					findFieldImpl(staticFields);
+				}
+				catch (_:Any)
+				{
+					findFieldImpl(memberFields);
+				}
 
 			default:
 				throw 'Field access unsuported "$parent"';

@@ -26,6 +26,7 @@ import haxe.macro.Type;
 import haxevm.impl.Ref;
 import haxevm.typer.BaseType;
 import haxevm.typer.Error;
+import haxevm.typer.Monomorph;
 
 using haxevm.utils.ArrayUtils;
 using haxevm.utils.PositionUtils;
@@ -74,6 +75,7 @@ abstract SymbolTable(SymbolTableData)
 			name: "value"
 		};
 		addVar("trace", TFun([arg], BaseType.tVoid));
+		addVar("this", Monomorph.make());
 	}
 
 	/**

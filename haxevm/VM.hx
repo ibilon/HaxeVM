@@ -40,6 +40,7 @@ import haxevm.vm.expr.TryExpr;
 using haxevm.utils.ArrayUtils;
 using haxevm.utils.EValUtils;
 using haxevm.utils.FieldUtils;
+using haxevm.utils.ModuleTypeUtils;
 
 /**
 Virtual machine evaluating the typed AST.
@@ -215,8 +216,24 @@ class VM
 			case TMeta(_, expr): // TODO is there actually something to do at runtime?
 				eval(expr);
 
-			case TNew(_, _, _):
-				throw "TNew unimplemented";
+			case TNew(classType, _, el):
+				var obj = EObject(classType.get().fields.get().map(f -> { name: f.name, val: eval(f.expr()) }));
+				var type = ModuleExpr.load(TClassDecl(classType), compilationOutput, moduleTypeCache, context, eval);
+				switch (type)
+				{
+					case EType(_, constructor, _, _):
+						if (constructor != null)
+						{
+							CallExpr.evalWithThis(constructor.val, el, obj, eval);
+						}
+						else
+						{
+							throw "No constructor";
+						}
+					default:
+						throw "Invalid new call";
+				}
+				obj;
 
 			case TObjectDecl(fields):
 				EObject(fields.map(f -> { name: f.name, val: eval(f.expr) }));

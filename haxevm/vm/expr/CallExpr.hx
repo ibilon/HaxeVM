@@ -41,6 +41,21 @@ class CallExpr
 	**/
 	public static function eval(expr:TypedExpr, arguments:Array<TypedExpr>, eval:EvalFn):EVal
 	{
+		try {
 		return eval(expr).asFunction()(arguments.map(arg -> eval(arg)));
+		} catch (e:Any) { throw "prout"+e; }
+	}
+
+	/**
+	Evaluate an instance call.
+
+	@param e The caller's evaluation.
+	@param arguments The call arguments' expressions.
+	@param obj The reference to `this` used in the call.
+	@param eval The expression evaluation function, should be `VM.eval`.
+	**/
+	public static function evalWithThis(e:EVal, arguments:Array<TypedExpr>, obj:EVal, eval:EvalFn):EVal
+	{
+		return e.asFunction()([obj].concat(arguments.map(arg -> eval(arg))));
 	}
 }
