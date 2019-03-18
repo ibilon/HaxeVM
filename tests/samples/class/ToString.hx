@@ -20,29 +20,39 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **/
 
-package tests;
-/**
-Test class related features.
-**/
-class ClassTest extends Test
+class WithToString
 {
-	public function testMultiClassStatic():Void
+	var i:String;
+
+	public function new(i:String)
 	{
-		compareFile("tests/samples/class/MultiClassStatic.hx");
+		this.i = i;
 	}
 
-	public function testNew():Void
+	function toString()
 	{
-		compareFile("tests/samples/class/New.hx");
+		return i;
 	}
+}
 
-	public function testStatic():Void
+class WithoutToString
+{
+	var i:String;
+
+	public function new(i:String)
 	{
-		compareFile("tests/samples/class/Static.hx");
+		this.i = i;
 	}
+}
 
-	public function testToString():Void
+class ToString
+{
+	public static function main()
 	{
-		compareFile("tests/samples/class/ToString.hx");
+		var a = new WithToString("hello");
+		trace(a);
+
+		var a = new WithoutToString("world");
+		trace(a);
 	}
 }

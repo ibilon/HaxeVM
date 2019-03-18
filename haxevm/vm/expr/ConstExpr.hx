@@ -33,8 +33,10 @@ class ConstExpr
 	Evaluate a constant.
 
 	@param constant The constant to evaluate.
+	@param symbolTable The symbol table from the compilation.
+	@param context The context to use.
 	**/
-	public static function eval(constant:TConstant):EVal
+	public static function eval(constant:TConstant, symbolTable:SymbolTable, context:Context):EVal
 	{
 		return switch (constant)
 		{
@@ -57,7 +59,7 @@ class ConstExpr
 				throw "no super";
 
 			case TThis:
-				throw "no this";
+				context[symbolTable.thisID];
 		}
 	}
 }

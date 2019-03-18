@@ -81,18 +81,35 @@ class ModuleTypeExpr
 		}
 
 		var constructorField = null;
-		var memberFields = new Map<String, TypedExpr>();
+		var memberFunctions = new Map<String, EVal>();
+		var memberVariables = new Map<String, TypedExpr>();
 		var staticFields = new Map<String, EField>();
 
 		if (classType.constructor != null)
 		{
 			var constructor = classType.constructor.get();
-			constructorField = EValUtils.makeEFunction(symbolTable.getFunctionArgumentSymbols(constructor), constructor.expr(), context, eval);
+			var argumentsID = [symbolTable.thisID].concat(symbolTable.getFunctionArgumentSymbols(constructor));
+			constructorField = EValUtils.makeEFunction(argumentsID, constructor.expr(), context, eval);
 		}
 
 		for (memberField in classType.fields.get())
 		{
-			memberFields[memberField.name] = memberField.expr();
+			switch (memberField.kind)
+			{
+				case FMethod(_):
+					switch (memberField.type)
+					{
+						case TFun(_, _):
+							var argumentsID = [symbolTable.thisID].concat(symbolTable.getFunctionArgumentSymbols(memberField));
+							memberFunctions[memberField.name] = EValUtils.makeEFunction(argumentsID, memberField.expr(), context, eval);
+
+						default:
+							throw "invalid method type";
+					}
+
+				case FVar(_, _):
+					memberVariables[memberField.name] = memberField.expr();
+			}
 		}
 
 		for (staticField in classType.statics.get())
@@ -117,7 +134,7 @@ class ModuleTypeExpr
 			}
 		}
 
-		var value = EClass(classType, { constructor: constructorField, memberFields: memberFields, staticFields: staticFields });
+		var value = EClass(classType, { constructor: constructorField, memberFunctions: memberFunctions, memberVariables: memberVariables, name: classType.name, staticFields: staticFields });
 		moduleTypeCache[hash] = value;
 		return value;
 	}

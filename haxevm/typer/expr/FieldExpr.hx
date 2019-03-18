@@ -28,6 +28,7 @@ import haxevm.impl.Ref;
 import haxevm.typer.Error;
 import haxevm.typer.ExprTyper;
 
+using haxevm.utils.TypeUtils;
 using haxevm.utils.TypedExprUtils;
 
 /**
@@ -47,8 +48,7 @@ class FieldExpr
 	{
 		var typed = typeExpr(expr);
 
-		// TODO class
-		switch (typed.t)
+		switch (typed.t.follow())
 		{
 			case TAnonymous(_.get() => anonType):
 				for (field in anonType.fields)
@@ -62,6 +62,16 @@ class FieldExpr
 				throw ErrorMessage.FieldNotFound(typed.t, fieldName);
 
 			case TInst(_.get() => classType, _):
+				// TODO only allow member access from the class or object (not Class)
+				for (memberField in classType.fields.get())
+				{
+					if (memberField.name == fieldName)
+					{
+						return TField(typed, FInstance(Ref.make(classType), [], Ref.make(memberField))).makeTyped(position, memberField.type);
+					}
+				}
+
+				// TODO only allow static access from the class or Class (not object)
 				for (staticField in classType.statics.get())
 				{
 					if (staticField.name == fieldName)

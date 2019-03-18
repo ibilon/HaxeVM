@@ -70,16 +70,8 @@ class FieldUtils
 			case EClass(_, classData):
 				classData.staticFields[name];
 
-			case EInstance(fields, classData):
-				var field = fields[name];
-
-				if (field == null)
-				{
-					// Fall back on the class' statics.
-					field = classData.staticFields[name];
-				}
-
-				field;
+			case EInstance(fields, _):
+				fields[name];
 
 			case EObject(fields):
 				fields[name];

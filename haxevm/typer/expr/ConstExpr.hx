@@ -27,7 +27,6 @@ import haxe.macro.Expr.Position as BasePosition;
 import haxe.macro.Type;
 import haxevm.impl.Position;
 import haxevm.typer.BaseType;
-import haxevm.typer.Error;
 import haxevm.typer.ExprTyper;
 import haxevm.utils.TVarUtils;
 
@@ -66,7 +65,7 @@ class ConstExpr
 				TConst(TSuper).makeTyped(position, Monomorph.make());
 
 			case CIdent("this"):
-				TConst(TThis).makeTyped(position, Monomorph.make());
+				TConst(TThis).makeTyped(position, symbolTable.getVar(symbolTable.thisID));
 
 			case CIdent("true"):
 				TConst(TBool(true)).makeTyped(position, BaseType.tBool);
@@ -77,8 +76,15 @@ class ConstExpr
 
 				switch (symbol)
 				{
-					case SField(_, from):
-						typeExpr({ expr: EField({ expr: EConst(CIdent(from.name)), pos: Position.makeEmpty() }, ident), pos: Position.makeEmpty() });
+					case SField(_, from, isStatic):
+						if (isStatic)
+						{
+							typeExpr({ expr: EField({ expr: EConst(CIdent(from.name)), pos: Position.makeEmpty() }, ident), pos: Position.makeEmpty() });
+						}
+						else
+						{
+							typeExpr({ expr: EField({ expr: EConst(CIdent("this")), pos: Position.makeEmpty() }, ident), pos: Position.makeEmpty() });
+						}
 
 					case SModule(_):
 						throw "not implemented";

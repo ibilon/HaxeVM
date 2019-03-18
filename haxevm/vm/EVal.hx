@@ -35,9 +35,19 @@ typedef EClassData =
 	var constructor:Null<EVal>;
 
 	/**
-	The member fields of the class.
+	The member functions of the class.
 	**/
-	var memberFields:Map<String, TypedExpr>;
+	var memberFunctions:Map<String, EVal>;
+
+	/**
+	The member variables of the class.
+	**/
+	var memberVariables:Map<String, TypedExpr>;
+
+	/**
+	The name of the class.
+	**/
+	var name:String;
 
 	/**
 	The static fields of the class.

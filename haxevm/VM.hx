@@ -87,12 +87,12 @@ class VM
 		this.out = out;
 
 		// insert builtin trace
-		context[0] = EFunction(function(args:Array<EVal>) {
+		context[compilationOutput.symbolTable.traceID] = EFunction(function(args:Array<EVal>) {
 			var buf = [];
 
 			for (arg in args)
 			{
-				buf.push(arg.toString(context));
+				buf.push(arg.toString(context, eval));
 			}
 
 			this.out.writeString(buf.join(" "));
@@ -176,7 +176,7 @@ class VM
 				throw "TCast unimplemented";
 
 			case TConst(constant):
-				ConstExpr.eval(constant);
+				ConstExpr.eval(constant, compilationOutput.symbolTable, context);
 
 			case TContinue:
 				throw FCContinue;

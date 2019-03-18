@@ -43,7 +43,7 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 	/**
 	The typed fields.
 	**/
-	var fields:Array<ClassField>;
+	var fields:Array<{ classField:ClassField, isStatic:Bool }>;
 
 	/**
 	The typed fields' expression.
@@ -240,7 +240,7 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 				}
 			}
 
-			fields.push(field);
+			fields.push({ classField: field, isStatic: isStatic });
 		}
 
 		// Check that all get_var and set_var exist.
@@ -248,26 +248,12 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 		{
 			var found = false;
 
-			if (accessor.isStatic)
+			for (field in fields)
 			{
-				for (field in staticFields)
+				if (field.classField.name == accessor.name && accessor.isStatic == field.isStatic)
 				{
-					if (field.name == accessor.name)
-					{
-						found = true;
-						break;
-					}
-				}
-			}
-			else
-			{
-				for (field in fields)
-				{
-					if (field.name == accessor.name)
-					{
-						found = true;
-						break;
-					}
+					found = true;
+					break;
 				}
 			}
 
@@ -292,7 +278,7 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 		{
 			for (field in fields)
 			{
-				compiler.symbolTable.addField(field, classData);
+				compiler.symbolTable.addField(field.classField, classData, field.isStatic);
 			}
 
 			// Second pass: type class symbols' expr
@@ -303,15 +289,20 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 				switch (data.kind)
 				{
 					case FFun(fn):
-						if (fn.expr == null && fields[i].isExtern == false)
+						if (fn.expr == null && fields[i].classField.isExtern == false)
 						{
 							throw new Error(FunctionBodyRequired, module, data.pos);
 						}
 
 						compiler.symbolTable.stack(() ->
 						{
+							if (!fields[i].isStatic)
+							{
+								compiler.symbolTable.setThis(classData);
+							}
+
 							var argsId = fn.args.map(arg -> compiler.symbolTable.addVar(arg.name, arg.type.toType()));
-							compiler.symbolTable.addFunctionArgumentSymbols(fields[i], argsId);
+							compiler.symbolTable.addFunctionArgumentSymbols(fields[i].classField, argsId);
 
 							fieldsExpr[i] = new ExprTyper(compiler, module, classData, fn.expr).type();
 						});
@@ -323,7 +314,7 @@ class WithFieldTyper<DefinitionFlag, DataType> extends ModuleTypeTyper<Definitio
 						fieldsExpr[i] = new ExprTyper(compiler, module, classData, expr).type();
 				}
 
-				Unification.unify(fields[i].type, fieldsExpr[i].t);
+				Unification.unify(fields[i].classField.type, fieldsExpr[i].t);
 			}
 		});
 	}

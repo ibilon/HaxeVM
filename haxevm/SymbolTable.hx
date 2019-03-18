@@ -49,7 +49,7 @@ enum Symbol
 	/**
 	A symbol representing a field.
 	**/
-	SField(field:ClassField, from:ClassType);
+	SField(field:ClassField, from:ClassType, isStatic:Bool);
 
 	/**
 	A symbol representing a local variable.
@@ -60,6 +60,7 @@ enum Symbol
 /**
 The compilation symbol table.
 **/
+@:forward(traceID, thisID)
 abstract SymbolTable(SymbolTableData)
 {
 	/**
@@ -74,20 +75,22 @@ abstract SymbolTable(SymbolTableData)
 			opt: false,
 			name: "value"
 		};
-		addVar("trace", TFun([arg], BaseType.tVoid));
+		this.traceID = addVar("trace", TFun([arg], BaseType.tVoid));
 
 		// Reserve symbol ID 1 for `this`.
-		addVar("this", Monomorph.make());
+		this.thisID = addVar("this", this.thisUnboundType);
 	}
 
 	/**
 	Add a field.
 
 	@param field The field to add.
+	@param from The class the field belongs to.
+	@param isStatic If the field is a static or member.
 	**/
-	public inline function addField(field:ClassField, from:ClassType):Int
+	public inline function addField(field:ClassField, from:ClassType, isStatic:Bool):Int
 	{
-		return addSymbol(field.name, SField(field, from));
+		return addSymbol(field.name, SField(field, from, isStatic));
 	}
 
 	/**
@@ -158,7 +161,7 @@ abstract SymbolTable(SymbolTableData)
 		return switch (this.symbols[key])
 		{
 			case null:
-				throw "symbol doesn't exist";
+				throw 'symbol $key doesn\'t exist in symbol table';
 
 			case value:
 				value;
@@ -247,6 +250,17 @@ abstract SymbolTable(SymbolTableData)
 	}
 
 	/**
+	Set the `this` type for this stack.
+
+	@param classType The class to bind `this` to.
+	**/
+	public inline function setThis(classType:ClassType):Void
+	{
+		this.symbols[this.thisID] = SVar(TInst(Ref.make(classType), []));
+		this.current["this"] = this.thisID;
+	}
+
+	/**
 	Stack a block, reverting the symbol table afterward.
 	**/
 	public inline function stack(block:Void->Void):Void
@@ -258,48 +272,73 @@ abstract SymbolTable(SymbolTableData)
 
 		this.stacks.pop();
 		this.current = this.stacks.last();
+
+		// Reset `this` if leaving member function.
+		if (!this.current.exists("this"))
+		{
+			this.symbols[this.thisID] = SVar(this.thisUnboundType);
+		}
 	}
 }
 
 /**
 Data class for the SymbolTable.
 **/
+@:allow(haxevm.SymbolTable)
 private class SymbolTableData
 {
 	/**
 	The current stack, linking a name to its id.
 	**/
-	public var current:Map<String, Int>;
+	public var current(default, null):Map<String, Int>;
 
 	/**
 	The next free symbol id.
 	**/
-	public var nextId:Int;
+	public var nextId(default, null):Int;
 
 	/**
 	The successive stacks of symbols.
 	**/
-	public var stacks:Array<Map<String, Int>>;
+	public var stacks(default, null):Array<Map<String, Int>>;
 
 	/**
 	The list of symbol id for the static function's argument variables.
 	**/
-	public var functionsArgumentSymbols:Map<String, Array<Int>>;
+	public var functionsArgumentSymbols(default, null):Map<String, Array<Int>>;
 
 	/**
 	The symbol associated to the id.
 	**/
-	public var symbols:Map<Int, Symbol>;
+	public var symbols(default, null):Map<Int, Symbol>;
+
+	/**
+	The symbol reserved for `this`.
+	**/
+	public var thisID(default, null):Int;
+
+	/**
+	Type representing an unbound this (outside a member function).
+	**/
+	public var thisUnboundType(default, null):Type;
+
+	/**
+	The symbol reserved for `trace`.
+	**/
+	public var traceID(default, null):Int;
 
 	/**
 	Construct the data.
 	**/
 	public inline function new()
 	{
-		current = new Map<String, Int>();
-		nextId = 0;
-		stacks = [current];
-		functionsArgumentSymbols = [];
-		symbols = new Map<Int, Symbol>();
+		this.current = new Map<String, Int>();
+		this.nextId = 0;
+		this.stacks = [current];
+		this.functionsArgumentSymbols = [];
+		this.symbols = new Map<Int, Symbol>();
+		this.thisID = -1;
+		this.thisUnboundType = TLazy(() -> throw "Can't access this outside member function");
+		this.traceID = -1;
 	}
 }

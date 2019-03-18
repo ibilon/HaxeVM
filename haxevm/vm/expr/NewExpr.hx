@@ -34,15 +34,27 @@ class NewExpr
 {
 	/**
 	Evaluate a new.
+
+	@param classType The class to construct.
+	@param arguments The constructor call's arguments.
+	@param symbolTable The symbol table from the compilation.
+	@param moduleTypeCache The cache of module types.
+	@param context The context to use.
+	@param eval The expression evaluation function, should be `VM.eval`.
 	**/
 	public static function eval(classType:ClassType, arguments:Array<TypedExpr>, symbolTable:SymbolTable, moduleTypeCache:Map<String, EVal>, context:Context, eval:EvalFn):EVal
 	{
 		var eclass = ModuleTypeExpr.loadClass(classType, symbolTable, moduleTypeCache, context, eval).asClass();
 		var fields = new Map<String, EField>();
 
-		for (memberField in eclass.memberFields)
+		for (name => memberFunction in eclass.memberFunctions)
 		{
-			// TODO evaluate member variables, and assign member functions from cache in eclass.
+			fields[name] = { name: name, value: memberFunction };
+		}
+
+		for (name => memberVariable in eclass.memberVariables)
+		{
+			fields[name] = { name: name, value: eval(memberVariable) };
 		}
 
 		var object = EInstance(fields, eclass);

@@ -58,7 +58,7 @@ abstract Context(ContextData)
 		return switch (this.current[key])
 		{
 			case null:
-				throw "symbol doesn't exist";
+				throw 'symbol $key doesn\'t exist in context';
 
 			case value:
 				value;

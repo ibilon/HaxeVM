@@ -43,8 +43,6 @@ class ModuleTypeUtils
 	public static function findClass(module:Module, typePath:TypePath):Ref<ClassType>
 	{
 		// TODO do proper type search with imports
-		var typePathHash = '${typePath.pack.join('.')}#${typePath.name}#${typePath.sub == null ? typePath.name : typePath.sub}';
-
 		var ref = null;
 
 		for (type in module.types)
@@ -52,7 +50,7 @@ class ModuleTypeUtils
 			switch (type)
 			{
 				case TClassDecl(classTypeRef):
-					if (type.hashModuleType() == typePathHash)
+					if (classTypeRef.get().name == typePath.name)
 					{
 						ref = classTypeRef;
 						break;

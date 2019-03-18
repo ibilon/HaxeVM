@@ -26,6 +26,7 @@ import haxe.macro.Type;
 import haxevm.vm.Context;
 import haxevm.vm.EVal;
 import haxevm.vm.FlowControl;
+import haxevm.vm.expr.CallExpr;
 
 using haxevm.utils.EValUtils;
 
@@ -122,6 +123,23 @@ class EValUtils
 	}
 
 	/**
+	Extract a string from the value, or error.
+
+	@param value The value.
+	**/
+	public static function asString(value:EVal):String
+	{
+		return switch (value)
+		{
+			case EString(s):
+				s;
+
+			default:
+				throw "expected EString got " + value.getName();
+		}
+	}
+
+	/**
 	Check if two EVal values are of the same type.
 
 	@param a The first value.
@@ -210,13 +228,14 @@ class EValUtils
 
 	@param value The value.
 	@param context The context to use.
+	@param eval The expression evaluation function, should be `VM.eval`.
 	**/
-	public static function toString(value:EVal, context:Context):String
+	public static function toString(value:EVal, context:Context, eval:EvalFn):String
 	{
 		return switch (value)
 		{
 			case EArray(_, a):
-				"[" + a.map(f -> f.toString(context)).join(",") + "]";
+				"[" + a.map(f -> f.toString(context, eval)).join(",") + "]";
 
 			case EBool(b):
 				b ? "true" : "false";
@@ -230,8 +249,15 @@ class EValUtils
 			case EFunction(_):
 				"#fun";
 
-			case EInstance(_, _):
-				"#inst"; // TODO
+			case EInstance(fields, classData):
+				switch (fields["toString"])
+				{
+					case null:
+						classData.name;
+
+					case fieldValue:
+						CallExpr.evalWithThis(fieldValue.value, [], value, eval).asString();
+				}
 
 			case EInt(i):
 				'$i';
@@ -246,7 +272,7 @@ class EValUtils
 
 				for (field in fields)
 				{
-					fs.push('${field.name}: ${field.value.toString(context)}');
+					fs.push('${field.name}: ${field.value.toString(context, eval)}');
 				}
 
 				buf.add(fs.join(", "));
